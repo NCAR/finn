@@ -18,7 +18,7 @@ def main(tag, fnames):
         else:
             tblname = 'af_in_%d' % (i+1)
 
-        if True:
+        if False:
             # ogr2ogr is better because this reads non-standard, larger dbf file.
             # but i screwed up my anaconda and ogr2ogr does not load properly now
             # so the shp2pgsql method is what i am using
