@@ -238,7 +238,7 @@ def main(tag, fnames):
 
     # merge
     dir_merge = os.path.join(workdir, 'mrg')
-    if False:
+    if True:
         # merge bands first as files
         logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
         mrgnames = work_merge(fnames, dir_merge)
@@ -249,7 +249,7 @@ def main(tag, fnames):
 
     # resample
     dir_rsmp = os.path.join(workdir, 'rsp')
-    if False:
+    if True:
         logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
         rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
         logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
