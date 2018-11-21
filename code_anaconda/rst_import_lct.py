@@ -80,6 +80,8 @@ def work_import(tifnames, tag):
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         psql = subprocess.Popen(['psql'], stdin=out.stdout,
                                 stdout=subprocess.PIPE)
+        out.stdout.close()
+        psql.communicate()[0]
 
 
 def work_merge(fnames, workdir, dryrun=False):
@@ -236,34 +238,22 @@ def main(tag, fnames):
     print('baname: ', bname)
     assert re.match('MCD12Q1.A\d\d\d\d001', bname)
 
-    # merge
+    # merge bands first as files
     dir_merge = os.path.join(workdir, 'mrg')
-    if True:
-        # merge bands first as files
-        logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
-        mrgnames = work_merge(fnames, dir_merge)
-        logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
-        #tifnames = work_merge(fnames, dir_merge, dryrun=True)
-    else:
-        mrgnames = sorted(glob.glob(os.path.join(dir_merge, '*.tif')))
+    logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
+    mrgnames = work_merge(fnames, dir_merge)
+    logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
 
     # resample
     dir_rsmp = os.path.join(workdir, 'rsp')
-    if True:
-        logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
-        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
-        logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
-        #oname = work_resample(tifnames)
-    else:
-        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname, dryrun=True)
+    logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
+    rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
+    logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
 
     # import
-    if True:
-        logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat() )
-        work_import(rsmpnames, tag)
-        logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat() )
-    else:
-        pass
+    logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat())
+    work_import(rsmpnames, tag)
+    logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat())
 
 if __name__ == '__main__':
     import sys
