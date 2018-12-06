@@ -2,7 +2,7 @@ code_anaconda/*.zip
 code_anaconda/all_countries
 code_anaconda/firms
 code_anaconda/step2*.sql
-
+code_anaconda/out_modlct*
 *log*.txt
 *proc_mod*
 *tifnames.txt
