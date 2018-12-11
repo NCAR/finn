@@ -47,6 +47,6 @@ If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost`
 ### Running the notebook
 
 To open the notebook, navigate to the `code_anaconda/` directory and open `main.ipynb`. 
-This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data.
+This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data. Note that 2016 is the only year currently supported.
 
-    > Note that 2016 is the only year currently supported.
+Execute the cells of the notebook to run the analysis.
