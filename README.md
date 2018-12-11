@@ -40,7 +40,8 @@ Once the container is running, we can launch a jupyter notebook using `docker ex
 docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --notebook-dir /home/finn
 ```
 
-Then, go to `localhost:8888` in a web browser to open the notebook interface. 
+Then, go to `localhost:8888/?token=...` in a web browser to open the notebook interface, pasting the token that is printed in the termainal in place of `...`.
+For example: `localhost:8888/?token=6d87327966c2769ea5a8d2da792e34127ac7dca29f78133d` (though your token will be different). 
 If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address. 
 
 
