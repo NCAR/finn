@@ -5,6 +5,13 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 
 ## Instructions
 
+### Building the Docker image
+
+To build the Docker image, execute the following command from the terminal, in the directory where `Dockerfile` exists (this project directory):
+
+```bash
+docker build -t finn .
+```
 
 ### Starting the Docker container
 
