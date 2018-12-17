@@ -15,8 +15,8 @@ def main(odir, schema, tblname, flds):
                 csvname=csvname
                 )
             ]
-   # p = Popen(cmd)
-   # p.communicate()
+    p = Popen(cmd)
+    p.communicate()
 
     ## # also get as shape file, for QA
     ## ogr2ogr -f "ESRI Shapefile" global_${yr}_div.shp PG:"host=localhost dbname=finn" -sql "select * from global_${yr}.out_div;"

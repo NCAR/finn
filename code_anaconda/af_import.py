@@ -1,5 +1,7 @@
 import os
+import subprocess
 from subprocess import Popen, PIPE
+import shlex
 
 def main(tag, fnames):
     if isinstance(fnames, str):
@@ -48,11 +50,12 @@ def main(tag, fnames):
             cmd += ['-nln', tblname]
             cmd += [fname]
             print('\ncmd:\n%s\n' % ' '.join(cmd))
-            fo = open('import_%s.log' % tag, 'w')
-            p1 = Popen(cmd)#, stdout=PIPE)
+            print(cmd)
+            subprocess.run(cmd)
+#            p1 = Popen(cmd)#, stdout=PIPE)
         #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
         #    print( p2.communicate())
-            p1.communicate()
+#            p1.communicate()
 
 if __name__ == '__main__':
     import sys

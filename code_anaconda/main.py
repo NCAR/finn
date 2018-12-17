@@ -12,7 +12,7 @@ tag_lct = 'modlct_%d' % year
 
 if False:
     # source dir
-    ddir = '../../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006'
+    ddir = '../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006'
 
     # grab hdf file names
     fnames = sorted(glob.glob("%(ddir)s/%(year)s.01.01/MCD12Q1.A%(year)s001.h??v??.006.*.hdf" % dict(
@@ -22,7 +22,7 @@ if False:
     import rst_import_lct
     rst_import_lct.main(tag_lct, fnames)
 
-    
+
 # import vcf
 
 # tag to identify dataset
@@ -30,7 +30,7 @@ tag_vcf = 'modvcf_%d' % year
 
 if False:
     # source dir
-    ddir = '../../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006'
+    ddir = '../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006'
 
     # grab hdf file names
     fnames = sorted(glob.glob("%(ddir)s/%(year)s.03.0[56]/MOD44B.A%(year)s065.h??v??.006.*.hdf" % dict(
@@ -44,7 +44,7 @@ if False:
 tag_regnum = 'regnum'
 if True:
     # source dir
-    ddir = '../../../rasters4Yo'
+    ddir = '../../rasters4Yo'
 
     fname = os.path.join(ddir, 'All_Countries.shp')
 
@@ -64,7 +64,7 @@ dt1 = datetime.date(year+1,1,1)
 
 if False:
     # source dir
-    ddir = '../../downloads/firms'
+    ddir = '../downloads/firms'
 
     # shp file names
     arcnames = ['M6_23581', ]
@@ -86,10 +86,10 @@ if True:
     import run_step2
     assert run_step2.ver == 'v8b'
     rasters = [
-            {'tag': tag_lct, 
+            {'tag': tag_lct,
                 'kind': 'thematic',
                 'variable': 'lct'},
-            {'tag': tag_vcf, 
+            {'tag': tag_vcf,
                 'kind': 'continuous',
                 'variables': ['tree', 'herb', 'bare'],
                 },
@@ -109,4 +109,3 @@ if True:
     tblname = 'out_{0}_{1}_{2}'.format(tag_lct, tag_vcf, tag_regnum)
     flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
     export_shp.main(odir, schema, tblname, flds)
-

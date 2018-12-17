@@ -128,8 +128,8 @@ $$
     return results
     
 $$ 
-language plpython3u volatile;
-
+-- language plpython3u volatile;
+language plpythonu volatile;
 
 -----------------------------------------
 -- Part 2.2: pnt2drop (points to drop) --
@@ -264,9 +264,9 @@ returns setof p2drp as $$
     return zip(todrop,others)
         
 $$ 
-language plpython3u volatile;
+-- language plpython3u volatile;
 -- language plpython2u volatile;
--- language plpythonu volatile;
+language plpythonu volatile;
 
 -----------------------------------------------
 -- Part 2.3: st_voronoi_py (voronoi polygon) --
@@ -420,9 +420,9 @@ $$
     return lst[:-4]
 
 $$ 
-language plpython3u volatile;
+-- language plpython3u volatile;
 -- language plpython2u volatile;
--- language plpythonu volatile;
+language plpythonu volatile;
 
 
 create or replace function st_voronoi_py(pnts geometry)
@@ -647,9 +647,9 @@ $$
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
     return lst
 $$
-language plpython3u volatile;
+-- language plpython3u volatile;
 -- language plpython2u volatile;
--- language plpythonu volatile;
+language plpythonu volatile;
 
 create or replace function st_cutter_py(pnts geometry)
 returns geometry as
