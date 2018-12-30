@@ -1,0 +1,73 @@
+Acquiring this repository
+
+	used github desktop, i guess you can use git clone too
+
+Building the Docker image
+	
+	cmd is used, i guess powershell work too?
+
+	as instructed.  Take long time where internet connection is not fast
+like my home
+
+Starting the Docker container
+
+	docker run
+
+*** if docker run screws up , you go "docker stop finn" and then "docker rm finn"
+***  "docker container ls" to get what you have created.
+(or "docker ps -a" ? )
+***  docker stop finn, docker start finn to stop/start daemon
+	- doesnt like single quotes in finn
+	- doesnt like $(pwd), should be %cd% ?  
+					tried %cd:\=/% too, 
+					tried to spell out c:/users/yosuke/documents/github/finn_preproc:/home/finn
+					what worked was to drop drive letter and using forward slash,
+			like this /users/yosuke/documents/github/finn_preproc:/home/finn 
+				
+					
+				- ask for share dtive, i say share
+				- doenst come back to cmd prompt....  opened another cmd, docker ps,
+				  but no process running
+
+				- with fix in drive pass, docker run completed, came back to prompt.
+				  Windows firewall warns me if i want let docker to access internet.
+				  i say allow access
+						got this!!
+					CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                            NAMES
+					580ec6e4a63d        finn                "/bin/sh -c /docker-…"   3 minutes ago       Up 3 minutes        0.0.0.0:5432->5432/tcp, 0.0.0.0:8888->8888/tcp   finn
+	- what i needed to do, was to go to setting for docker and allow
+	  access to c: drive!!!   just responding to the dialog didnt do
+anything.  with this change, and with %cd%, docker run success
+
+
+
+	docker exec,
+	well, it runs, but notebook is empty.  i guess i am not doing correct
+for the -v part
+
+
+
+to stop the -it version of docker (image?) type ^C at the terminal
+
+
+i did apt-get install for
+vim
+man
+
+i did conda install 
+beautifulsoup
+-c conda-forge pyproj
+
+
+somehow, i got corrupted hdf file and it was imposiible to delete it.  I ended
+up restarting the pc.  i got started writing downloader.py which has
+- downlaodall()
+	basically doens the same as current bash script
+- check_corrupsed()
+	matches cksum with xml file
+	(TODO) this is supposed to delete the file, but say something if it
+	really cannot delete
+- get_one()
+	(TODO) get just one file
+- find_needed_tiles()
+	(TODO) given point dataset, identify tiles that is needed
