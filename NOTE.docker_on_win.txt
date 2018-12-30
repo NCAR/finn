@@ -41,6 +41,10 @@ anything.  with this change, and with %cd%, docker run success
 
 
 
+	- Above is for "docker desktop", the newer one.  With "docker toolbox", only C:/Users can be shared, nowhere else, seems like.  See https://stackoverflow.com/questions/34161352/docker-sharing-a-volume-on-windows-with-docker-toolbox/34255036#34255036 .  So run git clone  on C: !
+
+
+
 	docker exec,
 	well, it runs, but notebook is empty.  i guess i am not doing correct
 for the -v part
