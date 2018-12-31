@@ -42,6 +42,8 @@ schema = 'raster'
 # tile size in the db
 tilesiz_db = 240
 
+# pyramid levels
+o_lvls = [str(_) for _ in (2,4,8,16,32)]
 
 def get_sdsname(lyrname, fname):
     """Given hdf file and layer name, find subdataset name for the layer."""
@@ -67,16 +69,41 @@ def work_import(tifnames, tag):
     create_schema = ["psql", "-c", 'CREATE SCHEMA IF NOT EXISTS %s;' % schema]
     subprocess.run(create_schema, stdout=subprocess.PIPE)
 
+    # delete pyramids, if exists
+    for o in o_lvls:
+        dstname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
+        drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
+        subprocess.run(drop_table, stdout=subprocess.PIPE)
+    # delete raster, if exists
     dstname = schema + '.' + '_'.join(['rst', tag])
     drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
     subprocess.run(drop_table, stdout=subprocess.PIPE)
+    
 
-    cmd_prefix = 'raster2pgsql -d -C -s 4326 -I -M -N 255'.split()
-    cmd_prefix += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
-    tif_paths = glob.glob(os.path.join('proc_modlct_2016', 'rsp', '*.tif'))
 
-    cmds = [cmd_prefix + [tif] + [dstname] for tif in tif_paths]
-    for cmd in cmds:
+    # process tif files one by one
+
+    # common tasks for imports
+    opts_common = '-s 4326 -N 255'.split()  # srs and nodata value
+    opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
+    opts_common += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
+
+    # options specific to first/middle/last files
+    opts_first = ['-c']  # create
+    opts_middle = ['-a'] # append
+    opts_last = ['-a'] + '-C -I -M'.split() # constraints, and GiST index, vacuum analysis
+
+    # run raster2pgsql, piped to psql
+    for i,tif in enumerate(tifnames):
+        print('%d of %d...' % (i+1, len(tif_paths)))
+        cmd = ['raster2pgsql']
+        if i == 0:
+            cmd += opts_first
+        elif i == len(tif_paths)-1:
+            cmd += opts_last
+        else:
+            cmd += opts_middle
+        cmd += (opts_common + [tif] + [dstname])
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         psql = subprocess.Popen(['psql'], stdin=out.stdout,
                                 stdout=subprocess.PIPE)
@@ -229,7 +256,7 @@ def work_resample(tifnames, oname='xxx.tif'):
     return oname
 
 
-def main(tag, fnames):
+def main(tag, fnames, run_merge=True, run_resample=True, run_import=True ):
     workdir = './proc_%s' % tag
     logfilename = 'log.%s.txt' % tag
     logfile = open(logfilename, 'w')
@@ -240,20 +267,30 @@ def main(tag, fnames):
 
     # merge bands first as files
     dir_merge = os.path.join(workdir, 'mrg')
-    logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
-    mrgnames = work_merge(fnames, dir_merge)
-    logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
+    if run_merge:
+        logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
+        mrgnames = work_merge(fnames, dir_merge)
+        logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
+    else:
+        mrgnames = sorted(glob.glob(os.path.join(dir_merge, '*.tif')))
 
     # resample
     dir_rsmp = os.path.join(workdir, 'rsp')
-    logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
-    rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
-    logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
+    if run_resample:
+        logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
+        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
+        logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
+    else:
+        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname,
+                dryrun=True)
 
     # import
-    logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat())
-    work_import(rsmpnames, tag)
-    logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat())
+    if run_import:
+        logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat())
+        work_import(rsmpnames, tag)
+        logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat())
+    else:
+        pass
 
 if __name__ == '__main__':
     import sys
