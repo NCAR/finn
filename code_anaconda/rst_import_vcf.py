@@ -32,7 +32,7 @@ lyrnames = [
     'Percent_NonTree_Vegetation',
     'Percent_NonVegetated'
     ]
-# acronym Yoseke used, in the order Yosuke uses store data
+# acronym Yosuke used, in the order Yosuke uses store data
 shortnames = ['tree', 'herb', 'bare']
 
 # intermediates
@@ -43,6 +43,8 @@ schema = 'raster'
 # tile size in the db
 tilesiz_db = 240
 
+# pyramid levels
+o_lvls = [str(_) for _ in (2,4,8,16,32)]
 
 def get_sdsname(lyrname, fname):
     """Given hdf file and layer name, find subdataset name. (duplicate)"""
@@ -69,18 +71,41 @@ def work_import(tifnames, tag):
     create_schema = ["psql", "-c", 'CREATE SCHEMA IF NOT EXISTS %s;' % schema]
     subprocess.run(create_schema, stdout=subprocess.PIPE)
 
+    # delete pyramids, if exists
+    for o in o_lvls:
+        dstname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
+        drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
+        subprocess.run(drop_table, stdout=subprocess.PIPE)
+    # delete raster, if exists
     dstname = schema + '.' + '_'.join(['rst', tag])
     drop_table = ["psql", "-c", "DROP TABLE IF EXISTS %s;" % dstname]
     subprocess.run(drop_table, stdout=subprocess.PIPE)
+    
 
-    cmd_prefix = 'raster2pgsql -d -C -s 4326 -I -M -N 255'.split()
-    cmd_prefix += ['-t', '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
-    tif_paths = glob.glob(os.path.join('proc_modvcf_2016', 'rsp', '*.tif'))
-    cmds = [cmd_prefix + [tif] + [dstname] for tif in tif_paths]
-    cmds = [' '.join(cmd) for cmd in cmds]
-    cmds = [shlex.split(cmd) for cmd in cmds]
-    for cmd in cmds:
-        print(cmd)
+
+    # process tif files one by one
+
+    # common tasks for imports
+    opts_common = '-s 4326 -N 255'.split()  # srs and nodata value
+    opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
+    opts_common += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
+
+    # options specific to first/middle/last files
+    opts_first = ['-c']  # create
+    opts_middle = ['-a'] # append
+    opts_last = ['-a'] + '-C -I -M'.split() # constraints, and GiST index, vacuum analysis
+
+    # run raster2pgsql, piped to psql
+    for i,tif in enumerate(tifnames):
+        print('%d of %d...' % (i+1, len(tifnames)))
+        cmd = ['raster2pgsql']
+        if i == 0:
+            cmd += opts_first
+        elif i == len(tifnames)-1:
+            cmd += opts_last
+        else:
+            cmd += opts_middle
+        cmd += (opts_common + [tif] + [dstname])
         out = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         psql = subprocess.Popen(['psql'], stdin=out.stdout,
                                 stdout=subprocess.PIPE)
@@ -88,7 +113,7 @@ def work_import(tifnames, tag):
         psql.communicate()[0]
 
 
-def work_merge(fnames, workdir):
+def work_merge(fnames, workdir, dryrun=False):
     """For each file, merge three layers into 3 band raster & import."""
     # partial duplicate
     if not os.path.exists(workdir):
@@ -109,56 +134,23 @@ def work_merge(fnames, workdir):
         )
         cmd = "gdal_merge.py -separate -o %(file)s %(opt)s %(sds)s" % params
 
-        status = os.system(cmd)
-        if not status == 0:
-            raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+        if dryrun:
+            pass
+        else:
+            status = os.system(cmd)
+            if not status == 0:
+                raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
 
         buf.append(tifname)
     return buf
 
 
-def work_math(fnames, dstdir):
-    if not os.path.exists(dstdir):
-        os.makedirs(dstdir)
-    onames = []
-    for fname in fnames:
-        oname = os.path.join(dstdir,
-                             os.path.basename(fname)[:-4] + '.proc.tif')
-        print('proc: %s' % oname)
-        work_math_one(fname, oname)
-        onames.append(oname)
-    return onames
-
-def work_math_one(fname, oname):
-    # works on 3band raster on tree/herb/bare
-    #  pixels with values > 100, convert them into bare unless its nodata
-    drv = gdal.GetDriverByName("GTiff")
-    ds = gdal.Open(fname, gdal.GA_ReadOnly)
-    dso = drv.CreateCopy(oname, ds)
-
-    bands = [ds.GetRasterBand(_) for _ in (1, 2, 3)]
-    arr = [_.ReadAsArray() for _ in bands]
-    arr[0] = np.where(arr[0] <= 100, arr[0], 0)
-    arr[1] = np.where(arr[1] <= 100, arr[1], 0)
-    arr[2] = np.where(arr[2] <= 100, arr[2], 100)
-
-    obands = [dso.GetRasterBand(_) for _ in (1, 2, 3)]
-
-    for (b, a) in zip(obands, arr):
-        b.WriteArray(a)
-    ds = None
-    dso = None
-    return oname
-
 
 def work_resample_pieces(tifnames, dstdir, bname, dryrun=False):
     # create vrt first, and then generate tiled warped files
-    if not os.path.exists(dstdir):
-        os.makedirs(dstdir)
-
-    print('Creating VRT:')
+    if not os.path.exists(dstdir): os.makedirs(dstdir)
     vrtname = os.path.join(dstdir, 'src.vrt')
-    with open('tifnames.txt', 'w') as f:
+    with open('tifnames.txt','w') as f:
         f.write('\n'.join(tifnames) + '\n')
         cmd = 'gdalbuildvrt %s -input_file_list %s' % (vrtname, 'tifnames.txt')
         status = os.system(cmd)
@@ -173,28 +165,24 @@ def work_resample_pieces(tifnames, dstdir, bname, dryrun=False):
 
     for i in range(36):
         for j in range(18):
-            te = '-te %d %d %d %d' % (-180 + 10*i,
-                                      90 - 10*(j+1),
-                                      -180+10*(i+1),
-                                      90-10*j)
-            oname = os.path.join(dstdir, '.'.join([bname, 'h%02dv%02d' % (i, j), 'tif']))
+            te = '-te %d %d %d %d' % (-180 + 10*i, 90 - 10*(j+1), -180+10*(i+1),
+                    90-10*j)
+            oname = os.path.join(dstdir, '.'.join([bname, 'h%02dv%02d' % (i,
+                j), 'tif']))
 
-            cmd = ('gdalwarp %(prj)s %(res)s %(te)s ' + \
-                   '-overwrite -r average -dstnodata 255 ' + \
-                   '-wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS ' + \
-                   '%(tiffopt)s %(fname)s %(oname)s') % dict(fname=vrtname,
-                                                             oname=oname,
-                                                             tiffopt=tiffopt,
-                                                             prj=prj,
-                                                             res=res,
-                                                             te=te)
+            cmd = ( 'gdalwarp %(prj)s %(res)s %(te)s ' + \
+                    '-overwrite -r average -dstnodata 255 ' + \
+                    '-wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS ' + \
+                    '%(tiffopt)s %(fname)s %(oname)s' ) % dict(
+                        fname=vrtname, oname=oname,
+                        tiffopt=tiffopt, prj=prj, res=res, te=te)
             if not dryrun:
                 subprocess.run(shlex.split(cmd), check=True)
             onames.append(oname)
     return onames
 
 
-def main(tag, fnames):
+def main(tag, fnames, run_merge=True, run_resample=True, run_import=True ):
     workdir = './proc_%s' % tag
     logfilename = 'log.%s.txt' % tag
     logfile = open(logfilename, 'w')
@@ -207,20 +195,30 @@ def main(tag, fnames):
     dir_merge = os.path.join(workdir, 'mrg')
 
     # merge bands first as files
-    logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat())
-    mrgnames = work_merge(fnames, dir_merge)
-    logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat())
+    if run_merge:
+        logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
+        mrgnames = work_merge(fnames, dir_merge, dryrun = False)
+        logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
+    else:
+        mrgnames = work_merge(fnames, dir_merge, dryrun = True)
 
     # resample
     dir_rsmp = os.path.join(workdir, 'rsp')
-    logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
-    rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
-    logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
+    if run_resample:
+        logfile.write('resmp start : %s\n' % datetime.datetime.now().isoformat() )
+        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname)
+        logfile.write('resmp finish: %s\n' % datetime.datetime.now().isoformat() )
+    else:
+        rsmpnames = work_resample_pieces(mrgnames, dir_rsmp, bname,
+                dryrun=True)
 
     # import
-    logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat() )
-    work_import(rsmpnames, tag )
-    logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat() )
+    if run_import:
+        logfile.write('imprt start : %s\n' % datetime.datetime.now().isoformat())
+        work_import(rsmpnames, tag)
+        logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat())
+    else:
+        pass
 
 if __name__ == '__main__':
     import sys

@@ -95,11 +95,11 @@ def work_import(tifnames, tag):
 
     # run raster2pgsql, piped to psql
     for i,tif in enumerate(tifnames):
-        print('%d of %d...' % (i+1, len(tif_paths)))
+        print('%d of %d...' % (i+1, len(tifnames)))
         cmd = ['raster2pgsql']
         if i == 0:
             cmd += opts_first
-        elif i == len(tif_paths)-1:
+        elif i == len(tifnames)-1:
             cmd += opts_last
         else:
             cmd += opts_middle
@@ -135,54 +135,6 @@ def work_merge(fnames, workdir, dryrun=False):
         buf.append(tifname)
     return buf
 
-
-def work_math(fnames, dstdir):
-    if not os.path.exists(dstdir):
-        os.makedirs(dstdir)
-    onames = []
-    for fname in fnames:
-        oname = os.path.join(dstdir,
-            os.path.basename(fname)[:-4] + '.proc.tif')
-        print('proc: %s' % oname)
-        work_math_one(fname, oname)
-        onames.append(oname)
-    return onames
-
-def work_math_one(fname, oname):
-    # works on 3band raster on tree/herb/bare
-    #  pixels with values > 100, convert them into bare unless its nodata
-
-    drv = gdal.GetDriverByName("GTiff")
-    ds = gdal.Open(fname, gdal.GA_ReadOnly)
-    dso = drv.CreateCopy(oname, ds)
-
-    bands = [ds.GetRasterBand(_) for _ in (1,2,3)]
-    arr = [_.ReadAsArray() for _ in bands]
-    arr[0] = np.where(arr[0] <= 100, arr[0], 0)
-    arr[1] = np.where(arr[1] <= 100, arr[1], 0)
-    arr[2] = np.where(arr[2] <= 100, arr[2], 100)
-
-    obands = [dso.GetRasterBand(_) for _ in (1,2,3)]
-
-    for (b,a) in zip(obands, arr):
-        b.WriteArray(a)
-    ds = None
-    dso = None
-    return oname
-
-def work_math_one_inplace(fname):
-    # works on 3band raster on tree/herb/bare
-    #  pixels with values > 100, convert them into bare unless its nodata
-    ds = gdal.Open(fname, gdal.GA_Update)
-    bands = [ds.GetRasterBand(_) for _ in (1, 2, 3)]
-    arr = [_.ReadAsArray() for _ in bands]
-    arr[0][arr[0] > 0] = 0
-    arr[1][arr[1] > 0] = 0
-    arr[2][arr[2] > 0] = 100
-
-    for (b,a) in zip(bands, arr):
-        b.WriteArray(a)
-    ds = None
 
 
 def work_resample_pieces(tifnames, dstdir, bname, dryrun=False):
@@ -269,10 +221,10 @@ def main(tag, fnames, run_merge=True, run_resample=True, run_import=True ):
     dir_merge = os.path.join(workdir, 'mrg')
     if run_merge:
         logfile.write('merge start : %s\n' % datetime.datetime.now().isoformat() )
-        mrgnames = work_merge(fnames, dir_merge)
+        mrgnames = work_merge(fnames, dir_merge, dryrun = False)
         logfile.write('merge finish: %s\n' % datetime.datetime.now().isoformat() )
     else:
-        mrgnames = sorted(glob.glob(os.path.join(dir_merge, '*.tif')))
+        mrgnames = work_merge(fnames, dir_merge, dryrun = True)
 
     # resample
     dir_rsmp = os.path.join(workdir, 'rsp')
