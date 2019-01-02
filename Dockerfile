@@ -23,4 +23,6 @@ run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4
 
 EXPOSE 8888
 
+COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
+
 ENTRYPOINT /docker-entrypoint.sh
