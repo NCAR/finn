@@ -205,4 +205,4 @@ def tester4():
     testurl = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2016.01.01/' 
     purge_corrupted( './downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2016.01.01', url = testurl)
 
-tester4()
+#tester4()
