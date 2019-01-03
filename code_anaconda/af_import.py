@@ -32,18 +32,14 @@ def main(tag, fnames):
             p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
             p2.communicate()
         else:
+            dbname = os.environ.get('PGDATABASE', 'finn')
+            #print(os.environ)
             cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
-        #    conninfo = { 
-        #            'dbname': 'PGDATABASE', 
-        #            'user': 'PGUSER', 
-        #            'password': 'PGPASSWORD',
-        #            }
-        #
         #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
             #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
-            cmd += [ "PG:dbname='finn'"]
-            #cmd += '-lco SPATIAL_INDEX=GIST'.split()
-            cmd += '-lco SPATIAL_INDEX=YES'.split()
+            cmd += [ "PG:dbname='%s'" % dbname]
+            cmd += '-lco SPATIAL_INDEX=GIST'.split()
+            #cmd += '-lco SPATIAL_INDEX=YES'.split()
             cmd += ('-lco SCHEMA='+schema).split()
             cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
             cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
