@@ -6,7 +6,7 @@ import datetime
 import os
 import shlex
 
-def main(tag, dt0, dt1, vorimp='scipy', gt=3, buf0=False, ver=None):
+def main(tag, dt0, dt1, vorimp='scipy', gt=3, buf0=False, ver=None, run_prep=True, run_work=True):
     if ver is None:
         
         if vorimp == 'scipy':
@@ -53,17 +53,23 @@ def main(tag, dt0, dt1, vorimp='scipy', gt=3, buf0=False, ver=None):
     max_procs = 2
 
     # run the prep script
-    print("starting prep: %s" % datetime.datetime.now())
-    cmd = " ".join(['psql'] + ['-f', ('step1_prep_%s.sql' % ver)] + ['-v', ("tag=%s" % tag)])
-    subprocess.run(shlex.split(cmd))
+    if run_prep:
+        print("starting prep: %s" % datetime.datetime.now())
+        cmd = " ".join(['psql'] + ['-f', ('step1_prep_%s.sql' % ver)] + ['-v', ("tag=%s" % tag)])
+        subprocess.run(shlex.split(cmd), check=True)
+    else:
+        pass
 
 
-    dates = [dt0 + datetime.timedelta(days=n) for n in
-            range((dt1-dt0).days)]
+    if run_work:
+        dates = [dt0 + datetime.timedelta(days=n) for n in
+                range((dt1-dt0).days)]
 
-    procs = set()
-    for dt in dates:
-        print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-        cmd = " ".join(['psql',] + ['-f', ('step1_work_%s.sql' % ver)] + 
-                       ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))])
-        subprocess.run(shlex.split(cmd))
+        procs = set()
+        for dt in dates:
+            print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
+            cmd = ['psql',] + ['-f', ('step1_work_%s.sql' % ver)] + \
+                           ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
+            #print(cmd)
+            #subprocess.run(shlex.split(cmd), check=True)
+            subprocess.run(cmd, check=True)

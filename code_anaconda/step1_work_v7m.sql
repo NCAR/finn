@@ -24,7 +24,7 @@ alter table work_div_oned drop column polyid;
 insert into work_pnt_oned 
 (rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid)
 select rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid 
-from work_pnt where acq_date_lst = :oned::date;
+from work_pnt where acq_date_lst = :oned::text::date;
 
 do language plpgsql $$
 	declare

@@ -71,9 +71,23 @@ values
 -- Part 2: Function and Type definitions --
 -------------------------------------------
 
------------------------------------------
--- Part 2.1: pnt2grp (points to group) --
------------------------------------------
+----------------------------------------
+-- Part 2.0: testpy (info for python) --
+----------------------------------------
+create or replace function testpy()
+returns text as
+$$
+    import sys
+    s = str(sys.version)
+    plpy.notice(s)
+    s2 = str(sys.path)
+    plpy.notice(2)
+    return(s)
+$$ 
+language plpython3u volatile;
+
+select testpy();
+
 /* NOTE for plpython */
 /* 
 
@@ -86,6 +100,9 @@ values
     * use query to aggrgate the edge tables by cleanid0, geometries got st_union()
     * union of this aggregated edge table plus the orphant detection 
 */
+-----------------------------------------
+-- Part 2.1: pnt2grp (points to group) --
+-----------------------------------------
 
 drop type if exists p2grp cascade;
 create type p2grp as (
@@ -128,8 +145,8 @@ $$
     return results
     
 $$ 
--- language plpython3u volatile;
-language plpythonu volatile;
+language plpython3u volatile;
+-- language plpythonu volatile;
 
 -----------------------------------------
 -- Part 2.2: pnt2drop (points to drop) --
@@ -264,9 +281,9 @@ returns setof p2drp as $$
     return zip(todrop,others)
         
 $$ 
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 -----------------------------------------------
 -- Part 2.3: st_voronoi_py (voronoi polygon) --
@@ -420,9 +437,9 @@ $$
     return lst[:-4]
 
 $$ 
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 
 create or replace function st_voronoi_py(pnts geometry)
@@ -647,9 +664,9 @@ $$
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
     return lst
 $$
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 create or replace function st_cutter_py(pnts geometry)
 returns geometry as
