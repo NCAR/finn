@@ -1,7 +1,9 @@
 import subprocess, glob, os
+import six
 import numpy as np
 from pyproj import Proj
 from bs4 import BeautifulSoup
+import ogr
 import requests
 
 def download_all(url):
@@ -105,7 +107,7 @@ def get_filelist(url):
     """download one page, look for <a href and get list of files"""
     
     # get the index.html
-    soup = BeautifulSoup(requests.get(url).text)
+    soup = BeautifulSoup(requests.get(url).text, features='html.parser')
 
     # get all the <a href= in the page
     filelist = [_['href'] for _ in soup.findAll('a', href=True)]
@@ -115,7 +117,22 @@ def get_filelist(url):
     return filelist
 
     
+
 def find_needed_tiles(lnglat):
+    
+    if isinstance(lnglat, six.string_types):
+        # assume path
+        lnglat = ogr.Open(lnglat)
+    if isinstance(lnglat, ogr.DataSource):
+        print('reading shp file ...', end=' ', flush=True)
+        coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in lnglat.GetLayer(0)])
+        print('Done')
+        lnglat = coords
+
+    return find_needed_tiles_slave(lnglat)
+
+
+def find_needed_tiles_slave(lnglat):
     """given point features identify MODIS tiles needed"""
 
     # modis sinusoidal, but they may be using sphere
