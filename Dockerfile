@@ -12,14 +12,19 @@ RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-4.5.11-Linux-x86
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc
 
-RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip && \
+RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip python3-pip && \
     TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
     curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
     dpkg -i tini.deb && \
     rm tini.deb && \
     apt-get clean
 
-run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely
+run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely networkx
+
+# conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
+# apt has older version of networkx, cannot be used.
+# so i have to use pip3
+run pip3 install networkx
 
 EXPOSE 8888
 
