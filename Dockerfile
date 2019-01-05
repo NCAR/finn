@@ -19,7 +19,7 @@ RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip && \
     rm tini.deb && \
     apt-get clean
 
-run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4
+run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely
 
 EXPOSE 8888
 
