@@ -47,7 +47,7 @@ def main(tag, fnames):
             cmd += [fname]
             print('\ncmd:\n%s\n' % ' '.join(cmd))
             print(cmd)
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=True)
 #            p1 = Popen(cmd)#, stdout=PIPE)
         #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
         #    print( p2.communicate())
