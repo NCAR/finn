@@ -27,7 +27,7 @@ def download_one(url):
     cmd.extend(['--password', os.environ['EARTHDATAPW']])
     cmd.extend(['-P', 'downloads'])
     cmd.append(url)
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
 
 def download_only_needed(url, pnts):
     """get list of points and grab only tiles that cover points"""
