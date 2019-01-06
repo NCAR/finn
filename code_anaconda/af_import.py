@@ -8,11 +8,13 @@ def main(tag, fnames):
         fnames = [fnames]
     schema = 'af_' + tag
     dstname = schema + '.' + 'af_in'
-    cmd = 'psql -c "DROP SCHEMA IF EXISTS %s CASCADE;"' %  schema
-    os.system(cmd)
-    cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
+    cmd = ['psql', '-c', 
+            'DROP SCHEMA IF EXISTS "%s" CASCADE;' % schema]
+    subprocess.run(cmd, check=True)
+    #cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
+    cmd = ['psql', '-c', 'CREATE SCHEMA "%s";' % schema]
     print(cmd)
-    os.system(cmd)
+    subprocess.run(cmd, check=True)
 
     for i,fname in enumerate(fnames):
         if len(fnames) == 1:
