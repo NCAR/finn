@@ -152,10 +152,10 @@ def work_resample_pieces(tifnames, dstdir, bname, dryrun=False):
     vrtname = os.path.join(dstdir, 'src.vrt')
     with open('tifnames.txt','w') as f:
         f.write('\n'.join(tifnames) + '\n')
-        cmd = 'gdalbuildvrt %s -input_file_list %s' % (vrtname, 'tifnames.txt')
-        status = os.system(cmd)
-        if status != 0:
-            raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+    cmd = 'gdalbuildvrt %s -input_file_list %s' % (vrtname, 'tifnames.txt')
+    status = os.system(cmd)
+    if status != 0:
+        raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
 
     res = '-tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667'  # 6 sec
     prj = '-t_srs "+proj=longlat +datum=WGS84 +no_defs"'

@@ -1,5 +1,12 @@
-﻿SET search_path TO af_:tag,public;
+﻿-- schema name tag, prepended by af_
 \set myschema af_:tag
+-- to use in identifier in query.  without double quote it is converted to lower case
+\set ident_myschema '\"' :myschema '\"'
+-- to use as literal string
+\set quote_myschema '\'' :myschema '\''
+
+SET search_path TO :ident_myschema , public;
+SHOW search_path;
 
 \set ON_ERROR_STOP on
 
@@ -7,6 +14,9 @@ DO language plpgsql $$ begin
 	RAISE NOTICE 'tool: start, %', clock_timestamp();
 END $$;
 
+DO language plpgsql $$ begin
+	RAISE NOTICE 'tool: here, %', clock_timestamp();
+END $$;
 -------------------------------
 -- Part 1: Setting up tables --
 -------------------------------
@@ -32,6 +42,9 @@ CREATE TABLE work_pnt (
 	geom_sml geometry
 	);
 
+DO language plpgsql $$ begin
+	RAISE NOTICE 'tool: here, %', clock_timestamp();
+END $$;
 
 -- group pixels, and lone detections in one table of fire polygons
 drop table if exists work_lrg;
@@ -747,7 +760,7 @@ language sql volatile;
 -----------------------------------
 
 -- find af_in
-\set quote_myschema '\'' :myschema '\''
+
 
 drop table if exists af_ins;
 create table af_ins as (select table_name from information_schema.tables where table_schema = :quote_myschema);
@@ -758,7 +771,7 @@ do language plpgsql $$ begin
 	else
 		delete from af_ins where  table_name !~ 'af_in_[0-9]'; 
 	end if ; 
-		end $$;
+end $$;
 
 
 
@@ -774,6 +787,7 @@ myrow record;
 begin
 
 for myrow in select table_name from af_ins order by table_name loop
+	raise notice 'tool: myrow , %', myrow;
 	-- if VIIRS, confidence is not numeric...  -- grab relevent fields
         -- FIXME lots of extra field related to time stamp.  clean them in production version, when i feel more confident with date calcs
 	execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
