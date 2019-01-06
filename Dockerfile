@@ -19,12 +19,12 @@ RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip python3-
     rm tini.deb && \
     apt-get clean
 
-run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely networkx
+run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely networkx psycopg2
 
 # conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
-run pip3 install networkx
+run pip3 install numpy scipy networkx
 
 EXPOSE 8888
 
