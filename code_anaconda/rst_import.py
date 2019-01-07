@@ -27,6 +27,7 @@ import gdal
 import ogr
 import osr
 from shapely.geometry import Polygon
+import shapely
 import numpy as np
 
 # supported data category
@@ -91,7 +92,16 @@ def get_sdsname(lyrname, fname):
     sdsname = sds[0]
     return sdsname
 
-def get_skelton(tifname, dso=None, name_use=None):
+def censor_sinu(p):
+    r = 6371007.181 
+    #p[1]/r is latitude in radian
+    len_parallel = 2 * np.pi * r * np.cos(p[...,1]/r)
+    p[..., 0] = np.where(  np.abs(p[..., 0]) > .5 * len_parallel , .5 * len_parallel * np.sign(p[..., 0]), p[...,0])
+    return p
+
+
+
+def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
 
     if name_use is None: name_use = tifname
     name_use = os.path.basename(name_use)
@@ -100,6 +110,24 @@ def get_skelton(tifname, dso=None, name_use=None):
     gt = np.array(ds.GetGeoTransform())
     nc = ds.RasterXSize
     nr = ds.RasterYSize
+
+    # get projection
+    srs = osr.SpatialReference()
+    srs.ImportFromWkt(ds.GetProjection())
+
+    # if its sinusoidal, i know what to do
+    if fn_censor is None:
+        srs0 = osr.SpatialReference()
+        srs0.ImportFromProj4('+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181  +units=m +no_defs') 
+        print(srs)
+        print(srs0)
+        # this IsSame doesnt work...
+        if srs.IsSame(srs0):
+            # given y coord, i can calculate length of the parallel.
+            # if x coord is beyond what's expected, shift to the x bound
+            fn_censor = censor_sinu
+        else:
+            fn_censor = lambda x: x
 
     # get corners and points along sides
 
@@ -129,17 +157,29 @@ def get_skelton(tifname, dso=None, name_use=None):
     # coords in dataset's coordinate
     xy = np.apply_along_axis(lambda p: (gt[0] + (gt[1:3]*p).sum(), gt[3] + (gt[4:6]*p).sum()), 1, xy)
 
+    # censor points outside of defined area
+    xy = fn_censor(xy)
+
+    ok = [0]
+    for i in range(1, (xy.shape[0])):
+        if not np.array_equal(xy[i-1,:], xy[i,:]):
+            ok.append(i)
+
+    xy = xy[ok,:]
+
 
     # make it into polygon
     poly = Polygon(xy)
+    if not poly.is_valid:
+        poly = poly.buffer(0)
+        if not poly.is_valid:
+            import pdb; pdb.set_trace()
 
 
     # ogr memory dataset
     if dso is None:
         # create dataset
         drv = ogr.GetDriverByName('Memory')
-        srs = osr.SpatialReference()
-        srs.ImportFromWkt(ds.GetProjection())
         dso = drv.CreateDataSource('poly')
         lyr = dso.CreateLayer('',srs,ogr.wkbPolygon)
         lyr.CreateField(ogr.FieldDefn('id',ogr.OFTInteger))
@@ -168,21 +208,50 @@ def get_skelton(tifname, dso=None, name_use=None):
 
     return dso
 
-class Intersecter(object):
+class Intersecter_shapely(object):
+    def __init__(self, ds):
+        from shapely import wkb
+        from shapely import ops
+        lyr = ds.GetLayer()
+        lst = []
+        lyr.SetNextByIndex(0)
+        for i,feat in enumerate(lyr):
+            geom = feat.GetGeometryRef()
+            geom = shapely.wkb.loads(geom.ExportToWkb())
+            lst.append(geom)
+        geom0 = shapely.ops.cascaded_union(lst)
+        lyr = geom = None
+        self.geom0 = geom0
+
+    def __call__(self, geom):
+        geom2 = self.geom0.intersection(geom)
+        if geom2 is None:
+            import pdb; pdb.set_trace()
+        geomx = ogr.CreateGeometryFromWkb(geom2.wkb)
+        return geomx
+class Intersecter_gdal(object):
     def __init__(self, ds):
         lyr = ds.GetLayer()
-        geom0 = ogr.Geometry(ogr.wkbPolygon)
+        multi = ogr.Geometry(ogr.wkbMultiPolygon)
         lyr.SetNextByIndex(0)
-        for feat in lyr:
+        for i,feat in enumerate(lyr):
             geom = feat.GetGeometryRef()
-            geom0 = geom0.Union(geom)
+            multi.AddGeometry(geom)
+        geom0 = multi.UnionCascaded()
+        if geom0 is None:
+            # dont know why it fails sometime
+            geom0 = multi
         lyr = geom = None
         self.geom0 = geom0
 
     def __call__(self, geom):
         geomx = ogr.CreateGeometryFromWkb(geom.wkb)
         geom2 = self.geom0.Intersection(geomx)
+        if geom2 is None:
+            import pdb; pdb.set_trace()
         return geom2
+
+Intersecter = Intersecter_shapely
 
 def save_as_shp(ds, oname):
     drv = ogr.GetDriverByName('ESRI Shapefile')
@@ -400,8 +469,9 @@ class Importer(object):
         # based on tif files, create polygon(s) representing region where data is avarilble
         ds_skelton = None
         for tifname,hdfname in zip(tifnames,hdfnames):
-            ds_skelton = get_skelton(tifname, ds_skelton,name_use=hdfname)
+            ds_skelton = get_skelton(tifname, ds_skelton,name_use=hdfname, fn_censor=censor_sinu)
         save_as_shp(ds_skelton, 'skely0.shp')
+
         # project skelton
         srs1 = osr.SpatialReference()
         srs1.ImportFromProj4(target_projection)
@@ -434,7 +504,7 @@ class Importer(object):
                 oname = os.path.join(dstdir, '.'.join([bname, 'h%02dv%02d' % (i,
                     j), 'tif']))
 
-                # TODO if tile does not overlap with any skelton polygons, dont resample
+                # if tile does not overlap with any skelton polygons, dont resample
                 poly = Polygon([[c[0],c[1]],[c[0],c[3]],[c[2],c[3]],[c[3],c[1]],[c[0],c[1]]])
                 intsct = intersector(poly)
                 if intsct.IsEmpty(): continue
@@ -463,7 +533,7 @@ def main(tag, datacat, fnames, run_merge=True, run_resample=True, run_import=Tru
     logfilename = 'log.%s.txt' % tag
     logfile = open(logfilename, 'w')
 
-    bname = os.path.basename(fnames[0])#[:15]
+    bname = os.path.basename(fnames[0])
     m = importer.re_bname.match(bname)
     if not m:
         raise RuntimeError('unexpected bname: %s vs. %s' %(bname, importer.re_bname))
