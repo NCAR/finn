@@ -160,11 +160,11 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
     # censor points outside of defined area
     xy = fn_censor(xy)
 
+    # remove repeated points (after censoring)
     ok = [0]
     for i in range(1, (xy.shape[0])):
         if not np.array_equal(xy[i-1,:], xy[i,:]):
             ok.append(i)
-
     xy = xy[ok,:]
 
 
