@@ -224,7 +224,10 @@ class Intersecter_shapely(object):
         self.geom0 = geom0
 
     def __call__(self, geom):
-        geom2 = self.geom0.intersection(geom)
+        try:
+            geom2 = self.geom0.intersection(geom)
+        except:
+            import pdb; pdb.set_trace()
         if geom2 is None:
             import pdb; pdb.set_trace()
         geomx = ogr.CreateGeometryFromWkb(geom2.wkb)
@@ -501,11 +504,11 @@ class Importer(object):
             for j in range(18):
                 c = (-180 + 10*i, 90 - 10*(j+1), -180+10*(i+1), 90-10*j)
                 te = '-te %s' % ' '.join(str(_) for _ in c)
-                oname = os.path.join(dstdir, '.'.join([bname, 'h%02dv%02d' % (i,
+                oname = os.path.join(dstdir, '.'.join([bname, 'r%02dc%02d' % (i,
                     j), 'tif']))
 
                 # if tile does not overlap with any skelton polygons, dont resample
-                poly = Polygon([[c[0],c[1]],[c[0],c[3]],[c[2],c[3]],[c[3],c[1]],[c[0],c[1]]])
+                poly = Polygon([[c[0],c[1]],[c[0],c[3]],[c[2],c[3]],[c[2],c[1]],[c[0],c[1]]])
                 intsct = intersector(poly)
                 if intsct.IsEmpty(): continue
 
