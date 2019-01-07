@@ -154,6 +154,16 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
 
     xy[(4*num),:]=0
 
+    # inver order so that points go clockwise, somwhow it works better in shapely
+    # with original ordering, it failed to fix the shape in siberia ('h22v01'), 
+    # for example.  top right tile which tourches boundary seemed to fail
+    # better way is to not rely on censor method, which shift out of boundary points
+    # horizontally to boundary but also check if vertical correction is needed
+    # (move to intersection of side of tile and the boundary), but i just let it 
+    # go for now, it is sort of working
+    # 
+    xy = xy[::-1,:]
+
     # coords in dataset's coordinate
     xy = np.apply_along_axis(lambda p: (gt[0] + (gt[1:3]*p).sum(), gt[3] + (gt[4:6]*p).sum()), 1, xy)
 
@@ -174,6 +184,7 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
         poly = poly.buffer(0)
         if not poly.is_valid:
             import pdb; pdb.set_trace()
+    assert poly.area > 0
 
 
     # ogr memory dataset
@@ -208,7 +219,14 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
 
     return dso
 
-class Intersecter_shapely(object):
+def test_get_skelton():
+    fname = './downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2016.01.01/MCD12Q1.A2016001.h22v01.006.2018055072419.hdf'
+    o = get_skelton(fname)
+    assert o.GetLayer().GetFeatureCount() == 1
+    import pdb; pdb.set_trace()
+    pass
+
+class Intersecter(object):
     def __init__(self, ds):
         from shapely import wkb
         from shapely import ops
@@ -232,29 +250,7 @@ class Intersecter_shapely(object):
             import pdb; pdb.set_trace()
         geomx = ogr.CreateGeometryFromWkb(geom2.wkb)
         return geomx
-class Intersecter_gdal(object):
-    def __init__(self, ds):
-        lyr = ds.GetLayer()
-        multi = ogr.Geometry(ogr.wkbMultiPolygon)
-        lyr.SetNextByIndex(0)
-        for i,feat in enumerate(lyr):
-            geom = feat.GetGeometryRef()
-            multi.AddGeometry(geom)
-        geom0 = multi.UnionCascaded()
-        if geom0 is None:
-            # dont know why it fails sometime
-            geom0 = multi
-        lyr = geom = None
-        self.geom0 = geom0
 
-    def __call__(self, geom):
-        geomx = ogr.CreateGeometryFromWkb(geom.wkb)
-        geom2 = self.geom0.Intersection(geomx)
-        if geom2 is None:
-            import pdb; pdb.set_trace()
-        return geom2
-
-Intersecter = Intersecter_shapely
 
 def save_as_shp(ds, oname):
     drv = ogr.GetDriverByName('ESRI Shapefile')
@@ -341,24 +337,9 @@ class Importer(object):
         self.rsmp_alg = config_datacat[datacat]['rsmp_alg']
         self.re_bname = config_datacat[datacat]['re_bname']
 
-    def work_import(self, tifnames, skelton, tag):
+    def work_import(self, tifnames, skelton, tag, dryrun=False):
         """Import raster data into PostGIS"""
-        create_schema = ["psql", "-c", 'CREATE SCHEMA IF NOT EXISTS %s;' % schema]
-        subprocess.run(create_schema, stdout=subprocess.PIPE)
 
-        # delete skelton, if exists
-        tblname = '_'.join(['skel', 'rst', tag])
-        dstname = schema + '.' + tblname
-        drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname] 
-        # delete pyramids, if exists
-        for o in o_lvls:
-            dstname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
-            drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
-            subprocess.run(drop_table, stdout=subprocess.PIPE)
-        # delete raster, if exists
-        dstname = schema + '.' + '_'.join(['rst', tag])
-        drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
-        subprocess.run(drop_table, stdout=subprocess.PIPE)
 
         def mkskel(skelton=skelton, tag=tag):
             tblname = '_'.join(['skel', 'rst', tag])
@@ -379,39 +360,63 @@ class Importer(object):
 
             # done
             drv = ogr.GetDriverByName('ESRI Shapefile')
-            #drv.DeleteDataSource(tmpname)
+            try:
+                drv.DeleteDataSource(tmpname)
+            except: pass
 
 
-        # process tif files one by one
-        # common tasks for imports
-        opts_common = '-s 4326 -N 255'.split()  # srs and nodata value
-        opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
-        opts_common += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
+        if dryrun:
+            # only save skelton file as shp
+            tmpname = 'tmp_skel.shp'
+            save_as_shp(skelton, tmpname)
+        else:
+            create_schema = ["psql", "-c", 'CREATE SCHEMA IF NOT EXISTS %s;' % schema]
+            subprocess.run(create_schema, stdout=subprocess.PIPE)
 
-        # options specific to first/middle/last files
-        opts_first = ['-c']  # create
-        opts_middle = ['-a'] # append
-        opts_last = ['-a'] + '-C -I -M'.split() # constraints, and GiST index, vacuum analysis
+            # delete skelton, if exists
+            tblname = '_'.join(['skel', 'rst', tag])
+            dstname = schema + '.' + tblname
+            drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname] 
+            # delete pyramids, if exists
+            for o in o_lvls:
+                dstname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
+                drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
+                subprocess.run(drop_table, stdout=subprocess.PIPE)
+            # delete raster, if exists
+            dstname = schema + '.' + '_'.join(['rst', tag])
+            drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
+            subprocess.run(drop_table, stdout=subprocess.PIPE)
 
-        # run raster2pgsql, piped to psql
-        for i,tif in enumerate(tifnames):
-            print('%d of %d...' % (i+1, len(tifnames)))
-            cmd = ['raster2pgsql']
-            if i == 0:
-                cmd += opts_first
-            elif i == len(tifnames)-1:
-                cmd += opts_last
-            else:
-                cmd += opts_middle
-            cmd += (opts_common + [tif] + [dstname])
-            out = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            psql = subprocess.Popen(['psql'], stdin=out.stdout,
-                                    stdout=subprocess.PIPE)
-            out.stdout.close()
-            psql.communicate()[0]
+            # process tif files one by one
+            # common tasks for imports
+            opts_common = '-s 4326 -N 255'.split()  # srs and nodata value
+            opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
+            opts_common += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
 
-        # make skelton table
-        mkskel(skelton, tag)
+            # options specific to first/middle/last files
+            opts_first = ['-c']  # create
+            opts_middle = ['-a'] # append
+            opts_last = ['-a'] + '-C -I -M'.split() # constraints, and GiST index, vacuum analysis
+
+            # run raster2pgsql, piped to psql
+            for i,tif in enumerate(tifnames):
+                print('%d of %d...' % (i+1, len(tifnames)))
+                cmd = ['raster2pgsql']
+                if i == 0:
+                    cmd += opts_first
+                elif i == len(tifnames)-1:
+                    cmd += opts_last
+                else:
+                    cmd += opts_middle
+                cmd += (opts_common + [tif] + [dstname])
+                out = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+                psql = subprocess.Popen(['psql'], stdin=out.stdout,
+                                        stdout=subprocess.PIPE)
+                out.stdout.close()
+                psql.communicate()[0]
+
+            # make skelton table
+            mkskel(skelton, tag)
 
 
 
@@ -473,13 +478,13 @@ class Importer(object):
         ds_skelton = None
         for tifname,hdfname in zip(tifnames,hdfnames):
             ds_skelton = get_skelton(tifname, ds_skelton,name_use=hdfname, fn_censor=censor_sinu)
-        save_as_shp(ds_skelton, 'skely0.shp')
+        #save_as_shp(ds_skelton, 'skely0.shp')
 
         # project skelton
         srs1 = osr.SpatialReference()
         srs1.ImportFromProj4(target_projection)
         ds_skelton = transform_coordinates(ds_skelton, srs1)
-        save_as_shp(ds_skelton, 'skely1.shp')
+        #save_as_shp(ds_skelton, 'skely1.shp')
         
         intersector = Intersecter(ds_skelton)
 
@@ -570,7 +575,8 @@ def main(tag, datacat, fnames, run_merge=True, run_resample=True, run_import=Tru
         importer.work_import(rsmpnames, skelton, tag)
         logfile.write('imprt finish: %s\n' % datetime.datetime.now().isoformat())
     else:
-        pass
+        importer.work_import(rsmpnames, skelton, tag, dryrun=True)
+
 
 if __name__ == '__main__':
     import sys
