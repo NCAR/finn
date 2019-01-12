@@ -6,7 +6,9 @@ from bs4 import BeautifulSoup
 import ogr
 import requests
 
-def download_all(url):
+droot = 'downloads'
+
+def download_all(url, droot=droot):
     """download everything in a direcotry (using wget --recursive --noparent)"""
 
     # all files goest to subdirectory of 'downloads' dir, with path like
@@ -15,21 +17,21 @@ def download_all(url):
     cmd = 'wget -nc --recursive --no-parent'.split()
     cmd.extend(['--user', os.environ['EARTHDATAUSER']])
     cmd.extend(['--password', os.environ['EARTHDATAPW']])
-    cmd.extend(['-P', 'downloads'])
+    cmd.extend(['-P', droot])
     cmd.append(url)
     subprocess.run(cmd)
 
-def download_one(url):
+def download_one(url, droot=droot):
     """download list of files but put the same dir as download all would"""
 
     cmd = 'wget -nc --force-directories'.split()
     cmd.extend(['--user', os.environ['EARTHDATAUSER']])
     cmd.extend(['--password', os.environ['EARTHDATAPW']])
-    cmd.extend(['-P', 'downloads'])
+    cmd.extend(['-P', droot])
     cmd.append(url)
     subprocess.run(cmd, check=True)
 
-def download_only_needed(url, pnts):
+def download_only_needed(url, pnts, droot=droot):
     """get list of points and grab only tiles that cover points"""
 
     # based on lon/lat of points, identify tiles needed
@@ -48,10 +50,10 @@ def download_only_needed(url, pnts):
         download_one(myurl)
 
 
-def purge_corrupted(dname, url=None):
-    """go throudh all ghe hdf files in the dir, and delete the hdf/xml file if it appears corrupt"""
+def purge_corrupted(ddir, url=None):
+    """go throudh all the hdf files in the dir, and delete the hdf/xml file if it appears corrupt"""
 
-    fnames = sorted(glob.glob(os.path.join(dname, '*.hdf')))
+    fnames = sorted(glob.glob(os.path.join(ddir, '*.hdf')))
     for fn in fnames:
         print(fn + ' ...', end=' ')
         if check_downloads(fn):
@@ -122,7 +124,11 @@ def find_needed_tiles(lnglat):
     
     if isinstance(lnglat, six.string_types):
         # assume path
+        if not os.path.exists(lnglat):
+            # its not path either
+            raise RuntimeError('lnglat is not filepath: %s' % lnglat)
         lnglat = ogr.Open(lnglat)
+
     if isinstance(lnglat, ogr.DataSource):
         print('reading shp file ...', end=' ', flush=True)
         coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in lnglat.GetLayer(0)])

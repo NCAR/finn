@@ -330,7 +330,19 @@ def transform_coordinates(ds, srs):
 
 class Importer(object):
 
-    def __init__(self, datacat):
+    def __init__(self, datacat = None, fnames = None):
+        if datacat is None:
+            if fnames is None:
+                raise RuntimeError('Importer: init with datacat or fnames')
+            bname = os.path.basename(fnames[0])
+            for k,v in config_datacat.items():
+                m = v['re_bname'].match(bname)
+                if m:
+                    datacat = k
+                    break
+            if datacat is None:
+                raise RuntimeError('Importer: cannot determine data category from file names')
+
         self.lyrnames = config_datacat[datacat]['lyrnames']
         self.shortnames = config_datacat[datacat]['shortnames']
         self.mrg_opt = config_datacat[datacat]['mrg_opt']
@@ -375,12 +387,12 @@ class Importer(object):
 
             # delete skelton, if exists
             tblname = '_'.join(['skel', 'rst', tag])
-            dstname = schema + '.' + tblname
-            drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname] 
+            sklname = schema + '.' + tblname
+            drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % sklname] 
             # delete pyramids, if exists
             for o in o_lvls:
-                dstname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
-                drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % dstname]
+                ovrname = schema + '.' + '_'.join(['o', str(o), 'rst', tag])
+                drop_table = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % ovrname]
                 subprocess.run(drop_table, stdout=subprocess.PIPE)
             # delete raster, if exists
             dstname = schema + '.' + '_'.join(['rst', tag])
@@ -390,7 +402,10 @@ class Importer(object):
             # process tif files one by one
             # common tasks for imports
             opts_common = '-s 4326 -N 255'.split()  # srs and nodata value
-            opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
+
+            # it's better to create overview after everthing got loaded
+            #opts_common += ['-l', ','.join(o_lvls)]  # some pyramids (hard to do...)
+
             opts_common += ['-t',  '%(tilesiz)sx%(tilesiz)s' % dict(tilesiz=tilesiz_db)]
 
             # options specific to first/middle/last files
@@ -414,6 +429,13 @@ class Importer(object):
                                         stdout=subprocess.PIPE)
                 out.stdout.close()
                 psql.communicate()[0]
+
+            # create overview
+            for l in o_lvls:
+                cmd = ['psql', '-c']
+                cmd += [ "SELECT ST_CreateOverview('%s'::regclass, 'rast', %s);" %  (dstname, l)]
+                print(cmd)
+                subprocess.run(cmd)
 
             # make skelton table
             mkskel(skelton, tag)
@@ -535,9 +557,11 @@ class Importer(object):
         return onames, ds_skelton
 
 
-def main(tag, datacat, fnames, run_merge=True, run_resample=True, run_import=True ):
-    importer = Importer(datacat)
-    workdir = './proc_%s' % tag
+def main(tag, fnames, workdir=None, run_merge=True, run_resample=True, run_import=True ):
+
+    importer = Importer(fnames=fnames)
+    if workdir is None:
+        workdir = './proc_%s' % tag
     logfilename = 'log.%s.txt' % tag
     logfile = open(logfilename, 'w')
 

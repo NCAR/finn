@@ -97,7 +97,7 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
     # run the prep script
     if run_prep:
         print("starting prep: %s" % datetime.datetime.now())
-        cmd = ['psql','-f',  ('step1_prep_%s.sql' % ver), '-v', ('tag=%s' % tag)]
+        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), '-v', ('tag=%s' % tag)]
         print(cmd)
         subprocess.run(cmd, check=True)
     else:
@@ -117,7 +117,7 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
         procs = set()
         for dt in dates:
             print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            cmd = ['psql',] + ['-f', ('step1_work_%s.sql' % ver)] 
+            cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_work_%s.sql' % ver)))]
             cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
             #print(cmd)
             #subprocess.run(shlex.split(cmd), check=True)

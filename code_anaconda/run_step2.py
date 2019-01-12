@@ -67,18 +67,18 @@ def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=T
             raise RuntimeError("unkown kind for raster: kind '{kind}' for raster '{tag}'".format(**rstinfo))
 
 
-        print(fldnames)
-        print(dctfldtbl)
+        #print(fldnames)
+        #print(dctfldtbl)
         # TODO table for output
         cmd_prep += '\n--\n-- Prepare table for output\n--\n'
         cmd_work += '\n--\n-- Gather restuls to output\n--\n'
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-        print(cmd_prep)
+        #print(cmd_prep)
         with open(scrname_prep, 'w') as f:
             f.write(cmd_prep)
-        print(cmd_work)
+        #print(cmd_work)
         with open(scrname_work, 'w') as f:
             f.write(cmd_work)
 
@@ -86,6 +86,7 @@ def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=T
     # run the prep script
     if run_prep:
 
+        print("starting prep: {0}".format( datetime.datetime.now()))
         p = Popen(
                 ['psql']
                 + ['-f', scrname_prep]

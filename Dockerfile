@@ -19,16 +19,20 @@ RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip python3-
     rm tini.deb && \
     apt-get clean
 
-# numpy was old!!
-run conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely networkx psycopg2 numpy
+RUN conda install -c conda-forge jupyterlab gdal ncurses pyproj beautifulsoup4 shapely networkx psycopg2 matplotlib basemap
 
 # conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
-run pip3 install numpy scipy networkx
+RUN pip3 install numpy scipy networkx
 
 EXPOSE 8888
 
 COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
+
+# default database settings
+ENV POSTGRES_USER=finn \
+    POSTGRES_PASS=finn \
+    POSTGRES_DBNAME=gis
 
 ENTRYPOINT /docker-entrypoint.sh
