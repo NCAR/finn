@@ -3,9 +3,14 @@ code_anaconda/all_countries
 code_anaconda/firms
 code_anaconda/step2*.sql
 code_anaconda/out_modlct*
+work_*/all_countries
+work_*/step2_*.sql
 *log*.txt
 *proc_mod*
 *tifnames.txt
+*.tif
+src.vrt
+out.step[12].*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
