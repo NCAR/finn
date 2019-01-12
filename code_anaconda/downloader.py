@@ -5,10 +5,11 @@ from pyproj import Proj
 from bs4 import BeautifulSoup
 import ogr
 import requests
+from urllib.parse import urlparse
 
-droot = 'downloads'
+default_droot = 'downloads'
 
-def download_all(url, droot=droot):
+def download_all(url, droot=default_droot):
     """download everything in a direcotry (using wget --recursive --noparent)"""
 
     # all files goest to subdirectory of 'downloads' dir, with path like
@@ -21,17 +22,26 @@ def download_all(url, droot=droot):
     cmd.append(url)
     subprocess.run(cmd)
 
-def download_one(url, droot=droot):
+def download_one(url, droot=None, ddir=None):
     """download list of files but put the same dir as download all would"""
 
-    cmd = 'wget -nc --force-directories'.split()
+
+    cmd = ['wget', '-nc']
+
+    if not ddir is None:
+        # if ddir is specified, put file there
+        cmd.extend(['--no-directories', '-P', ddir])
+    else:
+        # if not, use droot, and mirror the dir structure
+        if droot is None:
+            droot = default_droot
+        cmd.extend(['--force-directories', '-P', droot])
     cmd.extend(['--user', os.environ['EARTHDATAUSER']])
     cmd.extend(['--password', os.environ['EARTHDATAPW']])
-    cmd.extend(['-P', droot])
     cmd.append(url)
     subprocess.run(cmd, check=True)
 
-def download_only_needed(url, pnts, droot=droot):
+def download_only_needed(url, pnts, droot=default_droot):
     """get list of points and grab only tiles that cover points"""
 
     # based on lon/lat of points, identify tiles needed
@@ -43,11 +53,13 @@ def download_only_needed(url, pnts, droot=droot):
     # subset files to only that is needed
     files_needed = [_ for _ in flst if any(t in _ for t in tiles)]
 
+    print(droot)
+
     # get them one by one
     for fn in files_needed:
         myurl = url.rstrip('/') + '/' + fn
         print(myurl)
-        download_one(myurl)
+        download_one(myurl, droot)
 
 
 def purge_corrupted(ddir, url=None):
@@ -75,8 +87,8 @@ def purge_corrupted(ddir, url=None):
                 myurl = url.rstrip('/') + '/' + fn2
                 print('corrupted, downloading again')
                 print(myurl)
-                download_one(myurl)
-                download_one(myurl + '.xml')
+                download_one(myurl, ddir=ddir)
+                download_one(myurl + '.xml', ddir=ddir)
 
 
 def check_downloads(fname, get_cksum=None):
