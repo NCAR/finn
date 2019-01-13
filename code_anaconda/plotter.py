@@ -87,13 +87,29 @@ def plot(schema_table, cmap=None):
     info = getinfo(ds)
 
     plt.figure(figsize=(12,6))
+
+    llcrnrlon=info['Origin'][0]
+    urcrnrlat=info['Origin'][1]
+    urcrnrlon=(info['Origin'][0]+info['Pixel Size'][0] * info['Size'][0])
+    llcrnrlat=(info['Origin'][1]+info['Pixel Size'][1] * info['Size'][1])
+
+    if urcrnrlon > 180:
+        if urcrnrlon - 180 < .1 * info['Pixel Size'][0]:
+            urcrnrlon = 180
+        else:
+            raise RuntimeError('urrcrnerlon: %s' % urcrnrlon)
+    if llcrnrlat < -90:
+        if llcrnrlat - 90 < abs(.1 * info['Pixel Size'][1]):
+            llcrnrlat = -90
+        else:
+            raise RuntimeError('urrcrnerlon: %s' % llcrnrlat)
     
     m = Basemap(
             # need to flip upside down
-            llcrnrlon=info['Origin'][0], 
-            urcrnrlat=info['Origin'][1],
-            urcrnrlon=(info['Origin'][0]+info['Pixel Size'][0] * info['Size'][0]),
-            llcrnrlat=(info['Origin'][1]+info['Pixel Size'][1] * info['Size'][1]),
+            llcrnrlon=llcrnrlon,
+            urcrnrlat=urcrnrlat,
+            urcrnrlon=urcrnrlon, 
+            llcrnrlat=llcrnrlat
             )
     m.drawcoastlines()
     print(arr.shape)
