@@ -217,51 +217,6 @@ def find_needed_tiles_polygons(poly):
     
 
 
-def find_needed_tiles_polygons_postgis(poly):
-    """geven gdal geometry or layer of polygons identif MODIS tiles needed"""
-    
-    conn = psycopg2.connect(dbname = os.environ['PGDATABASE'], user = os.environ['PGUSER'], password = os.environ['PGPASSWORD'])
-    cur = conn.cursor()
-
-    # make ds of modis tiles
-    if True:
-        tiles = modis_tile.main(silent=True)
-
-#        fname = 'modis_tile_wgs.shp'
-#        modis_tile.save_as_shp(tiles, fname)
-#
-#        tblname = 'skel_modis_tile'
-#        dbname = os.environ.get('PGDATABASE', 'finn')
-#        cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
-#        cmd += [ "PG:dbname='%s'" % dbname]
-#        cmd += ('-lco SCHEMA='+schema).split()
-##        cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
-#        cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
-#        cmd += ['-nln', tblname]
-#        cmd += [fname]
-#
-#        print(cmd)
-#        subprocess.run(cmd, check=True)
-
-#    cur.execute('create schema find_tile;')
-#    cur.execute("""create table find_tile.poly (
-#    fid serial not null,
-#    geom geometry
-#            );""")
-
-    if isinstance(poly, ogr.Geometry):
-        cur.execute("""insert into find_tile.poly (geom)
-        values (geomfromtext('%s'));""" % poly.ExportToWkt())
-    else:
-        if isinstance(poly, ogr.DataSource):
-            lyr = poly.GetLayer()
-        elif isinstance(poly, ogr.Layer):
-            lyr = poly
-        for feat in lyr:
-            cur.execute("""insert into find_tile.poly (geom)
-            values (geomfromtext(%s));""" % feat.GetGeometryRef().ExportToWkt())
-
-
 def find_needed_tiles_points(lnglat):
     """given point features identify MODIS tiles needed"""
 
