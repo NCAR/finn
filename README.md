@@ -25,7 +25,7 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects (in `Powershell` and `Command Prompt` you have to do this conversion manually).  WIth `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
+(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
 
 ### (Windowd/Mac) Customize virtual machine
 
@@ -110,7 +110,7 @@ See "Running the notebook" section below for actually running the tool.
 
 #### Stop
 
-When you are done for the day, you stop container.  First stop the Jupyter Notebook application started from the container (See next section).  Then use following command. 
+When you are done for the day, you stop container.  First stop the Jupyter Notebook application by typing `ctrl+C` in the terminal that started the Notebook.  Then use following command. 
 
 ```bash
 docker stop finn
