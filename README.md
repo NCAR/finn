@@ -134,3 +134,7 @@ Execute the cells of the notebook to run the analysis.
   Annual application for year 2016, enteir globe.  MODIS raster dataset are download for entire globe, year 2016.
 * work_XXX
   A local scale testcase where user provides FCCS GeoTiff Land cover raster.  (**TODO**)
+
+## Turorial
+
+[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki) is prepared in project wiki.  
