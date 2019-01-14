@@ -33,6 +33,6 @@ COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
 # default database settings
 ENV POSTGRES_USER=finn \
     POSTGRES_PASS=finn \
-    POSTGRES_DBNAME=gis
+    POSTGRES_DBNAME=finn
 
 ENTRYPOINT /docker-entrypoint.sh
