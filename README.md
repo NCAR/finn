@@ -7,7 +7,7 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 
 (Paragraphs starting with an icon :information_source: can be skipped. They are FYI only)
 
-### Prerequiste
+### 1. Prerequiste
 
 * Docker CE
   * (Windows) https://docs.docker.com/docker-for-windows/install/
@@ -27,11 +27,13 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 
 (Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
 
-### (Windowd/Mac) Customize virtual machine
+### 2. (Windowd/Mac) Customize virtual machine
+
+Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application. 
 
 **TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure a large enough virtual storage.*
 
-### Acquiring this repository
+### 3. Acquiring this repository
 
 To get this repository locally, use `git clone`:
 
@@ -42,7 +44,7 @@ cd finn_preproc
 
 Alternatively `Download ZIP` button is available at https://github.com/yosukefk/finn_preproc (or direct link https://github.com/yosukefk/finn_preproc/archive/master.zip )
 
-### Building the Docker image
+### 4. Building the Docker image
 
 To build the Docker image, execute the following command from the terminal, in the directory where `Dockerfile` exists (this project directory):
 
@@ -54,7 +56,7 @@ To verify that the image is created, type `docker image ls`.  `finn` should be l
 
 :information_source:  An image is a template to do the work.  The data for the application (fire detection and burned area) itself won't be attached with the image.  A container is a specific instance made out of an image.  It behave like a semi-independent computer stored inside a computer.  You do your work in a container.  By default, the work you do will be saved in container.  In FINN application, we customize our container to let it store the data outside of container, so that data can exists independent of life of the container.
 
-### Manage the Docker container
+### 5. Manage the Docker container
 
 #### Create and start
 
@@ -130,7 +132,7 @@ docker stop finn
 
 **TODO** *a wiki page for `docker rm`, `docker inspect`, or link to suitable webpage*
 
-### Running the notebook
+### 6. Running the notebook
 
 To open the notebook, navigate to the `work_testOTS_092018/` directory and open `main_testOTS_092018.ipynb`.  
 This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data. 
