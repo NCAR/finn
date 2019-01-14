@@ -1,6 +1,6 @@
 # FINN Preprocessor
 
-PostGIS based preprorcessor.  Given point feature of active fire detections, this code estimates burned region, and then determine land cover on the burned area.
+PostGIS based preprorcessor.  Given point feature of active fire detections, this code estimates burned region, and then determine land cover on the burned area.  Output from this code will be used for emission estimate by FINN.
 
 
 ## Instructions
@@ -14,7 +14,7 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Linux) https://docs.docker.com/install/linux/docker-ce/ubuntu/
   * (Mac) https://docs.docker.com/docker-for-mac/install/  
 
-  Depending on version of Windows and Mac, you `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product)
+  (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product)
 
 * QGIS  
   https://qgis.org 
@@ -25,11 +25,11 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) to issue commands in instruction, you can user either one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` too.
+(Windows) to issue commands in instruction, you can user either one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` too.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects (in `Powershell` and `Command Prompt` you have to do this conversion manually).  WIth `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
 
 ### Acquiring this repository
 
-To get this repo locally, use `git clone`:
+To get this repository locally, use `git clone`:
 
 ```bash
 git clone https://github.com/yosukefk/finn_preproc.git
@@ -40,7 +40,7 @@ Alternatively `Download ZIP` button is available at https://github.com/yosukefk/
 
 ### Customize virtual machine (Windows/Mac only)
 
-**TODO** something short nice here, or a link to instruction specific to each environment.  Needs to secure large enough virtual storage.
+**TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure large enough virtual storage.*
 
 ### Building the Docker image
 
@@ -52,7 +52,7 @@ docker build -t finn .
 
 To verify that the image is created, type `docker image ls`.  `finn` should be listed as a REPOSITORY (specified by `-t finn` option).
 
-:information_source:  An image is a template to do the work.  The data for the application (fire detection and burned area) itself won't be attached with the image.  A container is a specific instance made out of an image.  It behave like an semi-independent computer stored inside a computer.  You do your work in a container.  By default, the work you do will be saved in container.  In FINN application, we customize our container to let it store the data outside of container, so that data can exists independent of life of the container.
+:information_source:  An image is a template to do the work.  The data for the application (fire detection and burned area) itself won't be attached with the image.  A container is a specific instance made out of an image.  It behave like a semi-independent computer stored inside a computer.  You do your work in a container.  By default, the work you do will be saved in container.  In FINN application, we customize our container to let it store the data outside of container, so that data can exists independent of life of the container.
 
 ### Manage the Docker container
 
@@ -60,28 +60,37 @@ To verify that the image is created, type `docker image ls`.  `finn` should be l
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container. 
 
+(Linux)
 ```bash
 mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
+(Windows/Mac)
+```bash
+docker volume create pg_data
+docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+```
+
 To verify that the container is running, type `docker ps`. 
 You should see the container listed with a unique container id, the name "finn" and some other information. 
 
-:information_source:  Below the meaning of of options for `docker run`.
+:information_source:  Below the meaning of each options for `docker run`.
 
 * `--name finn`
   This sets the name for the container.  Happened to be the same as image's name, but you may choose other names (to have multiple containers out of one image).  You cannot use same name for two different containers, though, container name must be unique.
 * `-v $(pwd):/home/finn`  
-  This makes $(pwd) (current working directory, where you downloaded FINN preprocessor by Git) to be accessible as `/home/finn` from the container being made ( [bind mounts](https://docs.docker.com/storage/bind-mounts/) ).  Therefore the change you make in FINN directory on your machine is reflected immediately in files in /home/finn in the container (because they are identical).  Our code is stored in FINN direoctory which becomes /home/finn when you look from the container.
+  This makes $(pwd) (current working directory, where you downloaded FINN preprocessor by Git) to be accessible as `/home/finn` from inside the container being made ( [bind mounts](https://docs.docker.com/storage/bind-mounts/) ).  Therefore the change you make in FINN directory on your machine is reflected immediately in files in /home/finn in the container and vice versa, since they are identical file on the storage.  Our code/inputs/intermediate files/outputs is stored in FINN direoctory which becomes /home/finn when you look from the container.
 * `-v ${HOME}/pg_data:/var/lib/postgresql`
-  Does bind mounting again, but mounting pg_data directory you created (this can be anywhere on your machine), to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Unfortunately this setting does not work for Windows and Mac version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version). 
+  (Linux) Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
+* `-v pg_data:/var/lib/posrgresql
+  Unfortunately this setting does not work for Windows and Mac version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for (volume management)[https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database] for detail.
 * `-p 5432:5432` and `-p 8888:8888`
-  Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine used 5432 for other purpose.
+  Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.
 * `-d`
   Makes the container be detached from the terminal you created container (makes it a daemon)
 * `-e EARTHDATAUSER=yourusename` and `-e EARTHDATAPW=yourpassword`
-  The code has functionality to download MODIS raster data from https://earthdata.nasa.gov/, and they require you to register to do that.  Create one if you plan to use MODIS raster.
+  The code has functionality to download MODIS raster data from [Earthdata website](https://earthdata.nasa.gov/), and they require you to register to do that.  Create one if you plan to use MODIS raster directly downloaded from Earthdata website.
 
 #### Start Jupyter Notebook from the container
 
@@ -94,6 +103,8 @@ docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no
 Then, go to `localhost:8888/?token=...` in a web browser to open the notebook interface, pasting the token that is printed in the termainal in place of `...`.
 For example: `localhost:8888/?token=6d87327966c2769ea5a8d2da792e34127ac7dca29f78133d` (though your token will be different). 
 If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address. 
+
+The fourth word in the command `finn` refers to container name you careated in `docker run` command.  If you use different `--name`, use the name here.
 
 See "Running the notebook" section below for actually running the tool.
 
@@ -117,7 +128,7 @@ docker stop finn
 
 #### More container management
 
-**TODO** a wiki page for `docker rm`, `docker inspect`, or link to suitable webpage
+**TODO** *a wiki page for `docker rm`, `docker inspect`, or link to suitable webpage*
 
 ### Running the notebook
 
@@ -128,4 +139,4 @@ Execute the cells of the notebook to run the analysis.
 
 ## Turorial
 
-[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki) is prepared in project wiki.  
+[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  
