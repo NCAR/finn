@@ -5,7 +5,7 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 
 ## Instructions
 
-(Paragraphis starting with icon :information_source: can be skipped, they are FYI only)
+(Paragraphs starting with an icon :information_source: can be skipped. They are FYI only)
 
 ### Prerequiste
 
@@ -25,7 +25,11 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) to issue commands in instruction, you can user either one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` too.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects (in `Powershell` and `Command Prompt` you have to do this conversion manually).  WIth `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
+(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects (in `Powershell` and `Command Prompt` you have to do this conversion manually).  WIth `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
+
+### (Windowd/Mac) Customize virtual machine
+
+**TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure a large enough virtual storage.*
 
 ### Acquiring this repository
 
@@ -37,10 +41,6 @@ cd finn_preproc
 ```
 
 Alternatively `Download ZIP` button is available at https://github.com/yosukefk/finn_preproc (or direct link https://github.com/yosukefk/finn_preproc/archive/master.zip )
-
-### Customize virtual machine (Windows/Mac only)
-
-**TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure large enough virtual storage.*
 
 ### Building the Docker image
 
@@ -81,10 +81,10 @@ You should see the container listed with a unique container id, the name "finn" 
   This sets the name for the container.  Happened to be the same as image's name, but you may choose other names (to have multiple containers out of one image).  You cannot use same name for two different containers, though, container name must be unique.
 * `-v $(pwd):/home/finn`  
   This makes $(pwd) (current working directory, where you downloaded FINN preprocessor by Git) to be accessible as `/home/finn` from inside the container being made ( [bind mounts](https://docs.docker.com/storage/bind-mounts/) ).  Therefore the change you make in FINN directory on your machine is reflected immediately in files in /home/finn in the container and vice versa, since they are identical file on the storage.  Our code/inputs/intermediate files/outputs is stored in FINN direoctory which becomes /home/finn when you look from the container.
-* `-v ${HOME}/pg_data:/var/lib/postgresql`
-  (Linux) Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
-* `-v pg_data:/var/lib/posrgresql
-  Unfortunately this setting does not work for Windows and Mac version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for (volume management)[https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database] for detail.
+* (Linux) `-v ${HOME}/pg_data:/var/lib/postgresql`  
+  Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
+* (Windows/Mac) `-v pg_data:/var/lib/posrgresql`  
+  Unfortunately this setting does not work for Windows and Mac version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
 * `-p 5432:5432` and `-p 8888:8888`
   Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.
 * `-d`
@@ -94,7 +94,7 @@ You should see the container listed with a unique container id, the name "finn" 
 
 #### Start Jupyter Notebook from the container
 
-Once the container is running, we can launch a jupyter notebook using `docker exec`: 
+Once the container is running, you can launch a jupyter notebook using `docker exec`: 
 
 ```
 docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --notebook-dir /home/finn
@@ -139,4 +139,4 @@ Execute the cells of the notebook to run the analysis.
 
 ## Turorial
 
-[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  
+[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  It explains purpose of each sample cases.
