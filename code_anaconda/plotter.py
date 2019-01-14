@@ -44,7 +44,7 @@ def getinfo(ds):
 
 
 def plot(schema_table, cmap=None):
-    conn = psycopg2.connect(dbname='gis')
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
     cur = conn.cursor()
 
 
