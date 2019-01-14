@@ -6,8 +6,12 @@ from bs4 import BeautifulSoup
 import ogr
 import requests
 from urllib.parse import urlparse
+import modis_tile
+import psycopg2
+
 
 default_droot = 'downloads'
+schema = 'raster'  # modis tile shape, post it to here
 
 def download_all(url, droot=default_droot):
     """download everything in a direcotry (using wget --recursive --noparent)"""
@@ -134,23 +138,131 @@ def get_filelist(url):
 
 def find_needed_tiles(lnglat):
     
+    is_poly = False
+
     if isinstance(lnglat, six.string_types):
-        # assume path
-        if not os.path.exists(lnglat):
+        # assume it's path
+        if os.path.exists(lnglat):
             # its not path either
-            raise RuntimeError('lnglat is not filepath: %s' % lnglat)
-        lnglat = ogr.Open(lnglat)
+            lnglat = ogr.Open(lnglat)
+        # or is it wkt?
+        else:
+            geom = ogr.CreateGeometryFromWkt(lnglat)
+            if geom is None:
+                raise RuntimeError('lnglat is neither filepath/wtk: %s' % lnglat)
+            else:
+                if geom.GetGeometryType() == ogr.wkbPolygon:
+                    is_poly = True
+                    lnglat = geom
+                else:
+                    raise RuntimeError('wkt in unsopported geomtype: %s' % geom.GetGeometryName())
 
     if isinstance(lnglat, ogr.DataSource):
-        print('reading shp file ...', end=' ', flush=True)
-        coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in lnglat.GetLayer(0)])
-        print('Done')
-        lnglat = coords
+        lyr = lnglat.GetLayer()
+        geomtyp = lyr.GetGeomType()
+        if geomtyp == ogr.wkbPoint:
+            print('reading shp file ...', end=' ', flush=True)
+            coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in lnglat.GetLayer(0)])
+            print('Done')
+            lnglat = coords
+            
+        elif geomtyp == ogr.wkbPolygon:
+            # its polygon feaure
+            is_poly = True
 
-    return find_needed_tiles_slave(lnglat)
+    if is_poly:
+        return find_needed_tiles_polygons(lnglat)
+    else:
+        return find_needed_tiles_points(lnglat)
 
 
-def find_needed_tiles_slave(lnglat):
+def find_needed_tiles_polygons(poly):
+
+    #fname0 = 'modis_tile_wgs.shp'
+    #tiles = modis_tile.main(silent=True)
+    #modis_tile.save_as_shp(tiles, fname)
+
+    class Grabber(object):
+        def __init__(self):
+            self.tiles = modis_tile.main(silent=True)
+        def __call__(self, geom):
+            o = []
+            lyr = self.tiles.GetLayer()
+            lyr.SetSpatialFilter(geom)
+            for feat in lyr:
+                if geom.Intersects(feat.GetGeometryRef()):
+                    h = feat.GetField('h')
+                    v = feat.GetField('v')
+                    o.append((h,v))
+            return o
+
+    grabber = Grabber()
+
+    if isinstance(poly, ogr.Geometry):
+        oo = grabber(poly)
+
+    else:
+        oo = set()
+        if isinstance(poly, ogr.DataSource):
+            lyr = poly.GetLayer()
+        elif isinstance(poly, ogr.Layer):
+            lyr = poly
+        for feat in lyr:
+            geom = feat.GetGeometryRef()
+            o = grabber(geom)
+            oo |= o
+
+    o = ['h%02dv%02d' % (_[0], _[1]) for _ in oo]
+    return o
+    
+
+
+def find_needed_tiles_polygons_postgis(poly):
+    """geven gdal geometry or layer of polygons identif MODIS tiles needed"""
+    
+    conn = psycopg2.connect(dbname = os.environ['PGDATABASE'], user = os.environ['PGUSER'], password = os.environ['PGPASSWORD'])
+    cur = conn.cursor()
+
+    # make ds of modis tiles
+    if True:
+        tiles = modis_tile.main(silent=True)
+
+#        fname = 'modis_tile_wgs.shp'
+#        modis_tile.save_as_shp(tiles, fname)
+#
+#        tblname = 'skel_modis_tile'
+#        dbname = os.environ.get('PGDATABASE', 'finn')
+#        cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
+#        cmd += [ "PG:dbname='%s'" % dbname]
+#        cmd += ('-lco SCHEMA='+schema).split()
+##        cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
+#        cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
+#        cmd += ['-nln', tblname]
+#        cmd += [fname]
+#
+#        print(cmd)
+#        subprocess.run(cmd, check=True)
+
+#    cur.execute('create schema find_tile;')
+#    cur.execute("""create table find_tile.poly (
+#    fid serial not null,
+#    geom geometry
+#            );""")
+
+    if isinstance(poly, ogr.Geometry):
+        cur.execute("""insert into find_tile.poly (geom)
+        values (geomfromtext('%s'));""" % poly.ExportToWkt())
+    else:
+        if isinstance(poly, ogr.DataSource):
+            lyr = poly.GetLayer()
+        elif isinstance(poly, ogr.Layer):
+            lyr = poly
+        for feat in lyr:
+            cur.execute("""insert into find_tile.poly (geom)
+            values (geomfromtext(%s));""" % feat.GetGeometryRef().ExportToWkt())
+
+
+def find_needed_tiles_points(lnglat):
     """given point features identify MODIS tiles needed"""
 
     # modis sinusoidal, but they may be using sphere
