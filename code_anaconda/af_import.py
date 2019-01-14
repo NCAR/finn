@@ -3,6 +3,21 @@ import subprocess
 from subprocess import Popen, PIPE
 import shlex
 
+def gdal_vernum_sys():
+    """gets gdal verion from command line, not the python binding"""
+    p = subprocess.run(['gdal-config', '--version'], stdout=PIPE)
+    v = p.stdout.decode()  # eg '2.3.2'
+    v = v.split('.')
+    o = []
+    for x in v:
+        try:
+            o.append(int(x))
+        except ValueError:
+            break
+    return o
+
+
+
 def main(tag, fnames):
     if isinstance(fnames, str):
         fnames = [fnames]
@@ -40,8 +55,11 @@ def main(tag, fnames):
         #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
             #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
             cmd += [ "PG:dbname='%s'" % dbname]
-            cmd += '-lco SPATIAL_INDEX=GIST'.split()
-            #cmd += '-lco SPATIAL_INDEX=YES'.split()
+            vn = gdal_vernum_sus()
+            if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
+                cmd += '-lco SPATIAL_INDEX=GIST'.split()
+            else:
+                cmd += '-lco SPATIAL_INDEX=YES'.split()
             cmd += ('-lco SCHEMA='+schema).split()
             cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
             cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
@@ -54,6 +72,19 @@ def main(tag, fnames):
         #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
         #    print( p2.communicate())
 #            p1.communicate()
+
+
+import psycopg2
+def check_raster_contains_fire(rst, fire):
+    dct = dict(rst=rst, fire=fire)
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+    cur.execute("""select count(*) from %(fire)s;""" % dct)
+    nfire = cur.fetchall()[0][0]
+    cur.execute("""select count(*) from %(rst)s a, %(fire)s b where  ST_Contains(a.geom , b.geom);""" % dct)
+    ncnt = cur.fetchall()[0][0]
+    nob = nfire - ncnt
+    return dict(n_fire=nfire, n_containd = ncnt, n_not_contained= nob)
 
 if __name__ == '__main__':
     import sys
