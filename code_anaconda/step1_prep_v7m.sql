@@ -790,6 +790,27 @@ for myrow in select table_name from af_ins order by table_name loop
 	raise notice 'tool: myrow , %', myrow;
 	-- if VIIRS, confidence is not numeric...  -- grab relevent fields
         -- FIXME lots of extra field related to time stamp.  clean them in production version, when i feel more confident with date calcs
+	-- execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
+	-- 	row_number()  over (order by gid),
+	-- 	geom,
+	-- 	longitude,
+	-- 	latitude,
+	-- 	scan, 
+	-- 	track,
+	-- 	acq_date,
+	-- 	acq_time,
+	-- 	date( acq_date + 
+	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
+	-- 			mins:= substring(acq_time, 3, 2)::int)) ,
+	-- 	cast(acq_date as timestamp without time zone) +
+	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
+	-- 			mins:= substring(acq_time, 3, 2)::int) ,
+	-- 	instrument,
+	-- 	(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
+	-- 	from ' || myrow.table_name || ';';
+	-- 	--confidence >= 20 --modis
+	-- 	--confidence != \'l\' -- viirs
+-- turned out that NRT dataset doesnt have instrument field, only satellite.  so i create one based on satellite field here
 	execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
 		row_number()  over (order by gid),
 		geom,
@@ -805,8 +826,8 @@ for myrow in select table_name from af_ins order by table_name loop
 		cast(acq_date as timestamp without time zone) +
 			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
 				mins:= substring(acq_time, 3, 2)::int) ,
-		instrument,
-		(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
+			case satellite when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else ''UNKNOWN'' end,
+		((satellite=''T'' or satellite=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
 		from ' || myrow.table_name || ';';
 		--confidence >= 20 --modis
 		--confidence != \'l\' -- viirs
