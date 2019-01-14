@@ -126,15 +126,6 @@ This notebook runs FINN (press Shift+Enter to run a cell), including the compone
 
 Execute the cells of the notebook to run the analysis.
 
-* work_testOTS_092018
-  A small testcase with one week period in September 2018 in Oregon.  MODIS raster dataset are download for particular location, year 2017.
-* work_nam_2012
-  Annual application for year 2012, North America.  MODIS raster dataset are download for North America, year 2012.
-* work_global_2016
-  Annual application for year 2016, enteir globe.  MODIS raster dataset are download for entire globe, year 2016.
-* work_XXX
-  A local scale testcase where user provides FCCS GeoTiff Land cover raster.  (**TODO**)
-
 ## Turorial
 
 [Tutorial page](https://github.com/yosukefk/finn_preproc/wiki) is prepared in project wiki.  
