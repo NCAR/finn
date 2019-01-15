@@ -826,7 +826,7 @@ for myrow in select table_name from af_ins order by table_name loop
 		cast(acq_date as timestamp without time zone) +
 			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
 				mins:= substring(acq_time, 3, 2)::int) ,
-			case satellite when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else ''UNKNOWN'' end,
+			case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
 		((satellite=''T'' or satellite=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
 		from ' || myrow.table_name || ';';
 		--confidence >= 20 --modis
