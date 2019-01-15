@@ -55,7 +55,7 @@ def main(tag, fnames):
         #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
             #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
             cmd += [ "PG:dbname='%s'" % dbname]
-            vn = gdal_vernum_sus()
+            vn = gdal_vernum_sys()
             if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
                 cmd += '-lco SPATIAL_INDEX=GIST'.split()
             else:
