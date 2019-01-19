@@ -5,8 +5,50 @@ from subprocess import Popen, PIPE
 import datetime
 import os
 import shlex
+import psycopg2
 
-def main(tag, dt0, dt1, vorimp='scipy', gt=3, buf0=False, ver=None):
+def get_first_last_day(tag):
+    """Returns first and last day from active fire table"""
+
+    schema = 'af_%s' % tag
+
+    oned = datetime.timedelta(days=1)
+
+    # get connection
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+
+    # make sure that work_pnt exists.
+    cur.execute('select exists(select * from information_schema.tables where table_schema = \'%s\' and table_name=\'work_pnt\')' % schema)
+    has_work_pnt = cur.fetchall()[0]
+    if not has_work_pnt:
+        raise RuntimeError("cannot find work_pnt.  run step1_prep first.")
+
+    # get first/last day from the data
+    cur.execute('select min(acq_date_lst), max(acq_date_lst) from "%s".work_pnt' % (schema))
+    dt01 = cur.fetchall()[0]
+    print(dt01)
+
+    # see if dup. toropics was done for modis
+    cur.execute('select count(*) from "%s".work_pnt where instrument = \'MOSIS\' and abs(lat) <= 30' % (schema))
+    cnt_tropdup = cur.fetchall()[0][0]
+    print(cnt_tropdup)
+    if cnt_tropdup > 0:
+        # trop fire should have been duplicated to carry over to next day
+        # that means first day of the dataset is incomplete (missing carry over from the previous day)
+        firstday = dt01[0] + oned
+    else:
+        # can start using the first day's data
+        firstday = dt01[0]
+    lastday = dt01[1]
+    
+    return (firstday, lastday)
+
+# TODO make dt0 and dt1 to be firstday/lastday, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
+def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver=None, run_prep=True, run_work=True):
+
+    schema = 'af_%s' % tag
+
     if ver is None:
         
         if vorimp == 'scipy':
@@ -53,17 +95,30 @@ def main(tag, dt0, dt1, vorimp='scipy', gt=3, buf0=False, ver=None):
     max_procs = 2
 
     # run the prep script
-    print("starting prep: %s" % datetime.datetime.now())
-    cmd = " ".join(['psql'] + ['-f', ('step1_prep_%s.sql' % ver)] + ['-v', ("tag=%s" % tag)])
-    subprocess.run(shlex.split(cmd))
+    if run_prep:
+        print("starting prep: %s" % datetime.datetime.now())
+        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), '-v', ('tag=%s' % tag)]
+        print(cmd)
+        subprocess.run(cmd, check=True)
+    else:
+        pass
 
 
-    dates = [dt0 + datetime.timedelta(days=n) for n in
-            range((dt1-dt0).days)]
+    if run_work:
+        if firstday is None or lastday is None:
+            firstday, lastday = get_first_last_day(tag)
 
-    procs = set()
-    for dt in dates:
-        print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-        cmd = " ".join(['psql',] + ['-f', ('step1_work_%s.sql' % ver)] + 
-                       ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))])
-        subprocess.run(shlex.split(cmd))
+        dt0 = firstday
+        dt1 = lastday + datetime.timedelta(days=1)
+
+        dates = [dt0 + datetime.timedelta(days=n) for n in
+                range((dt1-dt0).days)]
+
+        procs = set()
+        for dt in dates:
+            print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
+            cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_work_%s.sql' % ver)))]
+            cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
+            #print(cmd)
+            #subprocess.run(shlex.split(cmd), check=True)
+            subprocess.run(cmd, check=True)

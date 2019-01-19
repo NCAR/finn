@@ -5,8 +5,9 @@ import shlex
 # destination in db
 schema = 'raster'
 
-def main(tag_tbl, tag_var=None):
-    shpname = 'all_countries/All_Countries.shp'
+def main(tag_tbl, shpname=None, tag_var=None):
+    if shpname is None:
+        shpname = 'all_countries/All_Countries.shp'
     
     # create schema if needed
     cmd = 'psql -c "CREATE SCHEMA IF NOT EXISTS %s;"' %  schema
@@ -25,4 +26,4 @@ def main(tag_tbl, tag_var=None):
     fo = open('import_%s.log' % tag_tbl, 'w')
     p1 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     p2 = subprocess.Popen(['psql', ], stdin=p1.stdout, stdout=fo)
-    print(p2.communicate())
+    p2.communicate()

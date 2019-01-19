@@ -1,5 +1,12 @@
-﻿SET search_path TO af_:tag,public;
+﻿-- schema name tag, prepended by af_
 \set myschema af_:tag
+-- to use in identifier in query.  without double quote it is converted to lower case
+\set ident_myschema '\"' :myschema '\"'
+-- to use as literal string
+\set quote_myschema '\'' :myschema '\''
+
+SET search_path TO :ident_myschema , public;
+SHOW search_path;
 
 \set ON_ERROR_STOP on
 
@@ -7,6 +14,9 @@ DO language plpgsql $$ begin
 	RAISE NOTICE 'tool: start, %', clock_timestamp();
 END $$;
 
+DO language plpgsql $$ begin
+	RAISE NOTICE 'tool: here, %', clock_timestamp();
+END $$;
 -------------------------------
 -- Part 1: Setting up tables --
 -------------------------------
@@ -32,6 +42,9 @@ CREATE TABLE work_pnt (
 	geom_sml geometry
 	);
 
+DO language plpgsql $$ begin
+	RAISE NOTICE 'tool: here, %', clock_timestamp();
+END $$;
 
 -- group pixels, and lone detections in one table of fire polygons
 drop table if exists work_lrg;
@@ -71,9 +84,23 @@ values
 -- Part 2: Function and Type definitions --
 -------------------------------------------
 
------------------------------------------
--- Part 2.1: pnt2grp (points to group) --
------------------------------------------
+----------------------------------------
+-- Part 2.0: testpy (info for python) --
+----------------------------------------
+create or replace function testpy()
+returns text as
+$$
+    import sys
+    s = str(sys.version)
+    plpy.notice(s)
+    s2 = str(sys.path)
+    plpy.notice(2)
+    return(s)
+$$ 
+language plpython3u volatile;
+
+select testpy();
+
 /* NOTE for plpython */
 /* 
 
@@ -86,6 +113,9 @@ values
     * use query to aggrgate the edge tables by cleanid0, geometries got st_union()
     * union of this aggregated edge table plus the orphant detection 
 */
+-----------------------------------------
+-- Part 2.1: pnt2grp (points to group) --
+-----------------------------------------
 
 drop type if exists p2grp cascade;
 create type p2grp as (
@@ -128,8 +158,8 @@ $$
     return results
     
 $$ 
--- language plpython3u volatile;
-language plpythonu volatile;
+language plpython3u volatile;
+-- language plpythonu volatile;
 
 -----------------------------------------
 -- Part 2.2: pnt2drop (points to drop) --
@@ -264,9 +294,9 @@ returns setof p2drp as $$
     return zip(todrop,others)
         
 $$ 
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 -----------------------------------------------
 -- Part 2.3: st_voronoi_py (voronoi polygon) --
@@ -420,9 +450,9 @@ $$
     return lst[:-4]
 
 $$ 
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 
 create or replace function st_voronoi_py(pnts geometry)
@@ -647,9 +677,9 @@ $$
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
     return lst
 $$
--- language plpython3u volatile;
+language plpython3u volatile;
 -- language plpython2u volatile;
-language plpythonu volatile;
+-- language plpythonu volatile;
 
 create or replace function st_cutter_py(pnts geometry)
 returns geometry as
@@ -730,7 +760,7 @@ language sql volatile;
 -----------------------------------
 
 -- find af_in
-\set quote_myschema '\'' :myschema '\''
+
 
 drop table if exists af_ins;
 create table af_ins as (select table_name from information_schema.tables where table_schema = :quote_myschema);
@@ -741,7 +771,7 @@ do language plpgsql $$ begin
 	else
 		delete from af_ins where  table_name !~ 'af_in_[0-9]'; 
 	end if ; 
-		end $$;
+end $$;
 
 
 
@@ -757,8 +787,30 @@ myrow record;
 begin
 
 for myrow in select table_name from af_ins order by table_name loop
+	raise notice 'tool: myrow , %', myrow;
 	-- if VIIRS, confidence is not numeric...  -- grab relevent fields
         -- FIXME lots of extra field related to time stamp.  clean them in production version, when i feel more confident with date calcs
+	-- execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
+	-- 	row_number()  over (order by gid),
+	-- 	geom,
+	-- 	longitude,
+	-- 	latitude,
+	-- 	scan, 
+	-- 	track,
+	-- 	acq_date,
+	-- 	acq_time,
+	-- 	date( acq_date + 
+	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
+	-- 			mins:= substring(acq_time, 3, 2)::int)) ,
+	-- 	cast(acq_date as timestamp without time zone) +
+	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
+	-- 			mins:= substring(acq_time, 3, 2)::int) ,
+	-- 	instrument,
+	-- 	(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
+	-- 	from ' || myrow.table_name || ';';
+	-- 	--confidence >= 20 --modis
+	-- 	--confidence != \'l\' -- viirs
+-- turned out that NRT dataset doesnt have instrument field, only satellite.  so i create one based on satellite field here
 	execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
 		row_number()  over (order by gid),
 		geom,
@@ -774,8 +826,8 @@ for myrow in select table_name from af_ins order by table_name loop
 		cast(acq_date as timestamp without time zone) +
 			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
 				mins:= substring(acq_time, 3, 2)::int) ,
-		instrument,
-		(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
+			case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
+		((satellite=''T'' or satellite=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
 		from ' || myrow.table_name || ';';
 		--confidence >= 20 --modis
 		--confidence != \'l\' -- viirs

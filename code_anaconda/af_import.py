@@ -3,16 +3,33 @@ import subprocess
 from subprocess import Popen, PIPE
 import shlex
 
+def gdal_vernum_sys():
+    """gets gdal verion from command line, not the python binding"""
+    p = subprocess.run(['gdal-config', '--version'], stdout=PIPE)
+    v = p.stdout.decode()  # eg '2.3.2'
+    v = v.split('.')
+    o = []
+    for x in v:
+        try:
+            o.append(int(x))
+        except ValueError:
+            break
+    return o
+
+
+
 def main(tag, fnames):
     if isinstance(fnames, str):
         fnames = [fnames]
     schema = 'af_' + tag
     dstname = schema + '.' + 'af_in'
-    cmd = 'psql -c "DROP SCHEMA IF EXISTS %s CASCADE;"' %  schema
-    os.system(cmd)
-    cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
+    cmd = ['psql', '-c', 
+            'DROP SCHEMA IF EXISTS "%s" CASCADE;' % schema]
+    subprocess.run(cmd, check=True)
+    #cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
+    cmd = ['psql', '-c', 'CREATE SCHEMA "%s";' % schema]
     print(cmd)
-    os.system(cmd)
+    subprocess.run(cmd, check=True)
 
     for i,fname in enumerate(fnames):
         if len(fnames) == 1:
@@ -32,18 +49,17 @@ def main(tag, fnames):
             p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
             p2.communicate()
         else:
+            dbname = os.environ.get('PGDATABASE', 'finn')
+            #print(os.environ)
             cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
-        #    conninfo = { 
-        #            'dbname': 'PGDATABASE', 
-        #            'user': 'PGUSER', 
-        #            'password': 'PGPASSWORD',
-        #            }
-        #
         #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
             #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
-            cmd += [ "PG:dbname='finn'"]
-            #cmd += '-lco SPATIAL_INDEX=GIST'.split()
-            cmd += '-lco SPATIAL_INDEX=YES'.split()
+            cmd += [ "PG:dbname='%s'" % dbname]
+            vn = gdal_vernum_sys()
+            if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
+                cmd += '-lco SPATIAL_INDEX=GIST'.split()
+            else:
+                cmd += '-lco SPATIAL_INDEX=YES'.split()
             cmd += ('-lco SCHEMA='+schema).split()
             cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
             cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
@@ -51,11 +67,24 @@ def main(tag, fnames):
             cmd += [fname]
             print('\ncmd:\n%s\n' % ' '.join(cmd))
             print(cmd)
-            subprocess.run(cmd)
+            subprocess.run(cmd, check=True)
 #            p1 = Popen(cmd)#, stdout=PIPE)
         #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
         #    print( p2.communicate())
 #            p1.communicate()
+
+
+import psycopg2
+def check_raster_contains_fire(rst, fire):
+    dct = dict(rst=rst, fire=fire)
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+    cur.execute("""select count(*) from %(fire)s;""" % dct)
+    nfire = cur.fetchall()[0][0]
+    cur.execute("""select count(*) from %(rst)s a, %(fire)s b where  ST_Contains(a.geom , b.geom);""" % dct)
+    ncnt = cur.fetchall()[0][0]
+    nob = nfire - ncnt
+    return dict(n_fire=nfire, n_containd = ncnt, n_not_contained= nob)
 
 if __name__ == '__main__':
     import sys

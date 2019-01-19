@@ -1,9 +1,11 @@
 import datetime
 from subprocess import Popen
 
+from run_step1 import get_first_last_day
+
 ver = 'v8b'
 
-def main(tag_af, rasters, dt0, dt1):
+def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=True):
 
     schema = 'af_{0}'.format( tag_af )
 
@@ -18,88 +20,87 @@ def main(tag_af, rasters, dt0, dt1):
 
     scrname_prep = 'step2_prep_{0}_{1}.sql'.format('_'.join(tag_rsts), ver)
     scrname_work = 'step2_work_{0}_{1}.sql'.format('_'.join(tag_rsts), ver)
-    
 
-    # run the prep script
-    if True:
+    # compose commands
 
+    #for tag_rst in tag_rsts:
+    cmd_prep = 'set search_path to "{0}",public;\n'.format( schema )
+    cmd_work = 'set search_path to "{0}",raster,public;\n'.format( schema )
 
+    cmd_work += mkcmd_create_table_oned()
 
+    tag_tbls = []
+    fldnames = []
+    fldtypes = []
+    dctfldtbl = {}
 
-        # compose commands
-
-        #for tag_rst in tag_rsts:
-        cmd_prep = 'set search_path to {0},public;\n'.format( schema )
-        cmd_work = 'set search_path to {0},raster,public;\n'.format( schema )
-
-        cmd_work += mkcmd_create_table_oned()
-
-        tag_tbls = []
-        fldnames = []
-        fldtypes = []
-        dctfldtbl = {}
-
-        for rstinfo in rasters:
-            # make tables
-            # select mktble_thematic('lct');
-            # select mktble_continuous('vcf', array['tree','herb','bare']);
-            # select mktble_polygons('globreg');
-            # well, it probably make more sence to compose sql comman in python....
-            cmd_prep += '\n--\n-- Prepare table for {tag}\n--\n'.format(**rstinfo)
-            cmd_work += '\n--\n-- Find values for {tag}\n--\n'.format(**rstinfo)
-            if rstinfo['kind'] == 'thematic':
-                cmd_prep += mkcmd_create_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
-                cmd_work += mkcmd_insert_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
-                tag_tbls += [rstinfo['tag']]
-                fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable']]
-                fldtypes += ['integer', 'double precision']
-                dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_')])
-            elif rstinfo['kind'] == 'continuous':
-                cmd_prep += mkcmd_create_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
-                cmd_work += mkcmd_insert_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
-                tag_tbls += [rstinfo['tag']]
-                fldnames += [ 'v_'+_ for _ in rstinfo['variables']]
-                fldtypes += (['double precision'] * len(rstinfo['variables']))
-                dctfldtbl.update([('v_'+_ , tag_tbls[-1]) for _ in rstinfo['variables']])
-            elif rstinfo['kind'] == 'polygons':
-                cmd_prep += mkcmd_create_table_polygons(rstinfo['tag'], rstinfo['variable'], schema)
-                cmd_work += mkcmd_insert_table_polygons(rstinfo['tag'], rstinfo['variable'], rstinfo['variable_in'], schema)
-                tag_tbls += [rstinfo['tag']]
-                fldnames += ['v_'+rstinfo['variable']]
-                fldtypes += ['integer']
-                dctfldtbl.update([['v_'+rstinfo['variable'] , tag_tbls[-1]]])
-            else:
-                raise RuntimeError("unkown kind for raster: kind '{kind}' for raster '{tag}'".format(**rstinfo))
+    for rstinfo in rasters:
+        # make tables
+        # select mktble_thematic('lct');
+        # select mktble_continuous('vcf', array['tree','herb','bare']);
+        # select mktble_polygons('globreg');
+        # well, it probably make more sence to compose sql comman in python....
+        cmd_prep += '\n--\n-- Prepare table for {tag}\n--\n'.format(**rstinfo)
+        cmd_work += '\n--\n-- Find values for {tag}\n--\n'.format(**rstinfo)
+        if rstinfo['kind'] == 'thematic':
+            cmd_prep += mkcmd_create_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
+            cmd_work += mkcmd_insert_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
+            tag_tbls += [rstinfo['tag']]
+            fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable']]
+            fldtypes += ['integer', 'double precision']
+            dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_')])
+        elif rstinfo['kind'] == 'continuous':
+            cmd_prep += mkcmd_create_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
+            cmd_work += mkcmd_insert_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
+            tag_tbls += [rstinfo['tag']]
+            fldnames += [ 'v_'+_ for _ in rstinfo['variables']]
+            fldtypes += (['double precision'] * len(rstinfo['variables']))
+            dctfldtbl.update([('v_'+_ , tag_tbls[-1]) for _ in rstinfo['variables']])
+        elif rstinfo['kind'] == 'polygons':
+            cmd_prep += mkcmd_create_table_polygons(rstinfo['tag'], rstinfo['variable'], schema)
+            cmd_work += mkcmd_insert_table_polygons(rstinfo['tag'], rstinfo['variable'], rstinfo['variable_in'], schema)
+            tag_tbls += [rstinfo['tag']]
+            fldnames += ['v_'+rstinfo['variable']]
+            fldtypes += ['integer']
+            dctfldtbl.update([['v_'+rstinfo['variable'] , tag_tbls[-1]]])
+        else:
+            raise RuntimeError("unkown kind for raster: kind '{kind}' for raster '{tag}'".format(**rstinfo))
 
 
-        print(fldnames)
-        print(dctfldtbl)
+        #print(fldnames)
+        #print(dctfldtbl)
         # TODO table for output
         cmd_prep += '\n--\n-- Prepare table for output\n--\n'
         cmd_work += '\n--\n-- Gather restuls to output\n--\n'
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-        print(cmd_prep)
+        #print(cmd_prep)
         with open(scrname_prep, 'w') as f:
             f.write(cmd_prep)
-        print(cmd_work)
+        #print(cmd_work)
         with open(scrname_work, 'w') as f:
             f.write(cmd_work)
 
 
+    # run the prep script
+    if run_prep:
+
+        print("starting prep: {0}".format( datetime.datetime.now()))
         p = Popen(
                 ['psql']
                 + ['-f', scrname_prep]
                 )
         p.communicate()
 
+    if run_work: 
 
-            
-        
+        if firstday is None or lastday is None:
+            firstday, lastday = get_first_last_day(tag_af)
 
+        dt0 = firstday
+        dt1 = lastday + datetime.timedelta(days=1)
 
-    if True: 
         # process each day, store output into tables
         dates = [dt0 + datetime.timedelta(days=n) for n in
                 range((dt1-dt0).days)]
@@ -129,8 +130,8 @@ def mkcmd_create_table_thematic(tag_tbl, tag_var, schema):
     varname = 'v_{0}'.format( tag_var )
     frcname = 'f_{0}'.format( tag_var )
     cmd = """
-drop table if exists {schema}.{tblname};
-create table {schema}.{tblname} (
+drop table if exists "{schema}"."{tblname}";
+create table "{schema}"."{tblname}" (
     polyid integer,
     {varname} integer,
     {frcname} double precision,
@@ -143,8 +144,8 @@ def mkcmd_create_table_continuous(tag_tbl, tag_vars, schema):
     varnames = ['v_{0}'.format(_) for _ in tag_vars]
     vardefs = ['{0} double precision'.format(  _ ) for _ in varnames]
     cmd = """
-drop table if exists {schema}.{tblname};
-create table {schema}.{tblname} (
+drop table if exists "{schema}"."{tblname}";
+create table "{schema}"."{tblname}" (
     polyid integer,
     {vardefs},
     acq_date_lst date
@@ -161,8 +162,8 @@ def mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema):
     valdef = ',\n'.join(valdefs)
 
     cmd = """
-drop table if exists {schema}.{tblname};
-create table {schema}.{tblname} (
+drop table if exists "{schema}"."{tblname}";
+create table "{schema}"."{tblname}" (
     polyid integer, 
     fireid integer,
     geom geometry,
@@ -216,7 +217,7 @@ def mkcmd_create_table_oned():
 
 def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
     cmd = """
-    set search_path to {schema},raster,public;
+    set search_path to "{schema}",raster,public;
 
     set client_min_messages to warning;
     with
@@ -290,7 +291,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
     expr_summary = ', \n'.join('st_summarystatsagg(p.clp, {seq}, true) as stats{seq}'.format(seq =  _+1) for _ in range(nvar))
 
     cmd = """
-    set search_path to {schema},raster,public;
+    set search_path to "{schema}",raster,public;
 
     set client_min_messages to warning;
     with
@@ -347,7 +348,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
 
 def mkcmd_insert_table_polygons(tag_tbl, tag_var, variable_in, schema):
     cmd = """
-    set search_path to {schema},raster,public;
+    set search_path to "{schema}",raster,public;
 
     with crs as (
     select d.polyid, r.{variable_in} from rst_{tag_tbl} r 

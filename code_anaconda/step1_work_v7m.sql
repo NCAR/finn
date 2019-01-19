@@ -1,4 +1,11 @@
-﻿SET search_path TO af_:tag,public;
+﻿-- schema name tag, prepended by af_
+\set myschema af_:tag
+-- to use in identifier in query.  without double quote it is converted to lower case
+\set ident_myschema '\"' :myschema '\"'
+-- to use as literal string
+\set quote_myschema '\'' :myschema '\''
+
+SET search_path TO :ident_myschema,public;
 
 \set ON_ERROR_STOP on
 
@@ -24,7 +31,7 @@ alter table work_div_oned drop column polyid;
 insert into work_pnt_oned 
 (rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid)
 select rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid 
-from work_pnt where acq_date_lst = :oned::date;
+from work_pnt where acq_date_lst = :oned::text::date;
 
 do language plpgsql $$
 	declare
