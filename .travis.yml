@@ -11,5 +11,5 @@ before_install:
 - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
 
 script:
-- docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=$EARTHDATAUSER -e EARTHDATAPW=$EARTHDATAPW finn
+- docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=$(EARTHDATAUSER) -e EARTHDATAPW=$(EARTHDATAPW) finn
 - docker exec finn jupyter nbconvert --ExecutePreprocessor.timeout=600 --to notebook --execute /home/finn/work_testOTS_092018/main_testOTS_092018.ipynb
