@@ -19,13 +19,13 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 * QGIS  
   https://qgis.org 
   
-  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directory see the PostGIS database to QA the processing.
+  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.
 
 * Git
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
+(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Toolbox`, `Docker Quickstart Terminal` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Desktop`, `Git Bash` should work with path without manually editing but for some reason i still have to edit manually.  (**TODO** figure out why, come up with fix?  Or stick with manual editing of path for `Docker Desktop`)
 
 ### 2. (Windows/Mac) Customize virtual machine
 
