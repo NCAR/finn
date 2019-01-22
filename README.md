@@ -27,7 +27,7 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 
 (Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
 
-### 2. (Windowd/Mac) Customize virtual machine
+### 2. (Windows/Mac) Customize virtual machine
 
 Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application. 
 
