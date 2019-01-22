@@ -23,7 +23,6 @@ RUN conda install -c conda-forge python=3.6
 RUN conda config --remove channels 'defaults'
 RUN conda install -c conda-forge jupyterlab ncurses pyproj beautifulsoup4 shapely psycopg2 matplotlib basemap
 RUN conda install --channel conda-forge --override-channels "gdal>2.2.4"
-RUN pip3 install numpy scipy networkx
 
 # check that key packages are importable
 RUN python -c 'from osgeo import gdal'
@@ -31,7 +30,7 @@ RUN python -c 'from osgeo import gdal'
 # conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
-#RUN pip3 install numpy scipy networkx
+RUN pip3 install numpy scipy networkx
 
 EXPOSE 8888
 
@@ -43,4 +42,3 @@ ENV POSTGRES_USER=finn \
     POSTGRES_DBNAME=finn
 
 ENTRYPOINT /docker-entrypoint.sh
-
