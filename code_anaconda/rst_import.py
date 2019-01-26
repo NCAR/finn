@@ -22,6 +22,7 @@ import re
 import datetime
 import subprocess
 import shlex
+import itertools
 
 import gdal
 import ogr
@@ -51,10 +52,20 @@ config_datacat = dict(
                 ], 
             # acronym Yosuke used, in the order Yosuke uses store data
             shortnames = ['tree', 'herb', 'bare'],
-            # extra options for merge
+            # extra options for merg
             mrg_opt = ['-separate'],
             rsmp_alg = 'average',
             re_bname = re.compile('^MOD44B.A\d\d\d\d065'),
+            ),
+        bdt = dict( 
+            # hdf layer names
+            lyrnames = ['Burn Date'],  # for modis c6 
+            # acronym Yosuke used, in the order Yosuke uses store data
+            shortnames = ['bdt'],
+            # extra options for merge
+            mrg_opt = [''],
+            rsmp_alg = 'mode',
+            re_bname = re.compile('^MCD64A1.A\d\d\d\d\d\d\d'),
             ),
 )
 
@@ -458,29 +469,33 @@ class Importer(object):
             rname = os.path.basename(fname)
             tifname = os.path.join(workdir, rname[:-4] + '.tif')
             sdsnames = [get_sdsname(_, fname) for _ in lyrnames]
-            tiffopt = ' '.join(['-co %s' % _ for _ in tiffopts])
+            #tiffopt = ['-co %s' % _ for _ in tiffopts]
+            tiffopt = list(itertools.chain.from_iterable(['-co', _] for _ in  tiffopts))
+            print(tiffopt)
 
             params = dict(
                 file=tifname,
-                mrg_opt = ' '.join(self.mrg_opt),
+                mrg_opt = self.mrg_opt,
                 opt=tiffopt ,
-                sds=' '.join(sdsnames),
+                sds=sdsnames,
             )
 
             cmd = "gdal_merge.py %(mrg_opt)s -o %(file)s %(opt)s %(sds)s" % params
+            cmd = ["gdal_merge.py"]
+            cmd += params['mrg_opt']
+            cmd += ['-o', params['file']]
+            cmd += params['opt']
+            cmd += params['sds']
 
             if dryrun:
                 pass
             else:
-                if len(cmd) > 255: 
-                    cmd_x = cmd[:255] + ' ...'
-                else:
-                    cmd_x = cmd
+                cmd_x = ' '.join(cmd)
+                if len(cmd_x) > 255: 
+                    cmd_x = cmd_x[:255] + ' ...'
                 if os.path.exists(tifname): os.unlink(tifname)
                 print('cmd: ' + cmd_x)
-                status = os.system(cmd)
-                if not status == 0:
-                    raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+                subprocess.run(cmd, check=True)
 
             buf.append(tifname)
         return buf
