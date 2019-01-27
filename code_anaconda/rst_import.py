@@ -509,7 +509,7 @@ class Importer(object):
                 cmd_x = ' '.join(cmd)
                 if len(cmd_x) > 255: 
                     cmd_x = cmd_x[:255] + ' ...'
-                if os.path.exists(tifname): os.unlink(tifname)
+                if os.path.exists(tifname): os.remove(tifname)
                 print('cmd: ' + cmd_x)
                 subprocess.run(cmd, check=True)
 
@@ -544,8 +544,8 @@ class Importer(object):
         # valid data are 1-366.  0 is unbunred, -1 fill, -2 water
         # mask file should has 1 for valid, 0 for invalid
         drv = gdal.GetDriverByName('MEM')
-        dso = drv.CreateCopy('mem0', ds)
-        m = dso.GetRasterBand(1)
+        dsm = drv.CreateCopy('mem0', ds)
+        m = dsm.GetRasterBand(1)
         arr = m.ReadAsArray()
         arr[arr<0] = 0
         m.WriteArray(arr)
@@ -565,23 +565,29 @@ class Importer(object):
         srs.ImportFromWkt(srs0)
         #print(dst0)
         #print(ogr)
-        lyr = dst0.CreateLayer('lyr0', srs, ogr.wkbPolygon)
-        #print(lyr)
+        lyr0 = dst0.CreateLayer('lyr0', srs, ogr.wkbPolygon)
+        #print(lyr0)
 
         fd = ogr.FieldDefn('BurnYear', ogr.OFTInteger)
-        lyr.CreateField(fd)
+        lyr0.CreateField(fd)
         fd = ogr.FieldDefn('BurnDate', ogr.OFTInteger)
-        lyr.CreateField(fd)
+        lyr0.CreateField(fd)
+        fd = ogr.FieldDefn('area_sqkm', ogr.OFTReal)
+        lyr0.CreateField(fd)
         fld = 1  #second field
 
-        gdal.Polygonize(b, m, lyr, fld, [], callback=None)
-        lyr.SetNextByIndex(0)
-        for feat in lyr:
-            feat.SetField('BurnYear', self.year)
+        gdal.Polygonize(b, m, lyr0, fld, [], callback=None)
+        del b, m   # band
+        del ds, dsm  # raster
 
-        del m
-        del b
-        del lyr
+        lyr0.SetNextByIndex(0)
+        for i,feat in enumerate(lyr0):
+            feat.SetField('BurnYear', self.year)
+            geom = feat.GetGeometryRef()
+            feat.SetField('area_sqkm', geom.GetArea() / 1000000)
+
+            lyr0.SetFeature(feat)
+
 
         # project
         target_projection =  '+proj=longlat +datum=WGS84 +no_defs'
@@ -592,6 +598,7 @@ class Importer(object):
         srs1 = osr.SpatialReference()
         srs1.ImportFromProj4(target_projection)
         dst = transform_coordinates(dst0, srs1, drv, oname=oname)
+        del lyr0
         del dst0
 
         return dst
