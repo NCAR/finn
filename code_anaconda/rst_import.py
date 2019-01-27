@@ -41,7 +41,7 @@ config_datacat = dict(
             # extra options for merge
             mrg_opt = [''],
             rsmp_alg = 'mode',
-            re_bname = re.compile('^MCD12Q1.A\d\d\d\d001'),
+            re_bname = re.compile('^MCD12Q1.A(\d\d\d\d)001'),
             ),
         vcf = dict( 
             # hdf layer names
@@ -55,7 +55,7 @@ config_datacat = dict(
             # extra options for merg
             mrg_opt = ['-separate'],
             rsmp_alg = 'average',
-            re_bname = re.compile('^MOD44B.A\d\d\d\d065'),
+            re_bname = re.compile('^MOD44B.A(\d\d\d\d)065'),
             ),
         bdt = dict( 
             # hdf layer names
@@ -65,7 +65,7 @@ config_datacat = dict(
             # extra options for merge
             mrg_opt = [''],
             rsmp_alg = 'mode',
-            re_bname = re.compile('^MCD64A1.A\d\d\d\d\d\d\d'),
+            re_bname = re.compile('^MCD64A1.A(\d\d\d\d)\d\d\d'),
             ),
 )
 
@@ -130,8 +130,8 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
     if fn_censor is None:
         srs0 = osr.SpatialReference()
         srs0.ImportFromProj4('+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181  +units=m +no_defs') 
-        print(srs)
-        print(srs0)
+        #print(srs)
+        #print(srs0)
         # this IsSame doesnt work...
         if srs.IsSame(srs0):
             # given y coord, i can calculate length of the parallel.
@@ -298,15 +298,25 @@ def save_as_shp(ds, oname):
 
 
 
-def transform_coordinates(ds, srs):
+def transform_coordinates(ds, srs, drv=None, oname=None):
 
+    print('trnscoord')
     # create target dataset
-    drv = ds.GetDriver()
-    ds1 = drv.CreateDataSource(ds.GetName())# + '_p')
+    if drv is None:
+        drv = ds.GetDriver()
+    if oname is None:
+        oname = ds.GetName()
+    if os.path.exists(oname):
+        drv.DeleteDataSource(oname)
+    ds1 = drv.CreateDataSource(oname)
+    #print(ds1)
     lyr0 = ds.GetLayer()
     lyr0.SetNextByIndex(0)
     lyr1 = ds1.CreateLayer('', srs, ogr.wkbPolygon)
+    #print(lyr1)
     defn0 = lyr0.GetLayerDefn()
+    #print(defn0)
+    #print(defn0.GetFieldCount())
     for i in range(defn0.GetFieldCount()):
         fdefn = defn0.GetFieldDefn(i)
         lyr1.CreateField(fdefn)
@@ -350,6 +360,7 @@ class Importer(object):
                 m = v['re_bname'].match(bname)
                 if m:
                     datacat = k
+                    year = m.group(1)
                     break
             if datacat is None:
                 raise RuntimeError('Importer: cannot determine data category from file names')
@@ -359,9 +370,14 @@ class Importer(object):
         self.mrg_opt = config_datacat[datacat]['mrg_opt']
         self.rsmp_alg = config_datacat[datacat]['rsmp_alg']
         self.re_bname = config_datacat[datacat]['re_bname']
+        self.year = int(year)
 
     def work_import(self, tifnames, skelton, tag, dryrun=False):
         """Import raster data into PostGIS"""
+
+        if 'bdt' in self.shortnames:
+            print("Import of Burned Area raster is not supported by rst_import tool.  Merged shape files are created instead.")
+            return
 
 
         def mkskel(skelton=skelton, tag=tag):
@@ -376,7 +392,7 @@ class Importer(object):
             # populate table
             cmd = 'shp2pgsql -d -s 4326 -I'.split()
             cmd += [tmpname, dstname]
-            print(cmd)
+            #print(cmd)
             p1 = subprocess.Popen(cmd, stdout=subprocess.PIPE)
             p2 = subprocess.Popen(['psql',], stdin=p1.stdout)
             p2.communicate()
@@ -445,7 +461,7 @@ class Importer(object):
             for l in o_lvls:
                 cmd = ['psql', '-c']
                 cmd += [ "SELECT ST_CreateOverview('%s'::regclass, 'rast', %s);" %  (dstname, l)]
-                print(cmd)
+                #print(cmd)
                 subprocess.run(cmd)
 
             # make skelton table
@@ -471,7 +487,7 @@ class Importer(object):
             sdsnames = [get_sdsname(_, fname) for _ in lyrnames]
             #tiffopt = ['-co %s' % _ for _ in tiffopts]
             tiffopt = list(itertools.chain.from_iterable(['-co', _] for _ in  tiffopts))
-            print(tiffopt)
+            #print(tiffopt)
 
             params = dict(
                 file=tifname,
@@ -502,7 +518,86 @@ class Importer(object):
 
 
 
+    def work_polygonize(self, tifnames, dstdir, bname, dryrun=False):
+        # create vrt first, and then generate tiled warped files
+        if not os.path.exists(dstdir): os.makedirs(dstdir)
+
+        # create vrtual dataset
+        vrtname = os.path.join(dstdir, 'src.vrt')
+        #cmd = 'gdalbuildvrt %s %s'  % ( vrtname, ' '.join(tifnames))
+        # anaconda on win had trouble with long command line, ,so rewrote with -input_file_ist
+        with open('tifnames.txt','w') as f:
+            f.write('\n'.join(tifnames) + '\n')
+        cmd = 'gdalbuildvrt %s -input_file_list %s'  % ( vrtname, 'tifnames.txt')
+        status = os.system(cmd)
+        if status != 0:
+            raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+
+        # open the unified band
+        ds = gdal.Open(vrtname)
+        srs0 = ds.GetProjection()
+        #print(srs0)
+        #print(ds)
+        b = ds.GetRasterBand(1)
+
+        # create mask band
+        # valid data are 1-366.  0 is unbunred, -1 fill, -2 water
+        # mask file should has 1 for valid, 0 for invalid
+        drv = gdal.GetDriverByName('MEM')
+        dso = drv.CreateCopy('mem0', ds)
+        m = dso.GetRasterBand(1)
+        arr = m.ReadAsArray()
+        arr[arr<0] = 0
+        m.WriteArray(arr)
+
+        oname0 = os.path.join(dstdir, '.'.join([bname, 'sinu','shp']))
+        oname = os.path.join(dstdir, '.'.join([bname, 'shp']))
+        #print(oname0)
+        #print(oname)
+
+        # output shapefile
+        #drv = ogr.GetDriverByName('Memory')
+        drv = ogr.GetDriverByName('ESRI Shapefile')
+        if os.path.exists(oname0):
+            drv.DeleteDataSource(oname0)
+        dst0 = drv.CreateDataSource(oname0)
+        srs = osr.SpatialReference()
+        srs.ImportFromWkt(srs0)
+        #print(dst0)
+        #print(ogr)
+        lyr = dst0.CreateLayer('lyr0', srs, ogr.wkbPolygon)
+        #print(lyr)
+
+        fd = ogr.FieldDefn('BurnYear', ogr.OFTInteger)
+        lyr.CreateField(fd)
+        fd = ogr.FieldDefn('BurnDate', ogr.OFTInteger)
+        lyr.CreateField(fd)
+        fld = 1  #second field
+
+        gdal.Polygonize(b, m, lyr, fld, [], callback=None)
+        lyr.SetNextByIndex(0)
+        for feat in lyr:
+            feat.SetField('BurnYear', self.year)
+
+        del m
+        del b
+        del lyr
+
+        # project
+        target_projection =  '+proj=longlat +datum=WGS84 +no_defs'
+
+        drv = ogr.GetDriverByName('ESRI Shapefile')
+        if os.path.exists(oname):
+            drv.DeleteDataSource(oname)
+        srs1 = osr.SpatialReference()
+        srs1.ImportFromProj4(target_projection)
+        dst = transform_coordinates(dst0, srs1, drv, oname=oname)
+        del dst0
+
+        return dst
+
     def work_resample_pieces(self, tifnames, dstdir, bname, hdfnames, dryrun=False):
+
         # create vrt first, and then generate tiled warped files
         if not os.path.exists(dstdir): os.makedirs(dstdir)
 
@@ -522,6 +617,10 @@ class Importer(object):
         srs1.ImportFromProj4(target_projection)
         ds_skelton = transform_coordinates(ds_skelton, srs1)
         #save_as_shp(ds_skelton, 'skely1.shp')
+
+        if 'bdt' in self.shortnames:
+            dso = self.work_polygonize(tifnames, dstdir, bname, dryrun)
+            return [dso], ds_skelton
         
         intersector = Intersecter(ds_skelton)
 
