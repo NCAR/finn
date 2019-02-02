@@ -134,7 +134,7 @@ docker stop finn
 To start the container again and continue your work,
 
 ```bash
-docker stop finn
+docker start finn
 ```
 
 #### More container management
