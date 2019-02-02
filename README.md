@@ -25,7 +25,8 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Toolbox`, `Docker Quickstart Terminal` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Desktop`, `Git Bash` should work with path without manually editing but for some reason i still have to edit manually.  (**TODO** figure out why, come up with fix?  Or stick with manual editing of path for `Docker Desktop`)
+(Windows) With `Docker Toolbox`, it is recommended to use `Docker Quickstart Terminal` to run docer commands, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects.   
+With `Docker Desktop`, `Powershell` is recommended, Windows path may interfere with docker.  Special instruction is given for such case.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
@@ -68,11 +69,18 @@ mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows/Mac)
-```bash
+(Windows with Powershell)
+```powershell
+# Create named volume to store the database
 docker volume create pg_data
-docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+
+# Function to convert windows path to what docker likes
+filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
+
+# Create docker container and start
+docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
+
 
 To verify that the container is running, type `docker ps`. 
 You should see the container listed with a unique container id, the name "finn" and some other information. 
