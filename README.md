@@ -101,6 +101,7 @@ You should see the container listed with a unique container id, the name "finn" 
   Makes the container be detached from the terminal you created container (makes it a daemon)
 * `-e EARTHDATAUSER=yourusename` and `-e EARTHDATAPW=yourpassword`
   The code has functionality to download MODIS raster data from [Earthdata website](https://earthdata.nasa.gov/), and they require you to register to do that.  Create one if you plan to use MODIS raster directly downloaded from Earthdata website.
+* `finn` at the end refers to docker image `finn` created by `docker build` command earlier.
 
 #### Start Jupyter Notebook from the container
 
