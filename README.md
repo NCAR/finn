@@ -148,6 +148,26 @@ This notebook runs FINN (press Shift+Enter to run a cell), including the compone
 
 Execute the cells of the notebook to run the analysis.
 
+### 7. Backup/Restore
+
+Databese backup can be done with `pg_dump` command.
+
+`docker exec finn sudo -u postgres pg_dump finn -f /home/finn/finn.dmp`
+
+This created a postgresql dump file (text file with SQL command to restore data) in /home/finn, which is the same as where you downloaded finn from GitHub.
+
+Restoration can be done with `psql` command with the dump file.
+
+```powershell
+# create new docker container 'finn_testrestore' to restore database
+docker run --name finn_testrestore -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+
+# restore the database
+docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dmp
+
+# confirmed that output shp and csv can be exported without running analysis.
+```
+
 ## Turorial
 
 [Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  It explains purpose of each sample cases.
