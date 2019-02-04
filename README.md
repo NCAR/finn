@@ -19,15 +19,16 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
 * QGIS  
   https://qgis.org 
   
-  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directory see the PostGIS database to QA the processing.
+  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.
 
 * Git
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) To issue commands in this instructions, you can use any one of `Powershell`, `Command Prompt`, `Git Bash` (comes with Git).  If you use `Docker Toolbox`, it comes with `Docker Quickstart Terminal` as well.  With `Docker Desktop`, `Git Bash` is recommended, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects. In `Powershell` and `Command Prompt` you have to do this conversion manually.  With `Docker Toolbox`, `Docker Quickstart Terminal` is convenient.
+(Windows) With `Docker Toolbox`, it is recommended to use `Docker Quickstart Terminal` to run docer commands, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects.   
+With `Docker Desktop`, `Powershell` is recommended, Windows path may interfere with docker.  Special instruction is given for such case.
 
-### 2. (Windowd/Mac) Customize virtual machine
+### 2. (Windows/Mac) Customize virtual machine
 
 Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application. 
 
@@ -68,11 +69,18 @@ mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows/Mac)
-```bash
+(Windows with Powershell)
+```powershell
+# Create named volume to store the database
 docker volume create pg_data
-docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+
+# Function to convert windows path to what docker likes
+filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
+
+# Create docker container and start
+docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
+
 
 To verify that the container is running, type `docker ps`. 
 You should see the container listed with a unique container id, the name "finn" and some other information. 
@@ -93,6 +101,7 @@ You should see the container listed with a unique container id, the name "finn" 
   Makes the container be detached from the terminal you created container (makes it a daemon)
 * `-e EARTHDATAUSER=yourusename` and `-e EARTHDATAPW=yourpassword`
   The code has functionality to download MODIS raster data from [Earthdata website](https://earthdata.nasa.gov/), and they require you to register to do that.  Create one if you plan to use MODIS raster directly downloaded from Earthdata website.
+* `finn` at the end refers to docker image `finn` created by `docker build` command earlier.
 
 #### Start Jupyter Notebook from the container
 
@@ -125,7 +134,7 @@ docker stop finn
 To start the container again and continue your work,
 
 ```bash
-docker stop finn
+docker start finn
 ```
 
 #### More container management
@@ -138,6 +147,26 @@ To open the notebook, navigate to the `work_testOTS_092018/` directory and open 
 This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data. 
 
 Execute the cells of the notebook to run the analysis.
+
+### 7. Backup/Restore
+
+Databese backup can be done with `pg_dump` command.
+
+`docker exec finn sudo -u postgres pg_dump finn -f /home/finn/finn.dmp`
+
+This created a postgresql dump file (text file with SQL command to restore data) in /home/finn, which is the same as where you downloaded finn from GitHub.
+
+Restoration can be done with `psql` command with the dump file.
+
+```powershell
+# create new docker container 'finn_testrestore' to restore database
+docker run --name finn_testrestore -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+
+# restore the database
+docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dmp
+
+# confirmed that output shp and csv can be exported without running analysis.
+```
 
 ## Turorial
 
