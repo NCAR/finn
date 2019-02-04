@@ -39,6 +39,13 @@ COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
 # default database settings
 ENV POSTGRES_USER=finn \
     POSTGRES_PASS=finn \
-    POSTGRES_DBNAME=finn
+    POSTGRES_DBNAME=finn \
+    PGDATABASE=finn \
+    PGUSER=finn \
+    PGPASSWORD=finn \
+    PGHOST=localhost \
+    PGPORT=5432
+
+RUN echo "psql -d finn -c 'CREATE LANGUAGE plpython3u;'" >> /docker-entrypoint.sh
 
 ENTRYPOINT /docker-entrypoint.sh
