@@ -17,8 +17,8 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product)
 
 * QGIS  
-  https://qgis.org 
-  
+  https://qgis.org
+
   A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.
 
 * Git
@@ -30,7 +30,7 @@ With `Docker Desktop`, `Powershell` is recommended, Windows path may interfere w
 
 ### 2. (Windows/Mac) Customize virtual machine
 
-Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application. 
+Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application.
 
 **TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure a large enough virtual storage.*
 
@@ -61,7 +61,9 @@ To verify that the image is created, type `docker image ls`.  `finn` should be l
 
 #### Create and start
 
-Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container. 
+Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
+In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).
+If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/
 
 (Linux)
 ```bash
@@ -82,8 +84,8 @@ docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var
 ```
 
 
-To verify that the container is running, type `docker ps`. 
-You should see the container listed with a unique container id, the name "finn" and some other information. 
+To verify that the container is running, type `docker ps`.
+You should see the container listed with a unique container id, the name "finn" and some other information.
 
 :information_source:  Below the meaning of each options for `docker run`.
 
@@ -105,15 +107,15 @@ You should see the container listed with a unique container id, the name "finn" 
 
 #### Start Jupyter Notebook from the container
 
-Once the container is running, you can launch a jupyter notebook using `docker exec`: 
+Once the container is running, you can launch a jupyter notebook using `docker exec`:
 
 ```
 docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --notebook-dir /home/finn
 ```
 
 Then, go to `localhost:8888/?token=...` in a web browser to open the notebook interface, pasting the token that is printed in the termainal in place of `...`.
-For example: `localhost:8888/?token=6d87327966c2769ea5a8d2da792e34127ac7dca29f78133d` (though your token will be different). 
-If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address. 
+For example: `localhost:8888/?token=6d87327966c2769ea5a8d2da792e34127ac7dca29f78133d` (though your token will be different).
+If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address.
 
 The fourth word in the command `finn` refers to container name you careated in `docker run` command.  If you use different `--name`, use the name here.
 
@@ -121,7 +123,7 @@ See "Running the notebook" section below for actually running the tool.
 
 #### Stop
 
-When you are done for the day, you stop container.  First stop the Jupyter Notebook application by typing `ctrl+C` in the terminal that started the Notebook.  Then use following command. 
+When you are done for the day, you stop container.  First stop the Jupyter Notebook application by typing `ctrl+C` in the terminal that started the Notebook.  Then use following command.
 
 ```bash
 docker stop finn
@@ -144,7 +146,7 @@ docker start finn
 ### 6. Running the notebook
 
 To open the notebook, navigate to the `work_testOTS_092018/` directory and open `main_testOTS_092018.ipynb`.  
-This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data. 
+This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data.
 
 Execute the cells of the notebook to run the analysis.
 
