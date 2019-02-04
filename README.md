@@ -62,7 +62,9 @@ To verify that the image is created, type `docker image ls`.  `finn` should be l
 #### Create and start
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
-In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).
+
+
+**Note:** In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).
 If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/
 
 (Linux)
@@ -105,6 +107,7 @@ You should see the container listed with a unique container id, the name "finn" 
   The code has functionality to download MODIS raster data from [Earthdata website](https://earthdata.nasa.gov/), and they require you to register to do that.  Create one if you plan to use MODIS raster directly downloaded from Earthdata website.
 * `finn` at the end refers to docker image `finn` created by `docker build` command earlier.
 
+
 #### Start Jupyter Notebook from the container
 
 Once the container is running, you can launch a jupyter notebook using `docker exec`:
@@ -113,35 +116,24 @@ Once the container is running, you can launch a jupyter notebook using `docker e
 docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --notebook-dir /home/finn
 ```
 
-Then, go to `localhost:8888/?token=...` in a web browser to open the notebook interface, pasting the token that is printed in the termainal in place of `...`.
-For example: `localhost:8888/?token=6d87327966c2769ea5a8d2da792e34127ac7dca29f78133d` (though your token will be different).
+You should see something like the following in your terminal:
+
+```bash
+...
+Or copy and paste one of these URLs:
+        http://(604ea0e75121 or 127.0.0.1):8888/?token=a7217f195e3cdbfdf...
+```
+
+Copy your url, and replace the content in the parentheses with localhost
+in a web browser, e.g.,
+
+`http://localhost:8888/?token=a7217f195e3cdbfdf856eacbbd05abe54a7fca4a30f72503`
+
+Note that your token (the part after `token=...`) will be different.
+
 If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address.
 
-The fourth word in the command `finn` refers to container name you careated in `docker run` command.  If you use different `--name`, use the name here.
-
 See "Running the notebook" section below for actually running the tool.
-
-#### Stop
-
-When you are done for the day, you stop container.  First stop the Jupyter Notebook application by typing `ctrl+C` in the terminal that started the Notebook.  Then use following command.
-
-```bash
-docker stop finn
-```
-
-`finn` here refers to the name of container, the `--name` option you used in `docker run`.  `docker ps` shows all running containers (or  `docker container ls`).  Use `docker ps -a` to see all container including ones that is stopped.
-
-#### Start again
-
-To start the container again and continue your work,
-
-```bash
-docker start finn
-```
-
-#### More container management
-
-**TODO** *a wiki page for `docker rm`, `docker inspect`, or link to suitable webpage*
 
 ### 6. Running the notebook
 
@@ -170,6 +162,51 @@ docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dm
 # confirmed that output shp and csv can be exported without running analysis.
 ```
 
-## Turorial
+## Tutorial
 
 [Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  It explains purpose of each sample cases.
+
+
+### Just in case: starting, stopping, and deleting Docker containers
+
+Sometimes you may want to stop the container, and start it again.
+
+#### Stopping the container
+
+When you are done for the day, you stop container.  
+First stop the Jupyter Notebook application by typing `ctrl+C` in the
+terminal that started the Notebook.  Then use following command.
+
+```bash
+docker stop finn
+```
+
+`finn` here refers to the name of container, the `--name` option you used
+in `docker run`.  `docker ps` shows all running containers (or
+`docker container ls`).  Use `docker ps -a` to see all container including ones
+that is stopped.
+
+#### Start again
+
+To start the container again and continue your work,
+
+```bash
+docker start finn
+```
+
+#### List running containers
+
+If you're not sure whether there are any Docker containers currently running,
+you can check with:
+
+```bash
+docker ps
+```
+
+#### Removing the container
+
+To permanently delete the FINN container, you can use:
+
+```bash
+docker rm finn
+```
