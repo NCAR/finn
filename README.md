@@ -167,6 +167,18 @@ docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dm
 [Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  It explains purpose of each sample cases.
 
 
+## Removing raw MODIS imagery and intermediate data
+
+If you need to remove files to free up hard disk space after running the
+FINN preprocessor, you can do so by running the following commands in a
+cell at the end of a Jupyter notebook:
+
+```python
+!rm -rf ../downloads/
+!rm -rf ../proc_rst*
+```
+
+
 ### Just in case: starting, stopping, and deleting Docker containers
 
 Sometimes you may want to stop the container, and start it again.
