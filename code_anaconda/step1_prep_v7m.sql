@@ -850,7 +850,7 @@ end $$;
 -- dup tropics
 insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident)
 select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident from work_pnt
-where abs(lat) <= 30 and instrument = 'MODIS'
+where abs(lat) <= 23.5 and instrument = 'MODIS'
 ;
 do language plpgsql $$ begin
 raise notice 'tool: duplicating tropics done, %', clock_timestamp();
