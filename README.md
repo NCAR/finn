@@ -63,6 +63,7 @@ To verify that the image is created, type `docker image ls`.  `finn` should be l
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
 In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).
+If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/
 
 (Linux)
 ```bash
