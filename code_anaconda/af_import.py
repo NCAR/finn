@@ -78,11 +78,27 @@ import psycopg2
 def check_raster_contains_fire(rst, fire):
     dct = dict(rst=rst, fire=fire)
     conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+
+    # count # of fires is af_in file
     cur = conn.cursor()
     cur.execute("""select count(*) from %(fire)s;""" % dct)
     nfire = cur.fetchall()[0][0]
-    cur.execute("""select count(*) from %(rst)s a, %(fire)s b where  ST_Contains(a.geom , b.geom);""" % dct)
-    ncnt = cur.fetchall()[0][0]
+
+    # see if skel file exists
+    # got this technique from here 
+    # https://stackoverflow.com/questions/20582500/how-to-check-if-a-table-exists-in-a-given-schema
+    # hope this works...
+    has_skel = True
+    try:
+        cur.execute("""SELECT '%(rst)s'::regclass;""" % dct)
+    except psycopg2.ProgrammingError:
+        has_skel = False
+        ncnt = 0
+
+    if has_skel:
+        cur.execute("""select count(*) from %(rst)s a, %(fire)s b where  ST_Contains(a.geom , b.geom);""" % dct)
+        ncnt = cur.fetchall()[0][0]
+
     nob = nfire - ncnt
     return dict(n_fire=nfire, n_containd = ncnt, n_not_contained= nob)
 
