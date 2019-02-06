@@ -1,3 +1,10 @@
-downloads
 code_anaconda
+downloads
+images
+sample_datasets
+work_*
+proc_*
 
+# i may have database backup, which i most likely call with these extensions
+*.dmp
+#*.sql  # ok, dont call dump this sql
