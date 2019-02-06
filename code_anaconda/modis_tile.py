@@ -8,6 +8,12 @@ import ogr
 import osr
 from shapely.geometry import Polygon
 
+fileloc = os.path.realpath(__file__)
+
+
+lst_lct =  'lst.MCD12Q1.txt'
+lst_vcf =  'lst.MOD44B.txt'
+
 proj_wgs =  '+proj=longlat +datum=WGS84 +no_defs'
 proj_sinu = '+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181  +units=m +no_defs'
 
@@ -21,20 +27,20 @@ def censor_sinu(p):
     p[..., 0] = np.where(  np.abs(p[..., 0]) > .5 * len_parallel , .5 * len_parallel * np.sign(p[..., 0]), p[...,0])
     return p
 
-def land_tiles():
+def land_tiles(tilelist = lst_lct):
     lst = []
-    if os.path.exists('lst.MCD12Q1.txt'):
-        lst = [re.sub(r'^.*\.(h..v..)\..*$', r'\1', _.strip()) for _ in open('lst.MCD12Q1.txt')]
+    if os.path.exists(tilelist):
+        lst = [re.sub(r'^.*\.(h..v..)\..*$', r'\1', _.strip()) for _ in open(tilelist)]
     return lst
 
 def mk_tiles():
-    landtiles = land_tiles()
+    tiles_lct = land_tiles(lst_lct)
+    tiles_vcf = land_tiles(lst_vcf)
+    print(len(tiles_lct))
+    print(len(tiles_vcf))
 
     x = np.linspace(- np.pi * r, np.pi * r, nh + 1)
     y = np.linspace( .5 * np.pi * r, - .5 * np.pi * r, nv + 1)
-
-    if os.path.exists('lst.MCD12Q1.txt'):
-        lst = [re.sub('^.*\.(h..v..)\..*$', '\1', _) for _ in open('lst.MCD12Q1.txt')]
 
     #num = 1200 # 1km
     #num = 200 # .05deg
@@ -100,13 +106,15 @@ def mk_tiles():
             if poly.area == 0:
                 continue
 
-            landtile = 1 if tilename in landtiles else 0
+            lct = 1 if tilename in tiles_lct else 0
+            vcf = 1 if tilename in tiles_vcf else 0
             # store
             dat.append(
                     dict(
                         h = h, v = v,
                         tilename = tilename,
-                        landtile= landtile,
+                        lct= lct,
+                        vcf= vcf,
                         geom = poly,
                         )
                     )

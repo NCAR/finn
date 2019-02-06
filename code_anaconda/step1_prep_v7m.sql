@@ -827,7 +827,7 @@ for myrow in select table_name from af_ins order by table_name loop
 			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
 				mins:= substring(acq_time, 3, 2)::int) ,
 			case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
-		((satellite=''T'' or satellite=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
+		((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
 		from ' || myrow.table_name || ';';
 		--confidence >= 20 --modis
 		--confidence != \'l\' -- viirs
