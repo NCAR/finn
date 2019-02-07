@@ -25,14 +25,11 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) With `Docker Toolbox`, it is recommended to use `Docker Quickstart Terminal` to run docer commands, as it emulates Linux behavior.  For example, "C:\Users" is changed to "/c/Users" which is what Decker expects.   
-With `Docker Desktop`, `Powershell` is recommended, Windows path may interfere with docker.  Special instruction is given for such case.
+(Windows) `Powershell` is recommended. Windows path may interfere with docker.  For exampple, "C:\Users" is changed to "/c/Users".  Special function docker-path is provided to do this translation as needed.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
-Not needed in order to run the first sample case "testOTS_092018".  To work with larger data set, extra configuration is needed for Windows/Mac application.
-
-**TODO** *something short nice here, or a link to instruction specific to each environment.  Needs to secure a large enough virtual storage.*
+Windows/Mac requires customization of Docker environment.  Specific instuction for Docker Desktop can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.
 
 ### 3. Acquiring this repository
 
