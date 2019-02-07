@@ -23,6 +23,7 @@ import datetime
 import subprocess
 import shlex
 import itertools
+from importlib import reload
 
 import gdal
 import ogr
@@ -30,6 +31,9 @@ import osr
 from shapely.geometry import Polygon
 import shapely
 import numpy as np
+
+import modis_tile
+
 
 # supported data category
 config_datacat = dict(
@@ -91,17 +95,71 @@ def get_sdsname(lyrname, fname):
 
     # find subdataset whose name is ending with :lyrname
     sds = [_ for _ in sdss if _[0][-(len(lyrname)+1):] == (':' + lyrname)]
-    try:
-        assert len(sds) == 1
-    except AssertionError:
-        print('cant find subdataset :%s' % lyrname)
-        for i, s in enumerate(sdss):
-            print(i, s)
-        raise
+    if len(sds) == 0:
+        # didnt find the lyrname.
+        # see if i can find "lyrname"
+        sds = [_ for _ in sdss if _[0][-(len(lyrname)+2+1):] == (':"' + lyrname + '"')]
+
+        if len(sds) != 1:
+            print('cant find subdataset :%s' % lyrname)
+            for i, s in enumerate(sdss):
+                print(i, s)
+            raise RuntimeError("cannot find lyrname: %s" % lyrname)
 
     sds = sds[0]
     sdsname = sds[0]
     return sdsname
+
+def gdal_vernum_sys():
+    """gets gdal verion from command line, not the python binding"""
+    p = subprocess.run(['gdal-config', '--version'], stdout=subprocess.PIPE)
+    v = p.stdout.decode()  # eg '2.3.2'
+    v = v.split('.')
+    o = []
+    for x in v:
+        try:
+            o.append(int(x))
+        except ValueError:
+            break
+    return o
+
+def prep_modis_tile():
+    reload(modis_tile)
+    schema_rst = 'raster'
+
+    # make sure schema for raster exists
+    create_schema = ["psql", "-c", 'CREATE SCHEMA IF NOT EXISTS %s;' % schema_rst]
+    subprocess.run(create_schema, stdout=subprocess.PIPE)
+
+
+    # get the wireframe
+    shpname = 'tile_wgs.shp'
+    tblname = 'wireframe'
+
+    drop_table = ["psql", "-c", 'DROP TABLE IF EXISTS %s.%s;' % (schema_rst, tblname)]
+    subprocess.run(drop_table, stdout=subprocess.PIPE)
+
+    ds = modis_tile.main(silent=True)
+    modis_tile.save_as_shp(ds, shpname)
+
+    dbname = os.environ.get('PGDATABASE', 'finn')
+    cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
+    cmd += [ "PG:dbname='%s'" % dbname]
+    vn = gdal_vernum_sys()
+    if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
+        cmd += '-lco SPATIAL_INDEX=GIST'.split()
+    else:
+        cmd += '-lco SPATIAL_INDEX=YES'.split()
+    cmd += ('-lco SCHEMA='+schema_rst).split()
+#    cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
+    cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
+    cmd += ['-nln', tblname]
+    cmd += [shpname]
+
+    subprocess.run(cmd, check=True)
+
+
+
 
 def censor_sinu(p):
     r = 6371007.181 
@@ -300,7 +358,6 @@ def save_as_shp(ds, oname):
 
 def transform_coordinates(ds, srs, drv=None, oname=None):
 
-    print('trnscoord')
     # create target dataset
     if drv is None:
         drv = ds.GetDriver()

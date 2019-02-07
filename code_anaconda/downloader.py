@@ -1,4 +1,5 @@
 import subprocess, glob, os
+import re
 import six
 import numpy as np
 from pyproj import Proj
@@ -8,6 +9,11 @@ import requests
 from urllib.parse import urlparse
 import modis_tile
 import psycopg2
+from importlib import reload
+
+
+import af_import
+
 
 
 default_droot = 'downloads'
@@ -45,11 +51,14 @@ def download_one(url, droot=None, ddir=None):
     cmd.append(url)
     subprocess.run(cmd, check=True)
 
-def download_only_needed(url, pnts, droot=default_droot):
-    """get list of points and grab only tiles that cover points"""
+def download_only_needed(url, tiles=None, region=None, region_knd=None, droot=default_droot):
+    """get list of tiles or points and grab only tiles that cover points"""
 
-    # based on lon/lat of points, identify tiles needed
-    tiles = find_needed_tiles(pnts)
+    if tiles is None:
+        if region is None:
+            raise RuntimeError('have to specify either tiles or region')
+        # based on lon/lat of points, identify tiles needed
+        tiles = find_needed_tiles(data=region, knd=region_knd, return_details=False)
 
     # get list of all files from the url
     flst = get_filelist(url)
@@ -134,49 +143,179 @@ def get_filelist(url):
     filelist = [_ for _ in filelist if '/' not in _]
     return filelist
 
-    
+def find_table_indb(schema, table):
+    st = '"%s"."%s"' % (schema, table)
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+    try:
+        cur.execute("""SELECT '%s'::regclass;""" % st)
+    except psycopg2.ProgrammingError as e:
+        # no such table
+        return False
+    return True
 
-def find_needed_tiles(lnglat):
+def find_tiles_indb(data, knd='lnglat', tag_lct=None, tag_vcf=None):
+
+    tiles = find_needed_tiles(data, knd, return_details=True)
+
+
+    if isinstance(tiles, list):
+        # join into one dict if 'tiles' is list of dict
+        def append(a, b):
+            for k,v in b.items():
+                if k in a:
+                    vv = a[k]
+                    vv['count'] += v['count']
+                else:
+                    a[k] = v
+
+        my_tiles = dict()
+        for x in tiles:
+            append(my_tiles, x)
+        tiles = my_tiles
+
+    assert isinstance(tiles, dict)
+
+    # get name of tiles which is aleady in db
+    re_tileid = re.compile('\.(h\d\dv\d\d)\.')
+    def tileindb(tag):
+        conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+        cur = conn.cursor()
+        st = 'raster."skel_rst_%s"' % tag
+        try:
+            cur.execute("""SELECT '%s'::regclass;""" % st)
+        except psycopg2.ProgrammingError as e:
+            # no such table
+            return []
+
+        cur.execute("""select name from raster."skel_rst_%s";""" % tag)
+        tiles = [_[0] for _ in cur.fetchall()]
+        tiles = [re_tileid.search(_) for _ in tiles]
+        assert all(tiles)
+        tiles = [_.groups()[0] for _ in tiles]
+        return tiles
+
+    tileindb_lct = tileindb(tag_lct)
+    tileindb_vcf = tileindb(tag_vcf)
+
+    # count of AF points:
+    n_tot = 0  #total
+    n_ok = 0 # either tile is in db, or no tile to start with (ocean)
+    n_need = 0 # need to be downloaded
+    # name of all tiles that is needed to cover fire, but only ones that's actually have LCT/VCF raster tile
+    tiles_required_lct = []
+    tiles_required_vcf = []
+    # name of tiles that is included above but not yet imported into db
+    tiles_missing_lct = []
+    tiles_missing_vcf = []
+    for k in tiles:
+        n_tot += tiles[k]['count']
+        mis=False
+        if tiles[k]['av_lct']:
+            tiles_required_lct +=[k]
+            if k not in tileindb_lct:
+                mis=True
+                tiles_missing_lct +=[k]
+        if tiles[k]['av_vcf']:
+            tiles_required_vcf +=[k]
+            if k not in tileindb_vcf:
+                mis=True
+                tiles_missing_vcf +=[k]
+        if mis:
+            n_need += tiles[k]['count']
+        else:
+            n_ok += tiles[k]['count']
+    return dict(n_tot=n_tot, n_ok=n_ok, n_need=n_need, 
+            tiles_missing_lct=tiles_missing_lct, 
+            tiles_missing_vcf=tiles_missing_vcf, 
+            tiles_required_lct=tiles_required_lct, 
+            tiles_required_vcf=tiles_required_vcf, 
+            )
+            
+
+
+def find_needed_tiles(data, knd='lnglat', return_details=False):
     
     is_poly = False
 
-    if isinstance(lnglat, six.string_types):
-        # assume it's path
-        if os.path.exists(lnglat):
-            # its not path either
-            lnglat = ogr.Open(lnglat)
-        # or is it wkt?
-        else:
-            geom = ogr.CreateGeometryFromWkt(lnglat)
-            if geom is None:
-                raise RuntimeError('lnglat is neither filepath/wtk: %s' % lnglat)
-            else:
-                if geom.GetGeometryType() == ogr.wkbPolygon:
-                    is_poly = True
-                    lnglat = geom
-                else:
-                    raise RuntimeError('wkt in unsopported geomtype: %s' % geom.GetGeometryName())
+    if knd == 'lnglat':
+        lnglat = data
 
-    if isinstance(lnglat, ogr.DataSource):
-        lyr = lnglat.GetLayer()
+    elif knd == 'ds':
+
+        ds = data
+        # can be a path to ogr data source file
+        if isinstance(ds, six.string_types):
+            if not os.path.exists(ds):
+                raise RuntimeError('ds doesnt exist: %s' % ds)
+            # its not path either
+            ds = ogr.Open(ds)
+
+        if not isinstance(ds, ogr.DataSource):
+            raise RuntimeError('ds is not ogr Data source or path' % repr(ds))
+
+        lyr = ds.GetLayer()
         geomtyp = lyr.GetGeomType()
         if geomtyp == ogr.wkbPoint:
             print('reading shp file ...', end=' ', flush=True)
             coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in lnglat.GetLayer(0)])
             print('Done')
             lnglat = coords
-            
         elif geomtyp == ogr.wkbPolygon:
             # its polygon feaure
             is_poly = True
 
-    if is_poly:
-        return find_needed_tiles_polygons(lnglat)
+    elif knd == 'wkt': 
+        wkt = data
+        geom = ogr.CreateGeometryFromWkt(wkt)
+        if geom is None:
+            raise RuntimeError('wkt unrecognized: %s' % wkt)
+        else:
+            if geom.GetGeometryType() == ogr.wkbPolygon:
+                is_poly = True
+                lnglat = geom
+            else:
+                raise RuntimeError('wkt in unsopported geomtype: %s' % geom.GetGeometryName()) 
+
+    elif knd == 'schema':
+        schema = data
+        reload(af_import)
+        if return_details:
+            
+            lnglat = af_import.get_lnglat(schema, combined=False)
+            tiles = [find_needed_tiles(data=_, knd='lnglat', return_details=return_details) for _ in lnglat]
+            # list of dict 
+            return tiles
+            
+        else:
+            lnglat = af_import.get_lnglat(schema, combined=True)
+            # list of tile names
+            return find_needed_tiles(data=lnglat, knd='lnglat', return_details=return_details)
+
     else:
-        return find_needed_tiles_points(lnglat)
+        raise('Unknown knd: %s' % knd)
 
 
-def find_needed_tiles_polygons(poly):
+    if is_poly:
+        tiles =  find_needed_tiles_polygons(lnglat,return_counts=return_details)
+    else:
+        tiles =  find_needed_tiles_points(lnglat,return_counts=return_details)
+
+    # return list of tile names
+    if not return_details: return tiles
+
+    # return dict, keys=tile names, values = dict of count,lct_av,vcf_av
+    tiles = dict((k,dict(
+        count=v, 
+        av_lct = k in modis_tile.tiles_lct, 
+        av_vcf = k in modis_tile.tiles_vcf,
+        )
+        ) for (k,v) in tiles.items())
+    return tiles
+
+
+def find_needed_tiles_polygons(poly,return_counts):
+    from collections import defaultdict
 
     #fname0 = 'modis_tile_wgs.shp'
     #tiles = modis_tile.main(silent=True)
@@ -200,9 +339,10 @@ def find_needed_tiles_polygons(poly):
 
     if isinstance(poly, ogr.Geometry):
         oo = grabber(poly)
+        oo = dict((_,1) for _ in oo)
 
     else:
-        oo = set()
+        oo = defaultdict(int)
         if isinstance(poly, ogr.DataSource):
             lyr = poly.GetLayer()
         elif isinstance(poly, ogr.Layer):
@@ -210,14 +350,17 @@ def find_needed_tiles_polygons(poly):
         for feat in lyr:
             geom = feat.GetGeometryRef()
             o = grabber(geom)
-            oo |= o
+            for x in o:
+                oo[x] += 1
 
     o = ['h%02dv%02d' % (_[0], _[1]) for _ in oo]
+    if return_counts:
+        o = dict(zip(o, cnt))
     return o
     
 
 
-def find_needed_tiles_points(lnglat):
+def find_needed_tiles_points(lnglat,return_counts):
     """given point features identify MODIS tiles needed"""
 
     # modis sinusoidal, but they may be using sphere
@@ -247,18 +390,21 @@ def find_needed_tiles_points(lnglat):
     # just need integer as tile index
     o = np.floor(o).astype(int)
 
-    def unique_rows(a):
+    def unique_rows(a,return_counts):
         a = np.ascontiguousarray(a) 
-        unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1])) 
-        return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
+        return  np.unique(a.view([('', a.dtype)]*a.shape[1]), return_counts) 
 
 
     # get  the unique tiles
-    o = unique_rows(o)
+    if return_counts:
+        o,cnt = unique_rows(o,return_counts)
+    else:
+        o = unique_rows(o,return_counts)
 
     # put the results in to hXXvXX format
     o = ['h%02dv%02d' % (_[0], _[1]) for _ in o]
-
+    if return_counts:
+        o = dict(zip(o, cnt))
     return o
 
 def tester1():
@@ -268,14 +414,14 @@ def tester1():
     import ogr
     #
     #
-    oo1 = find_needed_tiles(np.array([[-180,0],[-90,0],[0,0],[90,0],[180,0]]))
-    oo2 = find_needed_tiles(np.array([[-180,0],[-180,30], [-180,60],[-180,90]]))
-    oo3 = find_needed_tiles(np.array([[0,0],[0,30], [0,60],[0,90]]))
+    oo1 = find_needed_tiles(data=np.array([[-180,0],[-90,0],[0,0],[90,0],[180,0]]), knd='lnglat')
+    oo2 = find_needed_tiles(data=np.array([[-180,0],[-180,30], [-180,60],[-180,90]]), knd='lnglat')
+    oo3 = find_needed_tiles(data=np.array([[0,0],[0,30], [0,60],[0,90]]), knd='lnglat')
 
     ds = ogr.Open('./downloads/firms/na_2012/fire_archive_M6_34602.shp')
     coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in ds.GetLayer(0)])
 
-    tiles = find_needed_tiles(coords)
+    tiles = find_needed_tiles(data=coords, knd='lnglat')
 
 def tester2():
 
@@ -283,7 +429,7 @@ def tester2():
     ds = ogr.Open('./downloads/firms/na_2012/fire_archive_M6_34602.shp')
     coords = np.array([(_.geometry().GetX(), _.geometry().GetY())   for _ in ds.GetLayer(0)])
 
-    tiles = find_needed_tiles(coords)
+    tiles = find_needed_tiles(data=coords,knd='lnglat')
 
     testurl = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2016.01.01/' 
     flst = get_filelist(testurl)

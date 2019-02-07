@@ -1,7 +1,10 @@
 import os
 import subprocess
 from subprocess import Popen, PIPE
+import itertools
+import numpy as np
 import shlex
+import psycopg2
 
 def gdal_vernum_sys():
     """gets gdal verion from command line, not the python binding"""
@@ -22,7 +25,6 @@ def main(tag, fnames):
     if isinstance(fnames, str):
         fnames = [fnames]
     schema = 'af_' + tag
-    dstname = schema + '.' + 'af_in'
     cmd = ['psql', '-c', 
             'DROP SCHEMA IF EXISTS "%s" CASCADE;' % schema]
     subprocess.run(cmd, check=True)
@@ -32,49 +34,31 @@ def main(tag, fnames):
     subprocess.run(cmd, check=True)
 
     for i,fname in enumerate(fnames):
-        if len(fnames) == 1:
-            tblname = 'af_in'
-        else:
-            tblname = 'af_in_%d' % (i+1)
+        tblname = 'af_in_%d' % (i+1)
 
-        if False:
-            # ogr2ogr is better because this reads non-standard, larger dbf file.
-            # but i screwed up my anaconda and ogr2ogr does not load properly now
-            # so the shp2pgsql method is what i am using
-            cmd = 'shp2pgsql -d -c -s 4326 -I'.split()
-            cmd += [fname]
-            cmd += [dstname]
-            fo = open('import_%s.log' % tag, 'w')
-            p1 = Popen(cmd, stdout=PIPE)
-            p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
-            p2.communicate()
+        dbname = os.environ.get('PGDATABASE', 'finn')
+        cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
+    #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
+        #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
+        cmd += [ "PG:dbname='%s'" % dbname]
+        vn = gdal_vernum_sys()
+        if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
+            cmd += '-lco SPATIAL_INDEX=GIST'.split()
         else:
-            dbname = os.environ.get('PGDATABASE', 'finn')
-            #print(os.environ)
-            cmd = 'ogr2ogr -progress -f PostgreSQL -overwrite'.split()
-        #    if 'PGUSER' in os.environ: conn['user'] = os.environ['PGUSER']
-            #cmd += [ "PG:dbname='finn' user='postgres' password='finn'" ]
-            cmd += [ "PG:dbname='%s'" % dbname]
-            vn = gdal_vernum_sys()
-            if (vn[0] > 2 or vn[0] == 2 and vn[1] >= 4):
-                cmd += '-lco SPATIAL_INDEX=GIST'.split()
-            else:
-                cmd += '-lco SPATIAL_INDEX=YES'.split()
-            cmd += ('-lco SCHEMA='+schema).split()
-            cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
-            cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
-            cmd += ['-nln', tblname]
-            cmd += [fname]
-            print('\ncmd:\n%s\n' % ' '.join(cmd))
-            print(cmd)
-            subprocess.run(cmd, check=True)
+            cmd += '-lco SPATIAL_INDEX=YES'.split()
+        cmd += ('-lco SCHEMA='+schema).split()
+        cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
+        cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
+        cmd += ['-nln', tblname]
+        cmd += [fname]
+        print('\ncmd:\n%s\n' % ' '.join(cmd))
+        print(cmd)
+        subprocess.run(cmd, check=True)
 #            p1 = Popen(cmd)#, stdout=PIPE)
-        #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
-        #    print( p2.communicate())
+    #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
+    #    print( p2.communicate())
 #            p1.communicate()
 
-
-import psycopg2
 def check_raster_contains_fire(rst, fire):
     dct = dict(rst=rst, fire=fire)
     conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
@@ -101,6 +85,62 @@ def check_raster_contains_fire(rst, fire):
 
     nob = nfire - ncnt
     return dict(n_fire=nfire, n_containd = ncnt, n_not_contained= nob)
+
+def get_lnglat(schema, combined=False):
+    # go over af_in files in the schema, and return info
+
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+
+    # go over each af_in table
+    lst = []
+    for i in itertools.count():
+        tbl = 'af_in_%d' % (i+1)
+        st = '%s.%s' % (schema, tbl)
+        try:
+            cur.execute("""SELECT '%s'::regclass;""" % st)
+        except psycopg2.ProgrammingError as e:
+            # no such table
+            if i == 0:
+                # something is wrong..., no af_in at all??
+                raise e
+            break
+        cur.execute("""select longitude::float,latitude::float from %s;""" % st)
+        lnglat = cur.fetchall()
+        lnglat = np.array([[float(x) for x in r] for r in lnglat])
+        lst.append(lnglat)
+        
+    if combined:
+        lst = np.vstack(lst)
+    return lst
+
+
+def get_dates(schema, combined=False):
+    # go over af_in files in the schema, and return info
+
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+
+    # go over each af_in table
+    lst = []
+    for i in itertools.count():
+        tbl = 'af_in_%d' % (i+1)
+        st = '%s.%s' % (schema, tbl)
+        try:
+            cur.execute("""SELECT '%s'::regclass;""" % st)
+        except psycopg2.ProgrammingError as e:
+            # no such table
+            if i == 0:
+                # something is wrong..., no af_in at all??
+                raise e
+            break
+        cur.execute("""select acq_date from %s;""" % st)
+        dates = cur.fetchall()
+        dates = np.array([r[0] for r in dates])
+        lst.append(dates)
+    if combined:
+        lst = np.concatenate(lst)
+    return lst
 
 if __name__ == '__main__':
     import sys

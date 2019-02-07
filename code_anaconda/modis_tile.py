@@ -8,11 +8,11 @@ import ogr
 import osr
 from shapely.geometry import Polygon
 
-fileloc = os.path.realpath(__file__)
+fileloc = os.path.dirname(os.path.realpath(__file__))
 
 
-lst_lct =  'lst.MCD12Q1.txt'
-lst_vcf =  'lst.MOD44B.txt'
+lst_lct =  os.path.join(fileloc, 'lst.MCD12Q1.txt')
+lst_vcf =  os.path.join(fileloc, 'lst.MOD44B.txt')
 
 proj_wgs =  '+proj=longlat +datum=WGS84 +no_defs'
 proj_sinu = '+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181  +units=m +no_defs'
@@ -31,13 +31,14 @@ def land_tiles(tilelist = lst_lct):
     lst = []
     if os.path.exists(tilelist):
         lst = [re.sub(r'^.*\.(h..v..)\..*$', r'\1', _.strip()) for _ in open(tilelist)]
+    else:
+        raise RuntimeError('cannot find: %s' % tilelist)
     return lst
 
+tiles_lct = land_tiles(lst_lct)
+tiles_vcf = land_tiles(lst_vcf)
+
 def mk_tiles():
-    tiles_lct = land_tiles(lst_lct)
-    tiles_vcf = land_tiles(lst_vcf)
-    print(len(tiles_lct))
-    print(len(tiles_vcf))
 
     x = np.linspace(- np.pi * r, np.pi * r, nh + 1)
     y = np.linspace( .5 * np.pi * r, - .5 * np.pi * r, nv + 1)
