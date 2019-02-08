@@ -49,7 +49,9 @@ The following software must be downloaded and installed on the computer:
   * (Linux/Mac) use system's package manager
 
 *For those using Windows:*  
-`Powershell` is recommended as your command line terminal. Windows path may interfere with docker.  To open the PowerShell, type PowerShell in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs.  Linux/Mac user can use the OS's default terminal.
+`Powershell` is recommended as your command line terminal. To open the PowerShell, type PowerShell in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs.  
+
+Linux/Mac user can use the OS's default terminal.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
@@ -69,7 +71,7 @@ cd finn_preproc
 Alternatively `Download ZIP` button is available at https://github.com/yosukefk/finn_preproc (or direct link https://github.com/yosukefk/finn_preproc/archive/master.zip )
 
 Next, copy your fire detection shapefile(s) into the directory ../finn_preproc/data/.
-These files need to be UNZIPPED 
+These files need to be UNZIPPED. 
 
 ### 4. Building the Docker image
 
@@ -192,7 +194,7 @@ The code on this page runs the FINN preprocessor, including the components relat
 
 Before running, the user must first edit the first cell (the coded part that is shaded in gray) in "Section 1". Instructions in Section 1 include information about what to edit. Read this and then edit the first cell. Make sure you have the correct path to the input fire detection shapefile(s) and the year. 
 
-Once you have edited the first cell to have the input files and run name and year that you like, you can go ahead and run the code. 
+Once you have edited the first cell, you can go ahead and run the code. 
 
 This can be done a couple of ways. 
 
@@ -264,7 +266,7 @@ To start the container again and continue your work,
 docker start finn
 ```
 
-#### 9.4 List running containers
+#### 9.3 List running containers
 
 If you're not sure whether there are any Docker containers currently running,
 you can check with:
@@ -279,14 +281,14 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
 
-#### 9.5 Removing the container
+#### 9.4 Removing the container
 
 To permanently delete the FINN container, you can use:
 
 ```bash
 docker rm finn
 ```
-#### 9.6 To update the code (or if it was updated and you need to start from scratch): 
+#### 9.5 To update the code (or if it was updated and you need to start from scratch): 
 
 In the Terminal, navigate to main directory `../finn_preproc`  
 Type `git pull` 
