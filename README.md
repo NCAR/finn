@@ -1,13 +1,36 @@
 # FINN Preprocessor
 
-PostGIS based preprorcessor.  Given point feature of active fire detections, this code estimates burned region, and then determine land cover on the burned area.  Output from this code will be used for emission estimate by FINN.
+The first step to create FINNv2 emission estimates is to produce the FINN input file. This file is a comma-delimited text file that includes the fire locations, burned area, and underlying information about the land cover and vegetation burned. This preprocessor creates the FINN input file for a given set of fire detections (MODIS and/or VIIRS). 
+Specifically, this is a PostGIS-based preprocessor. Given a point feature shapefile of active fire detections, this code estimates burned region, and then determines land cover on the burned area. The output from this code is a `*.csv` file that will be used to estimate emissions with the FINN emissions processor. 
 
 
 ## Instructions
 
-(Paragraphs starting with an icon :information_source: can be skipped. They are FYI only)
+Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only  
+*Note - the instructions here are for all operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (including links to other pages with step by step instructions for Windows).*
+
+The user is expected to provide the MODIS and/or VIIRS fire detection shapefile for the time and spatial extent to be processed. The user can request these files from the NASA Fire Information for Resource Management System (FIRMS). Information about the VIIRS and MODIS products are at:  
+https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms
+
+To request archived data, the user can go to the Archive Download:   https://firms.modaps.eosdis.nasa.gov/download/
+
+Users can also request the active fire data for up to 7 days ago at:  
+https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms/active-fire-data
+
+Users can chose MODIS and/or VIIRS fire detections. When requesting data, the shapefile file format should be chosen. 
 
 ### 1. Prerequiste
+
+Before running this code, the user must have accounts set up and software installed. Specifically,  
+
+#### 1.1 EarthData Login
+
+The user must have an EarthData login (this is necessary for downloading the required MODIS LCT and VCF products). If you do not have a NASA EarthData account, you can create one here:  
+https://urs.earthdata.nasa.gov/
+
+#### 1.2 Download this software to your computer
+
+The following software must be downloaded and installed on the computer:  
 
 * Docker CE
   * (Windows) https://docs.docker.com/docker-for-windows/install/
@@ -25,13 +48,16 @@ PostGIS based preprorcessor.  Given point feature of active fire detections, thi
   * (Windows) https://git-scm.com/download/win
   * (Linux/Mac) use system's package manager
 
-(Windows) `Powershell` is recommended. Windows path may interfere with docker.  For exampple, "C:\Users" is changed to "/c/Users".  Special function docker-path is provided to do this translation as needed.
+*For those using Windows:*  
+`Powershell` is recommended as your command line terminal. Windows path may interfere with docker.  To open the PowerShell, type PowerShell in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs.  Linux/Mac user can use the OS's default terminal.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
-Windows/Mac requires customization of Docker environment.  Specific instuction for Docker Desktop can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.
+Windows/Mac requires customization of Docker environment.  Specific instuction for Docker Desktop can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  **Make sure you do this before going further (after you install Docker to your computer).**
 
 ### 3. Acquiring this repository
+
+*Note for Windows Users: Open a PowerShell terminal and navigate to the directory on your computer where you want to store and run everything.*  
 
 To get this repository locally, use `git clone`:
 
@@ -42,27 +68,33 @@ cd finn_preproc
 
 Alternatively `Download ZIP` button is available at https://github.com/yosukefk/finn_preproc (or direct link https://github.com/yosukefk/finn_preproc/archive/master.zip )
 
+Next, copy your fire detection shapefile(s) into the directory ../finn_preproc/data/.
+These files need to be UNZIPPED 
+
 ### 4. Building the Docker image
 
-To build the Docker image, execute the following command from the terminal, in the directory where `Dockerfile` exists (this project directory):
+The next step is to build the Docker image. To build the Docker image, execute the following command from the terminal, in the directory where `Dockerfile` exists (this project directory):
 
 ```bash
 docker build -t finn .
 ```
 
-To verify that the image is created, type `docker image ls`.  `finn` should be listed as a REPOSITORY (specified by `-t finn` option).
+Look for an output line that says "Successfully built ..." and "Successfully tagged finn:latest". The security warning that may follow can be ignored. 
+
+To verify that the image is created, type `docker image ls`.  One record should list `finn` as a `REPOSITORY` (specified by `-t finn` option).
 
 :information_source:  An image is a template to do the work.  The data for the application (fire detection and burned area) itself won't be attached with the image.  A container is a specific instance made out of an image.  It behave like a semi-independent computer stored inside a computer.  You do your work in a container.  By default, the work you do will be saved in container.  In FINN application, we customize our container to let it store the data outside of container, so that data can exists independent of life of the container.
 
 ### 5. Manage the Docker container
 
-#### Create and start
+The next step is to create your Docker container and then run the code within it. This is still done within the terminal (for Windows users, continue in `PowerShell`).  
+
+#### 5.1 Create and start
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
 
 
-**Note:** In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).
-If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/
+**Note:** In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).  REMEMBER: If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/  You should only have to do this once. 
 
 (Linux)
 ```bash
@@ -86,6 +118,18 @@ docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var
 To verify that the container is running, type `docker ps`.
 You should see the container listed with a unique container id, the name "finn" and some other information.
 
+NOTE: If you get an error saying that container name "finn" already in use, then you need to get rid of it first or rename in the command above. To do this, type: 
+
+```bash
+docker stop finn
+docker container rm finn
+```
+
+If this still doesn’t work, you may want to try retarting Docker: 
+- Go to Docker whale symbol, right click, and select restart
+- Once it’s started again, go back to the PowerShell and type Docker start finn
+
+
 :information_source:  Below the meaning of each options for `docker run`.
 
 * `--name finn`
@@ -105,7 +149,7 @@ You should see the container listed with a unique container id, the name "finn" 
 * `finn` at the end refers to docker image `finn` created by `docker build` command earlier.
 
 
-#### Start Jupyter Notebook from the container
+#### 5.2 Start Jupyter Notebook from the container
 
 Once the container is running, you can launch a jupyter notebook using `docker exec`:
 
@@ -121,10 +165,17 @@ Or copy and paste one of these URLs:
         http://(604ea0e75121 or 127.0.0.1):8888/?token=a7217f195e3cdbfdf...
 ```
 
-Copy your url, and replace the content in the parentheses with localhost
-in a web browser, e.g.,
+The Jupyter notebook (and the code there) will be run from a web browser. 
 
-`http://localhost:8888/?token=a7217f195e3cdbfdf856eacbbd05abe54a7fca4a30f72503`
+Open a web brower. First type in 
+```
+localhost:
+```
+And copy the “8888/?....” in after the localhost as the web address. For example, you may type in something like this in your web browser: 
+
+`localhost: 8888/?token=d81907a2a19dc112c68cf14f56bc4c9ebf65f575ab6944be`
+
+This address will take you to the Jupyter notebook. 
 
 Note that your token (the part after `token=...`) will be different.
 
@@ -134,10 +185,24 @@ See "Running the notebook" section below for actually running the tool.
 
 ### 6. Running the notebook
 
-To open the notebook, navigate to the `work_testOTS_092018/` directory and open `main_testOTS_092018.ipynb`.  
-This notebook runs FINN (press Shift+Enter to run a cell), including the components related to downloading MODIS data.
+From this point forward, leave the terminal open and move to the newly opened web browser. 
 
-Execute the cells of the notebook to run the analysis.
+To open the notebook, navigate to the `work_generic/` directory and open [`main_generic.ipynb`](http://localhost:8888/notebooks/work_generic/main_generic.ipynb) by double clicking on that file.  
+The code on this page runs the FINN preprocessor, including the components related to downloading MODIS land cover and vegetation data. The user is able to run a test case or to run a specific time and location for which the user has already downloaded fire detections.
+
+Before running, the user must first edit the first cell (the coded part that is shaded in gray) in "Section 1". Instructions in Section 1 include information about what to edit. Read this and then edit the first cell. Make sure you have the correct path to the input fire detection shapefile(s) and the year. 
+
+Once you have edited the first cell to have the input files and run name and year that you like, you can go ahead and run the code. 
+
+This can be done a couple of ways. 
+
+You can press the `Run`  button at the top, which will run one cell at a time. (so you have to click it through the entire page), or you can go to `Cell` -> `Run All` from the top bar. 
+
+Next to each cell is `In [ ]:`. When there is a `In [*]:`, the cell is cued up to run. When there is a number in there, the results are finished. 
+
+At the end of the run, your FINN input file will be in the directory of the name that you chose in cell 1. The created file will be a comma-delimited file that can be used as input to the FINN emissions code. 
+
+NOTE: If running a recent year, the year-specific MODIS LCT and VCF files may not be yet available. This will lead to an error statement in Section 5. If the year-specific data are unavailable, we recommend choosing the most recent year available for your processing. You will have to go back and edit the first cell and restart the kernel. 
 
 ### 7. Backup/Restore
 
@@ -159,12 +224,7 @@ docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dm
 # confirmed that output shp and csv can be exported without running analysis.
 ```
 
-## Tutorial
-
-[Tutorial page](https://github.com/yosukefk/finn_preproc/wiki/Tutorial) is prepared in project wiki.  It explains purpose of each sample cases.
-
-
-## Removing raw MODIS imagery and intermediate data
+### 8. Removing raw MODIS imagery and intermediate data
 
 If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
@@ -176,13 +236,14 @@ cell at the end of a Jupyter notebook:
 ```
 
 
-### Just in case: starting, stopping, and deleting Docker containers
+### 9, Just in case: starting, stopping, and deleting Docker containers
 
 Sometimes you may want to stop the container, and start it again.
 
-#### Stopping the container
+#### 9.1 Stopping the container
 
-When you are done for the day, you stop container.  
+When you are done for the day, you should stop container.  To do this, follow these instructions:
+
 First stop the Jupyter Notebook application by typing `ctrl+C` in the
 terminal that started the Notebook.  Then use following command.
 
@@ -195,7 +256,7 @@ in `docker run`.  `docker ps` shows all running containers (or
 `docker container ls`).  Use `docker ps -a` to see all container including ones
 that is stopped.
 
-#### Start again
+#### 9.2 Start again
 
 To start the container again and continue your work,
 
@@ -203,7 +264,7 @@ To start the container again and continue your work,
 docker start finn
 ```
 
-#### List running containers
+#### 9.4 List running containers
 
 If you're not sure whether there are any Docker containers currently running,
 you can check with:
@@ -212,10 +273,20 @@ you can check with:
 docker ps
 ```
 
-#### Removing the container
+If nothing is running, then all you will see is a header: 
+<pre>
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS   
+</pre>
+Otherwise, there will be information below these headers about the container(s) that is running.
+
+#### 9.5 Removing the container
 
 To permanently delete the FINN container, you can use:
 
 ```bash
 docker rm finn
 ```
+#### 9.6 To update the code (or if it was updated and you need to start from scratch): 
+
+In the Terminal, navigate to main directory `../finn_preproc`  
+Type `git pull` 
