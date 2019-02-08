@@ -237,6 +237,15 @@ def find_tiles_indb(data, knd='lnglat', tag_lct=None, tag_vcf=None):
 def find_needed_tiles(data, knd='lnglat', return_details=False):
     
     is_poly = False
+    def tiles_av(tiles):
+        tiles = dict((k,dict(
+            count=v, 
+            av_lct = k in modis_tile.tiles_lct, 
+            av_vcf = k in modis_tile.tiles_vcf,
+            )
+            ) for (k,v) in tiles.items())
+        return tiles
+
 
     if knd == 'lnglat':
         lnglat = data
@@ -282,15 +291,17 @@ def find_needed_tiles(data, knd='lnglat', return_details=False):
         reload(af_import)
         if return_details:
             
-            lnglat = af_import.get_lnglat(schema, combined=False)
-            tiles = [find_needed_tiles(data=_, knd='lnglat', return_details=return_details) for _ in lnglat]
-            # list of dict 
+            tiles = af_import.get_tiles_needed(schema, combined=False)
+
+            # list of dict
+            tiles = [tiles_av(_) for _ in tiles]
             return tiles
             
         else:
-            lnglat = af_import.get_lnglat(schema, combined=True)
+            tiles = af_import.get_lnglat(schema, combined=True)
+            
             # list of tile names
-            return find_needed_tiles(data=lnglat, knd='lnglat', return_details=return_details)
+            return tiles
 
     else:
         raise('Unknown knd: %s' % knd)
@@ -305,16 +316,15 @@ def find_needed_tiles(data, knd='lnglat', return_details=False):
     if not return_details: return tiles
 
     # return dict, keys=tile names, values = dict of count,lct_av,vcf_av
-    tiles = dict((k,dict(
-        count=v, 
-        av_lct = k in modis_tile.tiles_lct, 
-        av_vcf = k in modis_tile.tiles_vcf,
-        )
-        ) for (k,v) in tiles.items())
+    tiles = tiles_av(tiles)
     return tiles
 
 
 def find_needed_tiles_polygons(poly,return_counts):
+    # retrun either
+    #  list of tilenames  
+    #    or
+    #  dict of tilname:count_of_fire
     from collections import defaultdict
 
     #fname0 = 'modis_tile_wgs.shp'
@@ -362,6 +372,10 @@ def find_needed_tiles_polygons(poly,return_counts):
 
 def find_needed_tiles_points(lnglat,return_counts):
     """given point features identify MODIS tiles needed"""
+    # retrun either
+    #  list of tilenames  
+    #    or
+    #  dict of tilname:count_of_fire
 
     # modis sinusoidal, but they may be using sphere
     # see this page https://modis-land.gsfc.nasa.gov/GCTP.html

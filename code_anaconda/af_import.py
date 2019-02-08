@@ -86,6 +86,96 @@ def check_raster_contains_fire(rst, fire):
     nob = nfire - ncnt
     return dict(n_fire=nfire, n_containd = ncnt, n_not_contained= nob)
 
+# Three get_XXX better be restructured, but i am lazy now.
+def get_tiles_needed(schema, combined=False):
+    # go over af_in files in the schema, and return info
+    print('gtn')
+
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+
+    # go over each af_in table
+    lst = []
+    for i in itertools.count():
+        tbl = 'af_in_%d' % (i+1)
+        st = '%s.%s' % (schema, tbl)
+        print('gtn:', st)
+        try:
+            cur.execute("""SELECT '%s'::regclass;""" % st)
+        except psycopg2.ProgrammingError as e:
+            # no such table
+            if i == 0:
+                # something is wrong..., no af_in at all??
+                raise e
+            break
+
+        # do better!!!
+        # maybe groupby st_intersect() count() those??
+        #
+        # METHOD 1: this is one way:
+        #
+        #    select count(*), w.tilename from af_in_1 a, wireframe w where st_covers(w.wkb_geometry, a.geom) group by w.tilename;
+        # 
+        # taking 4 min or so for VIIRS 2019.  st_covers is probably better than st_contains, i think it may pick up points on boundary.
+        # 
+        # METHOD 2: or come up with postgresql function to determine tile based on coordinate
+        #
+        #     lntlat2tilename(lng, lat)
+        #
+        #  to do that, 
+        #     define srid for sinu
+        #       INSERT into spatial_ref_sys (srid, auth_name, auth_srid, proj4text, srtext) 
+        #       values ( 9006842, 'spatialreferencing.org', 6842, 
+        #              '+proj=sinu +lon_0=0 +x_0=0 +y_0=0 +a=6371007.181 +b=6371007.181 +units=m +no_defs ', 
+        #               'PROJCS["Sinusoidal",GEOGCS["GCS_Undefined",DATUM["Undefined",SPHEROID["User_Defined_Spheroid",6371007.181,0.0]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]],PROJECTION["Sinusoidal"],PARAMETER["False_Easting",0.0],PARAMETER["False_Northing",0.0],PARAMETER["Central_Meridian",0.0],UNIT["Meter",1.0]]');
+        #     get xy coord on sinu
+        #
+        #        with st_transform(a.geom, 9006842) as g
+        #           st_x(g), st_y(g)
+        #     then get tile, doing similar to below
+        #
+
+        #        # they divide longitude (-180 to 180) into 36, latitude (-90 to 90) into 18
+        #        # fraction of circumfrance (1 for great circle)
+        #        o = o / ( 2 * np.pi * 6371007.181 )
+        #        #
+        #        # divide great cicle into 36
+        #        o = o * 36
+        #        #
+        #        # h, origin is -180 deg
+        #        o[:,0] = o[:,0] + 18
+        #        #
+        #        # v, it is flipped, and covers half of cicle, starting -90 degree
+        #        o[:,1] = -o[:,1] + 9
+        #        #
+        #        # just need integer as tile index
+        #        o = np.floor(o).astype(int)
+        #
+        #  METHOD 2 compatible with my other counting method.  each point get counted at most once.  point on boundary is counted to the tile closer to (lon,lat) = (0,0)
+        #
+        #  METHOD 1 involves double counting, i think.  But at least it should capture tiles needed, which is primary purpose of this code
+        #
+        #   I go with METHOD 1 for now.
+        #   make sure that rst_import.prep_modis_tile() got called somewhere, to have this wireframe (defining tiles)
+        qry = """select count(*), w.tilename from %s a, raster.wireframe w where st_covers(w.wkb_geometry, a.geom) group by w.tilename;""" % st
+        print('gtn: ', qry)
+        cur.execute(qry)
+        print('gtn: fetchall')
+        tiles = cur.fetchall()
+        print('gtn: np.array')
+        tiles = dict((r[1], r[0]) for r in tiles)
+        lst.append(tiles)
+        
+    if combined:
+        combined = {}
+        for x in lst:
+            for k,v in x.items():
+                combined[k] = combined.get(k, 0) + v
+        return combined
+    else:
+
+        return lst
+
 def get_lnglat(schema, combined=False):
     # go over af_in files in the schema, and return info
 
