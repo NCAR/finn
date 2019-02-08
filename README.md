@@ -292,4 +292,11 @@ docker rm finn
 #### 9.5 To update the code (or if it was updated and you need to start from scratch): 
 
 In the Terminal, navigate to main directory `../finn_preproc`  
-Type `git pull` 
+Then type:
+
+```
+git checkout -- .
+git pull
+``` 
+
+Be careful that this will overwrite your edits on `main_generic.ipynb`.  So save it with different name if it is needed.
