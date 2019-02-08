@@ -175,7 +175,7 @@ localhost:
 ```
 And copy the “8888/?....” in after the localhost as the web address. For example, you may type in something like this in your web browser: 
 
-`localhost: 8888/?token=d81907a2a19dc112c68cf14f56bc4c9ebf65f575ab6944be`
+`localhost:8888/?token=d81907a2a19dc112c68cf14f56bc4c9ebf65f575ab6944be`
 
 This address will take you to the Jupyter notebook. 
 
