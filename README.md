@@ -6,7 +6,8 @@ Specifically, this is a PostGIS-based preprocessor. Given a point feature shapef
 
 ## Instructions
 
-Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only  
+Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only,
+
 *Note - the instructions here are for all operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (including links to other pages with step by step instructions for Windows).*
 
 The user is expected to provide the MODIS and/or VIIRS fire detection shapefile for the time and spatial extent to be processed. The user can request these files from the NASA Fire Information for Resource Management System (FIRMS). Information about the VIIRS and MODIS products are at:  
