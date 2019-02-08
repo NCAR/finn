@@ -131,3 +131,5 @@ dmypy.json
 *~
 *.sw?
 .*.un~
+
+data/
