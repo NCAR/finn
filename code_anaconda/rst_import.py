@@ -85,7 +85,7 @@ tilesiz_db = 240
 
 # pyramid levels
 #o_lvls = [str(_) for _ in (2,4,8,16,32)]
-o_lvls = [str(_) for _ in (32,)]
+o_lvls = [str(_) for _ in (32,256,)]
 
 
 def get_sdsname(lyrname, fname):

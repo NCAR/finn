@@ -224,7 +224,7 @@ def get_dates(schema, combined=False):
                 # something is wrong..., no af_in at all??
                 raise e
             break
-        cur.execute("""select acq_date from %s;""" % st)
+        cur.execute("""select distinct acq_date from %s;""" % st)
         dates = cur.fetchall()
         dates = np.array([r[0] for r in dates])
         lst.append(dates)
