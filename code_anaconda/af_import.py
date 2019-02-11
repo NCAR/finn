@@ -89,7 +89,7 @@ def check_raster_contains_fire(rst, fire):
 # Three get_XXX better be restructured, but i am lazy now.
 def get_tiles_needed(schema, combined=False):
     # go over af_in files in the schema, and return info
-    print('gtn')
+    #print('gtn')
 
     conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
     cur = conn.cursor()
@@ -99,7 +99,7 @@ def get_tiles_needed(schema, combined=False):
     for i in itertools.count():
         tbl = 'af_in_%d' % (i+1)
         st = '%s.%s' % (schema, tbl)
-        print('gtn:', st)
+        #print('gtn:', st)
         try:
             cur.execute("""SELECT '%s'::regclass;""" % st)
         except psycopg2.ProgrammingError as e:
@@ -158,11 +158,11 @@ def get_tiles_needed(schema, combined=False):
         #   I go with METHOD 1 for now.
         #   make sure that rst_import.prep_modis_tile() got called somewhere, to have this wireframe (defining tiles)
         qry = """select count(*), w.tilename from %s a, raster.wireframe w where st_covers(w.wkb_geometry, a.geom) group by w.tilename;""" % st
-        print('gtn: ', qry)
+        #print('gtn: ', qry)
         cur.execute(qry)
-        print('gtn: fetchall')
+        #print('gtn: fetchall')
         tiles = cur.fetchall()
-        print('gtn: np.array')
+        #print('gtn: np.array')
         tiles = dict((r[1], r[0]) for r in tiles)
         lst.append(tiles)
         

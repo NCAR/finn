@@ -31,8 +31,10 @@ import osr
 from shapely.geometry import Polygon
 import shapely
 import numpy as np
+import psycopg2
 
 import modis_tile
+import downloader
 
 
 # supported data category
@@ -123,7 +125,7 @@ def gdal_vernum_sys():
             break
     return o
 
-def prep_modis_tile():
+def prep_modis_tile(force=False):
     reload(modis_tile)
     schema_rst = 'raster'
 
@@ -135,6 +137,13 @@ def prep_modis_tile():
     # get the wireframe
     shpname = 'tile_wgs.shp'
     tblname = 'wireframe'
+
+    # test if table already exists
+    has_wf = downloader.find_table_indb(schema_rst, tblname)
+
+    if not force and has_wf:
+        print('OK: %s already exists' % tblname)
+        return
 
     drop_table = ["psql", "-c", 'DROP TABLE IF EXISTS %s.%s;' % (schema_rst, tblname)]
     subprocess.run(drop_table, stdout=subprocess.PIPE)
@@ -405,6 +414,34 @@ def transform_coordinates(ds, srs, drv=None, oname=None):
     del lyr0 
     del lyr1
     return ds1 
+
+def drop_tables(tag):
+
+    # get all the related names
+    qry= """SELECT table_schema, table_name 
+FROM information_schema.tables
+WHERE table_name ~ '^.*%(tbl)s' AND table_schema = '%(schema)s'
+ORDER BY pg_total_relation_size('"' || table_schema || '"."' || table_name || '"') DESC;""" % dict(
+    schema=schema,
+    tbl=('rst_%s' % tag),
+)
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+    cur.execute(qry)
+    tbls = [_ for _ in cur.fetchall()]
+
+    # delete in the order of skelton, overview, then the data
+    for prefix in ('skel_', 'o_', 'rst_'):
+        for tbl in tbls:
+            if tbl[1][:len(prefix)] == prefix:
+                st = '"%s"."%s"' % tbl
+                cmd = ['psql', '-c', 'DROP TABLE IF EXISTS %s;' % st]
+                print(cmd)
+                p = subprocess.run(cmd, check=True, stdout=subprocess.PIPE)
+                print(p.stdout.decode())
+
+
+    
 
 class Importer(object):
 
