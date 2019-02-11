@@ -238,7 +238,7 @@ Restore the database from backup `finn.dmp` that was created earlier.
 
 Now new container `finn_testrestore` has it's own PostGIS database (stored in `pg_data2` on docker virtual machine).  You can, for example, export the output (last part of `main_XXX.ipynb` to export output without running them.
 
-### Removing intermediate data
+### 8. Removing intermediate data
 
 #### 8.1 Removing raw MODIS imagery and intermediate raster data
 
@@ -246,7 +246,7 @@ If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
 cell at the end of a Jupyter notebook:
 
-```python
+```ipython
 !rm -rf ../downloads/
 !rm -rf ../proc_rst*
 ```
@@ -265,11 +265,13 @@ If you use Windows and using `Docker Destkop for Windows`, easiest way to check 
 
 In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  A query which does this clean-up will be provided soon **[TODO]** Adapt these methods to come up with such query: https://stackoverflow.com/questions/21361169/postgresql-drop-tables-with-query https://stackoverflow.com/questions/2596624/how-do-you-find-the-disk-size-of-a-postgres-postgresql-table-and-its-indexes .  With that, insturction would be `!psql -d finn -f the_wiper.sql`
 
-### 9, Just in case: starting, stopping, and deleting Docker containers
+### 9. Just in case: starting, stopping, and deleting Docker containers
+
+#### 9.1 What you'd do day-to-day
 
 Sometimes you may want to stop the container, and start it again.
 
-#### 9.1 Stopping the container
+##### Stopping the container
 
 When you are done for the day, you should stop container.  To do this, follow these instructions:
 
@@ -285,7 +287,7 @@ in `docker run`.  `docker ps` shows all running containers (or
 `docker container ls`).  Use `docker ps -a` to see all container including ones
 that is stopped.
 
-#### 9.2 Start again
+##### Start again
 
 To start the container again and continue your work,
 
@@ -293,7 +295,7 @@ To start the container again and continue your work,
 docker start finn
 ```
 
-#### 9.3 List running containers
+##### List running containers
 
 If you're not sure whether there are any Docker containers currently running,
 you can check with:
@@ -308,14 +310,23 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
 
-#### 9.4 Removing the container
+#### 9.2 What you may do for maintenance task
+
+Once in a while you may want to tidy up your work.
+
+##### Removing the container
 
 To permanently delete the FINN container, you can use:
 
 ```bash
 docker rm finn
 ```
-#### 9.5 To update the code (or if it was updated and you need to start from scratch): 
+
+##### Free up things you don't need anymore
+
+**[TODO]**
+
+##### Update the code (or if it was updated and you need to start from scratch): 
 
 In the Terminal, navigate to main directory `../finn_preproc`  
 Then type:
@@ -326,3 +337,22 @@ git pull
 ``` 
 
 Be careful that this will overwrite your edits on `main_generic.ipynb`.  So save it with different name if it is needed.
+
+#### 9.3 Disaster recovery
+
+##### Try this first
+
+Stop container and restart  
+**[TODO]**
+
+##### Or some of these
+
+Restart docker  
+**[TODO]**
+
+Recreate image  
+**[TODO]**
+
+##### Last resort, i.e. start over
+
+**[TODO]**
