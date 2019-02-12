@@ -378,6 +378,7 @@ def transform_coordinates(ds, srs, drv=None, oname=None):
     #print(ds1)
     lyr0 = ds.GetLayer()
     lyr0.SetNextByIndex(0)
+    print('fc:', lyr0.GetFeatureCount())
     lyr1 = ds1.CreateLayer('', srs, ogr.wkbPolygon)
     #print(lyr1)
     defn0 = lyr0.GetLayerDefn()
@@ -640,12 +641,18 @@ class Importer(object):
         drv = gdal.GetDriverByName('MEM')
         dsm = drv.CreateCopy('mem0', ds)
         m = dsm.GetRasterBand(1)
+        # TODO
+        # this may bomb if raster is large
+        # solution, make mask for each tile
+        # maybe do it with scratch file, not memory
+        # then make vrt
+        # Band.CreateMaskBand() may be useful
         arr = m.ReadAsArray()
         arr[arr<0] = 0
         m.WriteArray(arr)
 
-        oname0 = os.path.join(dstdir, '.'.join([bname, 'sinu','shp']))
-        oname = os.path.join(dstdir, '.'.join([bname, 'shp']))
+        oname0 = os.path.join(dstdir, '.'.join([bname, 'sinu','poly','shp']))
+        oname = os.path.join(dstdir, '.'.join([bname, 'poly','shp']))
         #print(oname0)
         #print(oname)
 
@@ -654,6 +661,8 @@ class Importer(object):
         drv = ogr.GetDriverByName('ESRI Shapefile')
         if os.path.exists(oname0):
             drv.DeleteDataSource(oname0)
+#        import pdb
+#        pdb.set_trace()
         dst0 = drv.CreateDataSource(oname0)
         srs = osr.SpatialReference()
         srs.ImportFromWkt(srs0)
@@ -662,15 +671,73 @@ class Importer(object):
         lyr0 = dst0.CreateLayer('lyr0', srs, ogr.wkbPolygon)
         #print(lyr0)
 
+        # need point shape file too
+        onamep0 = os.path.join(dstdir, '.'.join([bname, 'sinu','pnt','shp']))
+        onamep = os.path.join(dstdir, '.'.join([bname, 'pnt', 'shp']))
+        if os.path.exists(onamep0):
+            drv.DeleteDataSource(onamep0)
+        dstp0 = drv.CreateDataSource(onamep0)
+        lyrp0 = dstp0.CreateLayer('lyrp0', srs, ogr.wkbPoint)
+
         fd = ogr.FieldDefn('BurnYear', ogr.OFTInteger)
         lyr0.CreateField(fd)
+        lyrp0.CreateField(fd)
         fd = ogr.FieldDefn('BurnDate', ogr.OFTInteger)
         lyr0.CreateField(fd)
+        lyrp0.CreateField(fd)
         fd = ogr.FieldDefn('area_sqkm', ogr.OFTReal)
         lyr0.CreateField(fd)
         fld = 1  #second field
 
+        def pointize(b, m, lyrp0, fld):
+            # similar to gdal.Polygonize()
+            a = b.ReadAsArray()
+            #jdx,idx = np.nonzero(m)
+            indices = np.nonzero(m.ReadAsArray())
+            if len(indices) == 1  : 
+                # i am guessing it means empty
+                return
+            #print(indices)
+            jdx, idx = indices
+
+            gt = b.GetDataset().GetGeoTransform()
+            xcoord = (idx + .5) * gt[1] + gt[0]
+            ycoord = (jdx + .5) * gt[5] + gt[3]
+
+            n = xcoord.size
+            fldname = lyrp0.GetLayerDefn().GetFieldDefn(fld).GetNameRef()
+            print(n)
+            #print(lyr0.GetFeatureCount())
+            print(lyrp0.GetFeatureCount())
+            for i in range(n):
+                geom = ogr.Geometry(ogr.wkbPoint)
+                geom.AddPoint(xcoord[i], ycoord[i])
+                v = a[jdx[i], idx[i]]
+                feat = ogr.Feature(lyrp0.GetLayerDefn())
+                #print(fldname)
+                #print(a[jdx[i],idx[i]].astype(int))
+                #print(type(a[jdx[i],idx[i]].astype(int)))
+                #print(type(1))
+                # TODO there should be more cleaner way
+                feat.SetField(fldname, int(a[jdx[i],idx[i]].astype(int)))
+                feat.SetGeometry(geom)
+                lyrp0.CreateFeature(feat)
+                del feat
+            #print(lyr0.GetFeatureCount())
+            print(lyrp0.GetFeatureCount())
+
+
         gdal.Polygonize(b, m, lyr0, fld, [], callback=None)
+        pointize(b, m, lyrp0, fld)
+        print(lyrp0.GetFeatureCount())
+        lyrp0.SyncToDisk()
+        # close and reopen. ugly...
+        del lyrp0
+        del dstp0
+        subprocess.run(['ls', '-l', onamep0], check=True)
+        #subprocess.run(['ogrinfo', onamep0], check=True)
+        dstp0 = drv.Open(onamep0)
+
         del b, m   # band
         del ds, dsm  # raster
 
@@ -694,6 +761,17 @@ class Importer(object):
         dst = transform_coordinates(dst0, srs1, drv, oname=oname)
         del lyr0
         del dst0
+        if os.path.exists(onamep):
+            drv.DeleteDataSource(onamep)
+        # Couldn't figure out why this does work, so use gdalwarp command
+        #dstp = transform_coordinates(dstp0, srs1, drv, oname=onamep)
+        del dstp0
+        subprocess.run(['ls', '-l', onamep0], check=True)
+        subprocess.run(['ogrinfo', onamep0], check=True)
+        subprocess.run(['ogr2ogr', '-t_srs', target_projection, onamep, onamep0], check=True)
+        #del lyrp0
+        #del dstp0
+        #del dstp
 
         return dst
 
