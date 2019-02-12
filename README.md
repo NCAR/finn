@@ -6,9 +6,9 @@ Specifically, this is a PostGIS-based preprocessor. Given a point feature shapef
 
 ## Instructions
 
-Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only,
+Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only.
 
-*Note - the instructions here are for all operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (including links to other pages with step by step instructions for Windows).*
+*Note - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (including links to other pages with [step by step instructions for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows)).*
 
 The user is expected to provide the MODIS and/or VIIRS fire detection shapefile for the time and spatial extent to be processed. The user can request these files from the NASA Fire Information for Resource Management System (FIRMS). Information about the VIIRS and MODIS products are at:  
 https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms
@@ -27,18 +27,19 @@ Before running this code, the user must have accounts set up and software instal
 #### 1.1 EarthData Login
 
 The user must have an EarthData login (this is necessary for downloading the required MODIS LCT and VCF products). If you do not have a NASA EarthData account, you can create one here:  
-https://urs.earthdata.nasa.gov/
+https://urs.earthdata.nasa.gov/  
+The account is used in order to download land cover raster dataset from EarthData.
 
 #### 1.2 Download this software to your computer
 
-The following software must be downloaded and installed on the computer:  
+The following software must be downloaded and installed on your computer:  
 
 * Docker CE
   * (Windows) https://docs.docker.com/docker-for-windows/install/
   * (Linux) https://docs.docker.com/install/linux/docker-ce/ubuntu/
   * (Mac) https://docs.docker.com/docker-for-mac/install/  
 
-  (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product)
+  (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product).  Project wiki page for `Docker Desktop for Windows` has [screen shots of installation steps](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#1-install-docker-ce). 
 
 * QGIS  
   https://qgis.org
@@ -50,17 +51,17 @@ The following software must be downloaded and installed on the computer:
   * (Linux/Mac) use system's package manager
 
 *For those using Windows:*  
-`Powershell` is recommended as your command line terminal. To open the PowerShell, type PowerShell in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs.  
+`Powershell` is recommended as your command line terminal. To open the `PowerShell`, type `PowerShell` in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs (see [screeen shots in wiki page](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#4-docker-build)).  
 
 Linux/Mac user can use the OS's default terminal.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
-Windows/Mac requires customization of Docker environment.  Specific instuction for Docker Desktop can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  **Make sure you do this before going further (after you install Docker to your computer).**
+Windows/Mac requires customization of Docker environment.  Specific instuction for `Docker Desktop` can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  **Make sure you do this before going further (after you install Docker to your computer).**
 
 ### 3. Acquiring this repository
 
-*Note for Windows Users: Open a PowerShell terminal and navigate to the directory on your computer where you want to store and run everything.*  
+*Note for Windows Users: Open a `PowerShell` terminal and navigate to the directory on your computer where you want to store and run everything.*  
 
 To get this repository locally, use `git clone`:
 
@@ -96,7 +97,6 @@ The next step is to create your Docker container and then run the code within it
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
 
-
 **Note:** In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).  REMEMBER: If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/  You should only have to do this once. 
 
 (Linux)
@@ -105,7 +105,7 @@ mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows with Powershell)
+(Windows with Powershell)/
 ```powershell
 # Create named volume to store the database
 docker volume create pg_data
@@ -117,21 +117,26 @@ filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
 docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-
 To verify that the container is running, type `docker ps`.
 You should see the container listed with a unique container id, the name "finn" and some other information.
 
-NOTE: If you get an error saying that container name "finn" already in use, then you need to get rid of it first or rename in the command above. To do this, type: 
+NOTE: If you get an error saying that container name "finn" already in use, then you need to either (1) get rid of it first and `docker run` again, or (2) use different name for `--name finn` part, e.g. `--name finn_second`, in the command above.
+
+If you did approach (2), you start having multiple containers for finn, so make sure you keep track of which is what.  Container `finn` is already there, and you now has container `finn_second`.
+
+If you rather take approach (1), type: 
 
 ```bash
 docker stop finn
 docker container rm finn
 ```
 
-If this still doesn’t work, you may want to try retarting Docker: 
-- Go to Docker whale symbol, right click, and select restart
-- Once it’s started again, go back to the PowerShell and type Docker start finn
+These should remove the pre-existing container `finn` and you should be able to `docker run` now.
 
+If this still doesn't work, you may want to try retarting Docker.  If you are using `Docker Desktop for Windows`,
+- Go to Docker whale symbol, right click, and select restart
+- Once it's started again, go back to the `PowerShell` and type `docker start finn`. 
+Instead of `docker run` after restarting docker, You would try `docker start finn`.  This is because `docker run` creates containers and starts it.  If it fails, it may be that container is created but failed to started.  After restarting docker, the container you have already created may work by just starting it, `docker start finn`
 
 :information_source:  Below the meaning of each options for `docker run`.
 
@@ -215,35 +220,58 @@ Databese backup can be done with `pg_dump` command.
 
 This created a postgresql dump file (text file with SQL command to restore data) in /home/finn, which is the same as where you downloaded finn from GitHub.
 
-Restoration can be done with `psql` command with the dump file.
+Restoration can be done with `psql` command with the dump file.  Example below creates new container that restores backed up data.
+
+First, create new docker volume (virtual disk space where PostGIS databse is stored).
+
+`docker volume create pg_data2`
+
+Create new docker container 'finn_testrestore' to restore database (example below is for powershell.  user appropriate path for first -v option if you are on different OS).
 
 ```powershell
-# create new docker container 'finn_testrestore' to restore database
-docker run --name finn_testrestore -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
-
-# restore the database
-docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dmp
-
-# confirmed that output shp and csv can be exported without running analysis.
+docker run --name finn_testrestore -v ( (pwd | docker-path) + ':/home/finn') -v pg_data2:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-### 8. Removing raw MODIS imagery and intermediate data
+Restore the database from backup `finn.dmp` that was created earlier.
+
+`docker exec finn_testrestore sudo -u postgres psql -d finn -f /home/finn/finn.dmp`
+
+Now new container `finn_testrestore` has it's own PostGIS database (stored in `pg_data2` on docker virtual machine).  You can, for example, export the output (last part of `main_XXX.ipynb` to export output without running them.
+
+### 8. Removing intermediate data
+
+#### 8.1 Removing raw MODIS imagery and intermediate raster data
 
 If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
 cell at the end of a Jupyter notebook:
 
-```python
+```ipython
 !rm -rf ../downloads/
 !rm -rf ../proc_rst*
 ```
 
+The first command removes the `downloads` directory which has copy of raw MODIS imagery (hdf files) on EarthLab.  Second command removes all directories that starts with `proc_rst`, where intermediate raster files are created.  
 
-### 9, Just in case: starting, stopping, and deleting Docker containers
+#### 8.2 Removing intermediate fire detection/burned area processing data
+
+The active fire shape file you downloaded from FIRMS website is imported into PostGIS database, and has several intermediate format in the database.  The disk use by the database is checked from Jupyter notebook by `!du -sh /var/lib/postgresql`.  With annual, global processing using combined MODIS/VIIRS detection, disk use was 48GB.  
+
+Or directly from your computer by one of following ways, depending on your OS.  
+
+If you use linux, `du -sh $HOME/pg_data` .  This is where we decided to store database when you created container (`docker run`).  
+
+If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and finn preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
+
+In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  A query which does this clean-up will be provided soon **[TODO]** Adapt these methods to come up with such query: https://stackoverflow.com/questions/21361169/postgresql-drop-tables-with-query https://stackoverflow.com/questions/2596624/how-do-you-find-the-disk-size-of-a-postgres-postgresql-table-and-its-indexes .  With that, insturction would be `!psql -d finn -f the_wiper.sql`
+
+### 9. Just in case: starting, stopping, and deleting Docker containers
+
+#### 9.1 What you'd do day-to-day
 
 Sometimes you may want to stop the container, and start it again.
 
-#### 9.1 Stopping the container
+##### Stopping the container
 
 When you are done for the day, you should stop container.  To do this, follow these instructions:
 
@@ -259,7 +287,7 @@ in `docker run`.  `docker ps` shows all running containers (or
 `docker container ls`).  Use `docker ps -a` to see all container including ones
 that is stopped.
 
-#### 9.2 Start again
+##### Start again
 
 To start the container again and continue your work,
 
@@ -267,7 +295,7 @@ To start the container again and continue your work,
 docker start finn
 ```
 
-#### 9.3 List running containers
+##### List running containers
 
 If you're not sure whether there are any Docker containers currently running,
 you can check with:
@@ -282,14 +310,23 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
 
-#### 9.4 Removing the container
+#### 9.2 What you may do for maintenance task
+
+Once in a while you may want to tidy up your work.
+
+##### Removing the container
 
 To permanently delete the FINN container, you can use:
 
 ```bash
 docker rm finn
 ```
-#### 9.5 To update the code (or if it was updated and you need to start from scratch): 
+
+##### Free up things you don't need anymore
+
+**[TODO]**
+
+##### Update the code (or if it was updated and you need to start from scratch): 
 
 In the Terminal, navigate to main directory `../finn_preproc`  
 Then type:
@@ -300,3 +337,22 @@ git pull
 ``` 
 
 Be careful that this will overwrite your edits on `main_generic.ipynb`.  So save it with different name if it is needed.
+
+#### 9.3 Disaster recovery
+
+##### Try this first
+
+Stop container and restart  
+**[TODO]**
+
+##### Or some of these
+
+Restart docker  
+**[TODO]**
+
+Recreate image  
+**[TODO]**
+
+##### Last resort, i.e. start over
+
+**[TODO]**
