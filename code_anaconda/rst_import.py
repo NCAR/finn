@@ -647,7 +647,12 @@ class Importer(object):
         # maybe do it with scratch file, not memory
         # then make vrt
         # Band.CreateMaskBand() may be useful
-        arr = m.ReadAsArray()
+        try:
+            arr = m.ReadAsArray()
+            print('good')
+        except Exception as e:
+            print(e)
+            raise
         arr[arr<0] = 0
         m.WriteArray(arr)
 
