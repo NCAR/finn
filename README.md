@@ -345,7 +345,7 @@ or
 docker container rm finn
 ```
 
-Note that this does not delete the files in finn_preproc directory, or the PostgreSQL database stored inside docker volume (Windows) or $HOME/pg_data (Linux).  It simply remove the container which can be easily recreated, by `docker run` command described in Section 5.1.
+Note that this does not delete the files in finn_preproc directory, or the PostgreSQL database stored inside docker volume (Windows) or $HOME/pg_data (Linux).  It simply remove the container which can be easily recreated, by `docker run` command described in Section 5.1.  By using argumeents for `-v pg_data:/var/lib/postgresql` (or `-v ${HOME}/pg_data:/var/lib/postgresql` for Linux), the content of database is unaffected, and all the data you created earlier are still available as it was before removing the container.
 
 ##### Removing the image
 
