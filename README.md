@@ -87,7 +87,6 @@ Look for an output line that says "Successfully built ..." and "Successfully tag
 
 To verify that the image is created, type `docker image ls`.  One record should list `finn` as a `REPOSITORY` (specified by `-t finn` option).
 
-:information_source:  An image is a template to do the work.  The data for the application (fire detection and burned area) itself won't be attached with the image.  A container is a specific instance made out of an image.  It behave like a semi-independent computer stored inside a computer.  You do your work in a container.  By default, the work you do will be saved in container.  In FINN application, we customize our container to let it store the data outside of container, so that data can exists independent of life of the container.
 
 ### 5. Manage the Docker container
 
@@ -105,7 +104,7 @@ mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows with Powershell)/
+(Windows with Powershell)
 ```powershell
 # Create named volume to store the database
 docker volume create pg_data
@@ -212,7 +211,54 @@ At the end of the run, your FINN input file will be in the directory of the name
 
 NOTE: If running a recent year, the year-specific MODIS LCT and VCF files may not be yet available. This will lead to an error statement in Section 5. If the year-specific data are unavailable, we recommend choosing the most recent year available for your processing. You will have to go back and edit the first cell and restart the kernel. 
 
-### 7. Backup/Restore
+NOTE: work_generic/main_generic.ipynb may be overwritten when FINN preprocessor code is updated.  It is recommended for you to copy the file to different name, or even to create separate subdirectory work_XXX to start your work.  Added advantage of this practice is that you can track your work if you have multiple tasks.
+
+### 7 What you'd do day-to-day
+
+You may want to shut down, leave the computer, come back next day to continue you rowrk.  Use the comamnd below.
+
+##### Stopping the container
+
+When you are done for the day, you should stop container.  To do this, follow these instructions:
+
+First stop the Jupyter Notebook application by typing `ctrl+C` in the
+terminal that started the Notebook.  Then use following command.
+
+```bash
+docker stop finn
+```
+
+`finn` here refers to the name of container, the `--name` option you used
+in `docker run`.  `docker ps` shows all running containers (or
+`docker container ls`).  Use `docker ps -a` to see all container including ones
+that is stopped.
+
+##### Start again
+
+To start the container again and continue your work, use following command.
+
+```bash
+docker start finn
+```
+
+This command take you to the place right after `docker run`, as in section 5.1 above, except that creating new container, you are reusing the existing container.  
+
+##### List running containers
+
+If you're not sure whether there are any Docker containers currently running,
+you can check with:
+
+```bash
+docker ps
+```
+
+If nothing is running, then all you will see is a header: 
+<pre>
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS   
+</pre>
+Otherwise, there will be information below these headers about the container(s) that is running.
+
+### 8 Database Backup/Restore
 
 Databese backup can be done with `pg_dump` command.
 
@@ -238,9 +284,9 @@ Restore the database from backup `finn.dmp` that was created earlier.
 
 Now new container `finn_testrestore` has it's own PostGIS database (stored in `pg_data2` on docker virtual machine).  You can, for example, export the output (last part of `main_XXX.ipynb` to export output without running them.
 
-### 8. Removing intermediate data
+### 9. Tidy up by removing intermediate or unneeded data
 
-#### 8.1 Removing raw MODIS imagery and intermediate raster data
+#### 9.1 Removing raw MODIS imagery and intermediate raster data
 
 If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
@@ -251,9 +297,9 @@ cell at the end of a Jupyter notebook:
 !rm -rf ../proc_rst*
 ```
 
-The first command removes the `downloads` directory which has copy of raw MODIS imagery (hdf files) on EarthLab.  Second command removes all directories that starts with `proc_rst`, where intermediate raster files are created.  
+The first command removes the `downloads` directory which has copy of raw MODIS imagery (hdf files) on EarthLab.  Second command removes all directories that starts with `proc_rst`, where intermediate raster files are created.  ALternatively you can use your system's methods (e.g. `rm` in terminal, Windows Explorer to remove files) to remove the files/directories.
 
-#### 8.2 Removing intermediate fire detection/burned area processing data
+#### 9.2 Removing intermediate fire detection/burned area processing data
 
 The active fire shape file you downloaded from FIRMS website is imported into PostGIS database, and has several intermediate format in the database.  The disk use by the database is checked from Jupyter notebook by `!du -sh /var/lib/postgresql`.  With annual, global processing using combined MODIS/VIIRS detection, disk use was 48GB.  
 
@@ -263,70 +309,77 @@ If you use linux, `du -sh $HOME/pg_data` .  This is where we decided to store da
 
 If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and finn preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
 
-In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  A query which does this clean-up will be provided soon **[TODO]** Adapt these methods to come up with such query: https://stackoverflow.com/questions/21361169/postgresql-drop-tables-with-query https://stackoverflow.com/questions/2596624/how-do-you-find-the-disk-size-of-a-postgres-postgresql-table-and-its-indexes .  With that, insturction would be `!psql -d finn -f the_wiper.sql`
+In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  A query which does this clean-up will be provided soon.
 
-### 9. Just in case: starting, stopping, and deleting Docker containers
+**[TODO]** Adapt these methods to come up with such query: https://stackoverflow.com/questions/21361169/postgresql-drop-tables-with-query https://stackoverflow.com/questions/2596624/how-do-you-find-the-disk-size-of-a-postgres-postgresql-table-and-its-indexes .  With that, insturction would be `!psql -d finn -f the_wiper.sql`
 
-#### 9.1 What you'd do day-to-day
+**[TODO]** In order to reclaim the disk space, the Hyper-V virtual machine's virtual image needs to be shrunk to smaller size.  Not sure this is automatic, or user need to go into Hyper-V manager.
 
-Sometimes you may want to stop the container, and start it again.
+#### 9.3 Remove/Recreate/Update docker components
 
-##### Stopping the container
+##### Overview of docker components
 
-When you are done for the day, you should stop container.  To do this, follow these instructions:
+Diagram below shows components of docker involved in FINN preprocessor.
 
-First stop the Jupyter Notebook application by typing `ctrl+C` in the
-terminal that started the Notebook.  Then use following command.
+![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
-```bash
-docker stop finn
-```
+The day-to-day task covered in this subsection 7 deals with docker container, represented by boxes starting with "Run" and ending with "Conteiner Rm".  Blue arrows indicates that container is running, and `docker exec` can be issued on the container.  "Stop"/"Start" cycle can be repeated as many times.  You will also note that `docker build` and `docker volume create` commands creates "image" and "volume" respectively.  These exists independently until you explicitly delete them.
 
-`finn` here refers to the name of container, the `--name` option you used
-in `docker run`.  `docker ps` shows all running containers (or
-`docker container ls`).  Use `docker ps -a` to see all container including ones
-that is stopped.
+FINN preprocessor is designed to save data that you download/generate to be saved outside of Docker system for better persistence of data.  First, all of your downloaded files and intermediate data are stored in finn_preproc directory which you created near begining.  We are using docker's "bind-mount" method to access the directory both from inside and outside of docker.  
 
-##### Start again
+Another location where FINN store data is PostgreSQL (PostGIS) database.  For Linux users, this is $HOME/pg_data directory, and is "bind-mount"ed similarly to finn_preproc.  The data there can be reused (more later).  For Windows users, we created "named volume" pg_data by command `docker volume create pg_data`.  This will set a directory inside Linux virtual machine (Hyper-V), and docker container is going to access the space to store the database.  Life of docker named volume is independent of docker images and containers, and it persist unless you explicitly delete the volume.
 
-To start the container again and continue your work,
-
-```bash
-docker start finn
-```
-
-##### List running containers
-
-If you're not sure whether there are any Docker containers currently running,
-you can check with:
-
-```bash
-docker ps
-```
-
-If nothing is running, then all you will see is a header: 
-<pre>
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS   
-</pre>
-Otherwise, there will be information below these headers about the container(s) that is running.
-
-#### 9.2 What you may do for maintenance task
-
-Once in a while you may want to tidy up your work.
+Following section has commands for deleting cocker components used in FINN.  With the exception of removing docker volumes, these have little effects on disk use, as FINN preprocer does not store data in containers/images.  
 
 ##### Removing the container
 
-To permanently delete the FINN container, you can use:
+To permanently delete the FINN container, you have to first stop the container `docker stop finn`, then you can use:
 
 ```bash
 docker rm finn
 ```
 
-##### Free up things you don't need anymore
+or 
 
-**[TODO]**
+```bash
+docker container rm finn
+```
 
-##### Update the code (or if it was updated and you need to start from scratch): 
+Note that this does not delete the files in finn_preproc directory, or the PostgreSQL database stored inside docker volume (Windows) or $HOME/pg_data (Linux).  It simply remove the container which can be easily recreated, by `docker run` command described in Section 5.1.
+
+##### Removing the image
+
+You have to first remove container made from the image, following the instruction above.  If you created more than one container from the image, all of containers needs to be removed.
+
+```bash
+docker rmi finn
+```
+
+or 
+
+```bash
+docker image rm finn
+```
+
+Again, this does not remove any files in finn_preproc directory, or the PostgreSQL database.  Image can be recreated with `docker build` command described in Section 4.
+
+
+##### Removing the volume 
+
+This applies to Windows users, which uses `docker volume create` to create named volume to house the PostgreSQL database.  
+
+```bash
+docker volume rm pg_data
+```
+
+This will wipe the PostgreSQL datbase (PostGIS database) stored in Linux virtual machine.  **[TODO]** Confirm
+
+
+### 10 Update FINN
+
+**[TODO]** a lot of time, code update does not affects finn image/containers.  so all you need is to git checkout and git pull.  Do we ask people to always rebuild image?   Also, the database itself unlikely to be affected by this update procedure.
+
+Stop all running containers.  Remove images.
 
 In the Terminal, navigate to main directory `../finn_preproc`  
 Then type:
@@ -338,21 +391,31 @@ git pull
 
 Be careful that this will overwrite your edits on `main_generic.ipynb`.  So save it with different name if it is needed.
 
-#### 9.3 Disaster recovery
 
-##### Try this first
+### 11. Disaster recovery
 
-Stop container and restart  
-**[TODO]**
+##### Try this first, restart the container
 
-##### Or some of these
+Stop container and start again.  See section 7 for instructions.
 
-Restart docker  
-**[TODO]**
+##### Restart docker
 
-Recreate image  
-**[TODO]**
+Sometimes, restarting the container does not resolves the glitches introduced at runtime.  We noticed several times that restarting docker will resolve the unpredictable behavior of docker container.
+
+For docker desktop for Windows, System taks tray have the whale icon for Docker Desktop.  You can right-click the icon and choose `Restart...`.  On linux, you can `sudo service docker restart`
+
+##### Check if the system has changed in any way
+
+From our experiences, docker may appear to stop functioning because changes in your system.  We observed that
+
+- If you started VPN, docker may lose access to local storage. As a result you cannot see the conent of finn_preproc directory from docker (e.g. Jupyter Notebook).  Stop the VPN and restart the container (`docker stop finn` and then `docker start finn`)
+- If you changed password for your machine or domain, it may affects docker.  On `Docker Desktop for Windows`, you can go to the setting (right click the system tray icon for docker), go to  `Shared Drive` tab, and `Reset credentials`.  Then enable the shared drive again.
+- You have to be in a user group `docker` in order to use docker.  Make sure that you are in `docker` user.  [Instruction for Docker Desktop for Windows are found here](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#2-add-yourself-to-docker-users-group).  Linux instruction is ["Manage Docker as a non-root user" section in thie page](https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user).
+
+##### Recreate container/image/volume 
+
+From our experience, this usually does not resolves the "disaster", i.e. Docker suddenly stop working.  This is more of tidy up task.  Go through three kind of Docker `rm` commands to remove docker componets.  You can then start again from Section 4.
 
 ##### Last resort, i.e. start over
 
-**[TODO]**
+To wipe everythign and start over, you can first remove everytinng in finn_postproc directory.  You also remove all docker containers/images/volumes to start over.  Easiest way to do this for Windows is to uninstall the docker desktop.  The action wipes out the Linux virtual machine (Hyper-V virtual machine) created for Docker, and in effect wipe everything out.  You can then start from Section 1.
