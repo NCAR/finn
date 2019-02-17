@@ -372,8 +372,9 @@ This applies to Windows users, which uses `docker volume create` to create named
 docker volume rm pg_data
 ```
 
-This will wipe the PostgreSQL datbase (PostGIS database) stored in Linux virtual machine.  **[TODO]** Confirm
+This will wipe the PostgreSQL datbase (PostGIS database) stored in Linux virtual machine.  You can now start from Section 5 to create new volume (`docker volume create`) and create container (`docker run`).  The database for this new container is near empty.
 
+:information_source: The content of pg_data is native format for the specific versoin of PostgreSQL.  If you copy the entire directory/files to somewhere and let postgreSQL to point to the directory, the database starts with the data.  This means that that if you have copy of entier pg_data in somewhere safe, you can start the database by restoring the content.  To be specific, you first wipe the pg_data as specified here (or `rm -fr ${HOME}/pg_data` for linux), and then create new docker volume/container to have fresh databse.  You stop the container, and overwrite the content of `pg_data` with copy of older versoin.  You start the docker container, then the database is populated with the old data.  This could be an alternative way to backup/restore the database, rather than the canonical method of creating database dump as explained in Secton 8.  This is easy for Liunx, as pg_data is a directory in host machine.  A log harder to actually do this, because you have to get into Hyper-V linux virtual machine to do the same (this tool lets you do this https://github.com/justincormack/nsenter1).  Moreover, you have to make sure that file ownership is set correctly after restoring data:  PostgreSQL for Linux is pecific about file ownership, and this was the reason why we have to use named volume (diskspace inside Linux virtual machine), instead of bind-mounte volume (directly accessing host computer's diskspace) for Windows application.  
 
 ### 10 Update FINN
 
