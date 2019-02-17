@@ -319,7 +319,7 @@ In order to wipe intermediate data in the database, you'd have to delete each sc
 
 ##### Overview of docker components
 
-Diagram below shows components of docker involved in FINN preprocessor.
+:information_source: Diagram below shows components of docker involved in FINN preprocessor.
 
 ![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
