@@ -44,7 +44,7 @@ The following software must be downloaded and installed on your computer:
 * QGIS  
   https://qgis.org
 
-  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.
+  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.  Instruction to use QGIS to visualize burned area and raster stored in PostGIS database is available in [this wiki page](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor).
 
 * Git
   * (Windows) https://git-scm.com/download/win
@@ -212,6 +212,8 @@ At the end of the run, your FINN input file will be in the directory of the name
 NOTE: If running a recent year, the year-specific MODIS LCT and VCF files may not be yet available. This will lead to an error statement in Section 5. If the year-specific data are unavailable, we recommend choosing the most recent year available for your processing. You will have to go back and edit the first cell and restart the kernel. 
 
 NOTE: work_generic/main_generic.ipynb may be overwritten when FINN preprocessor code is updated.  It is recommended for you to copy the file to different name, or even to create separate subdirectory work_XXX to start your work.  Added advantage of this practice is that you can track your work if you have multiple tasks.
+
+NOTE:  [Minimum in struction to use QGIS](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor) available to visualize burned area and raster dataset stored in PostGIS.
 
 ### 7 What you'd do day-to-day
 
