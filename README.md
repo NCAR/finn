@@ -380,9 +380,15 @@ This will wipe the PostgreSQL datbase (PostGIS database) stored in Linux virtual
 
 ### 10 Update FINN
 
-**[TODO]** a lot of time, code update does not affects finn image/containers.  so all you need is to git checkout and git pull.  Do we ask people to always rebuild image?   Also, the database itself unlikely to be affected by this update procedure.
+Note that updating FINN code won't affect your data on the database you have worked on, or input/output you have generated.  It only updates the code to create them.   The only exception that you may loose your work in main_generic.ipynb.  Update will wipe what you have done to the file.  If have customized the file, you save the file with different name before you update FINN.  Better yet, you save in different name if you customized the file (e.g., save as `work_global_2016/main_global_2016.ipynb` for global run for year 2016).
 
-Stop all running containers.  Remove images.
+First stop running containers and remove.  Remove the image as well.
+
+```
+docker stop finn
+docker container rm finn
+docker image rm finn
+```
 
 In the Terminal, navigate to main directory `../finn_preproc`  
 Then type:
@@ -392,7 +398,7 @@ git checkout -- .
 git pull
 ``` 
 
-Be careful that this will overwrite your edits on `main_generic.ipynb`.  So save it with different name if it is needed.
+You now recreate image (`docker build` as in Section 4) and container (`docer run` as in Section 5.1).  
 
 
 ### 11. Disaster recovery
