@@ -427,11 +427,11 @@ From our experience, this usually does not resolves the "disaster", i.e. Docker 
 
 ##### Last resort, i.e. start over
 
-To wipe everythign and start over, you can first remove everytinng in finn_postproc directory.  You can do it by Windows Explorer, for example.
+To wipe everything and start over, you have to reomve (1) everytinng in finn_postproc directory, and (2) remove all docker components (container, image, volume).  
 
-You also remove all docker containers/images/volumes to start over.  
+For (1), you can do it by Windows Explorer, for example.  User appropriate method for your system to remove files/directories.
 
-One way to do this is remove stop/remove all containers, remove images, remove volumes.
+For (2), one way to do this is remove stop/remove all containers, remove images, remove volumes.
 
 ```
 docker stop finn
