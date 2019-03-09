@@ -19,10 +19,10 @@ RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip python3-
     rm tini.deb && \
     apt-get clean
 
-RUN conda install -c conda-forge python=3.6
-RUN conda config --remove channels 'defaults'
+RUN conda install -c conda-forge python
+#RUN conda config --remove channels 'defaults'
 RUN conda install -c conda-forge jupyterlab ncurses pyproj beautifulsoup4 shapely psycopg2 matplotlib basemap
-RUN conda install --channel conda-forge --override-channels "gdal>2.2.4"
+RUN conda install --channel conda-forge gdal
 
 # check that key packages are importable
 RUN python -c 'from osgeo import gdal'
