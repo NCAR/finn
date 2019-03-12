@@ -8,7 +8,11 @@ Specifically, this is a PostGIS-based preprocessor. Given a point feature shapef
 
 Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only.
 
-*Note - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (including links to other pages with [step by step instructions for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows)).*
+*Note - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (Docker Desktop for Windows).  There are extra information specific to different operations system, version of Docker product (Desktop vs. Toolbox), and please refer to them as needed.
+
+* [Docker Desktop for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows), standard docker environment for recent version of Windows
+* [Docker Toolbox for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows), legacy implementation of docker for older version of Windows10 and older
+* [Docker CE for Linux](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-CE-for-Ubuntu), use of Ubuntu Linux is assumed.
 
 The user is expected to provide the MODIS and/or VIIRS fire detection shapefile for the time and spatial extent to be processed. The user can request these files from the NASA Fire Information for Resource Management System (FIRMS). Information about the VIIRS and MODIS products are at:  
 https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms
@@ -57,7 +61,13 @@ Linux/Mac user can use the OS's default terminal.
 
 ### 2. (Windows/Mac) Customize virtual machine
 
-Windows/Mac requires customization of Docker environment.  Specific instuction for `Docker Desktop` can be found in [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  **Make sure you do this before going further (after you install Docker to your computer).**
+Windows/Mac requires customization of Docker environment.  
+
+Specific instuction for `Docker Desktop` can be found in the wiki page at [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  
+
+Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Configure Oracle VM Virtual Machine](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows#2-configure-oracle-vm-virtual-machine)
+
+**Make sure you do this before going further (after you install Docker to your computer).**
 
 ### 3. Acquiring this repository
 
@@ -104,7 +114,7 @@ mkdir ${HOME}/pg_data
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows with Powershell)
+(Windows Powershell for Docker Desktop, the latest Docker on Windows)
 ```powershell
 # Create named volume to store the database
 docker volume create pg_data
@@ -115,6 +125,19 @@ filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
 # Create docker container and start
 docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
+
+(Windows Powershell for Docker Desktop, the legacy Docker on Windows)
+```powershell
+# Create named volume to store the database
+docker volume create pg_data
+
+# Function to convert windows path to what docker likes
+filter docker-path { '/' + $_.tostring().substring(0,1).tolower() + $_.tostring().substr ing(1) -replace '\\', '/' -replace ':', ''}
+
+# Create docker container and start
+docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+```
+
 
 To verify that the container is running, type `docker ps`.
 You should see the container listed with a unique container id, the name "finn" and some other information.
