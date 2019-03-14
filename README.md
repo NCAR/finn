@@ -126,7 +126,7 @@ filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
 docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
-(Windows Powershell for Docker Desktop, the legacy Docker on Windows)
+(Windows Powershell for Docker Toolbox, the legacy Docker on Windows)
 ```powershell
 # Create named volume to store the database
 docker volume create pg_data
