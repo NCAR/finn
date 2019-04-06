@@ -59,7 +59,8 @@ config_datacat = dict(
             # acronym Yosuke used, in the order Yosuke uses store data
             shortnames = ['tree', 'herb', 'bare'],
             # extra options for merg
-            mrg_opt = ['-separate'],
+            mrg_opt = ['-separate',  
+                '-n', '200', '-init', '0 0 100',],  # treat water as no data and set that to all bare
             rsmp_alg = 'average',
             re_bname = re.compile('^MOD44B.A(\d\d\d\d)065'),
             ),
