@@ -45,7 +45,8 @@ def get_first_last_day(tag):
     return (firstday, lastday)
 
 # TODO make dt0 and dt1 to be firstday/lastday, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
-def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver=None, run_prep=True, run_work=True):
+#def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver=None, run_prep=True, run_work=True):
+def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver='v7m', run_prep=True, run_work=True):
 
     schema = 'af_%s' % tag
 
