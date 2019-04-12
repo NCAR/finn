@@ -39,6 +39,7 @@ CREATE TABLE work_pnt (
 	instrument character(5),
 --	confidence integer,
 	confident boolean,
+	anomtype integer, -- "Type" field of AF product, 0-3
 	geom_sml geometry
 	);
 
@@ -759,11 +760,23 @@ language sql volatile;
 -- Part 3: Start processing data --
 -----------------------------------
 
--- find af_in
+-- find af_in tables (names)
+-- also see if "type" field is available
+-- seems like sometime between fall 2018 and spring 2019, AF folks introduced daynight and type field
 
 
 drop table if exists af_ins;
-create table af_ins as (select table_name from information_schema.tables where table_schema = :quote_myschema);
+create table af_ins as (select table_name, FALSE has_type from information_schema.tables where table_schema = :quote_myschema);
+update  af_ins a set has_type = foo.chk
+from (
+  select i.table_name, bool_or(i.column_name = 'type') chk 
+  from information_schema.columns  i
+  where i.table_schema = :quote_myschema
+  group by table_name
+) foo 
+where foo.table_name = a.table_name;
+
+
 
 do language plpgsql $$ begin 
 	if (select count(*) from af_ins where table_name = 'af_in') = 1 then 
@@ -784,34 +797,12 @@ end $$;
 do language plpgsql $$ 
 declare
 myrow record;
+s varchar;
 begin
 
-for myrow in select table_name from af_ins order by table_name loop
+for myrow in select table_name,has_type from af_ins order by table_name loop
 	raise notice 'tool: myrow , %', myrow;
-	-- if VIIRS, confidence is not numeric...  -- grab relevent fields
-        -- FIXME lots of extra field related to time stamp.  clean them in production version, when i feel more confident with date calcs
-	-- execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
-	-- 	row_number()  over (order by gid),
-	-- 	geom,
-	-- 	longitude,
-	-- 	latitude,
-	-- 	scan, 
-	-- 	track,
-	-- 	acq_date,
-	-- 	acq_time,
-	-- 	date( acq_date + 
-	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-	-- 			mins:= substring(acq_time, 3, 2)::int)) ,
-	-- 	cast(acq_date as timestamp without time zone) +
-	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-	-- 			mins:= substring(acq_time, 3, 2)::int) ,
-	-- 	instrument,
-	-- 	(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
-	-- 	from ' || myrow.table_name || ';';
-	-- 	--confidence >= 20 --modis
-	-- 	--confidence != \'l\' -- viirs
--- turned out that NRT dataset doesnt have instrument field, only satellite.  so i create one based on satellite field here
-	execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
+s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select
 		row_number()  over (order by gid),
 		geom,
 		longitude,
@@ -827,10 +818,15 @@ for myrow in select table_name from af_ins order by table_name loop
 			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
 				mins:= substring(acq_time, 3, 2)::int) ,
 			case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
-		((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
-		from ' || myrow.table_name || ';';
-		--confidence >= 20 --modis
-		--confidence != \'l\' -- viirs
+		((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' ||
+                case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
+		' from ' || myrow.table_name || ';';
+
+                raise notice 's: %', s;
+
+--                raise exception 'sss';
+                execute s;
+
 end loop;
 end $$;
 
