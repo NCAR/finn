@@ -656,3 +656,16 @@ do language plpgsql $$ begin
 raise notice 'tool: step3 done, %', clock_timestamp();
 end $$;
 
+-- just put changes posteriori to the log
+-- time duration becoms meaningless...
+DO LANGUAGE plpgsql $$
+  DECLARE
+    i bigint;
+  BEGIN
+    i := log_checkin('agg to large', 'work_lrg_oned', (select count(*) from work_pnt_oned)); 
+    i := log_checkout(i, (select count(*) from work_lrg_oned) );
+    i := log_checkin('subdiv', 'work_div_oned', (select count(*) from work_lrg_oned)); 
+    i := log_checkout(i, (select count(*) from work_div_oned) );
+  END
+$$;
+
