@@ -8,6 +8,9 @@
 SET search_path TO :ident_myschema , public;
 SHOW search_path;
 
+\set my_filter_persistent_sources :filter_persistent_sources
+\set
+
 \set ON_ERROR_STOP on
 
 DO language plpgsql $$ begin
@@ -39,6 +42,7 @@ CREATE TABLE work_pnt (
 	instrument character(5),
 --	confidence integer,
 	confident boolean,
+	anomtype integer, -- "Type" field of AF product, 0-3
 	geom_sml geometry
 	);
 
@@ -79,10 +83,60 @@ values
 ('VIIRS', 'confident', 'confidence != ''l''')
 ;
 
+DROP TABLE IF EXISTS tbl_options;
+CREATE table tbl_options(
+  opt_name varchar,
+  opt_value varchar
+);
+INSERT INTO tbl_options (opt_name, opt_value)
+VALUES
+('filter_persistent_sources', :my_filter_persistent_sources )
+;
+
+DROP TABLE IF EXISTS tbl_log;
+CREATE table tbl_log(
+  log_id bigserial,
+  log_event varchar,
+  log_table varchar,
+  log_nrec_change bigint,
+  log_nrec_before bigint,
+  log_nrec_after bigint,
+  log_time_start timestamp,
+  log_time_finish timestamp,
+  log_time_elapsed interval
+);
+
 
 -------------------------------------------
 -- Part 2: Function and Type definitions --
 -------------------------------------------
+
+CREATE OR REPLACE FUNCTION log_checkin(log_event varchar, log_table varchar, nrec bigint)
+RETURNS bigint AS
+$$
+  INSERT INTO tbl_log (log_event, log_table, log_nrec_before, log_time_start)
+  VALUES (log_event, log_table, nrec, clock_timestamp())
+  RETURNING log_id;
+$$
+LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION log_checkout(log_id_target bigint, nrec bigint)
+RETURNS bigint AS
+$$
+  WITH foo AS (
+    SELECT clock_timestamp() tnow
+  )
+  UPDATE tbl_log t SET 
+  log_nrec_after = nrec,
+  log_nrec_change = nrec - t.log_nrec_before, 
+  log_time_finish = foo.tnow,
+  log_time_elapsed = foo.tnow - t.log_time_start
+  FROM foo
+  WHERE t.log_id = log_id_target
+  RETURNING log_nrec_change;
+  ;
+$$
+LANGUAGE sql;
 
 ----------------------------------------
 -- Part 2.0: testpy (info for python) --
@@ -759,21 +813,49 @@ language sql volatile;
 -- Part 3: Start processing data --
 -----------------------------------
 
--- find af_in
+-- find af_in tables (names)
+-- also see if "type" field is available
+-- seems like sometime between fall 2018 and spring 2019, AF folks introduced daynight and type field
 
 
 drop table if exists af_ins;
-create table af_ins as (select table_name from information_schema.tables where table_schema = :quote_myschema);
+create table af_ins as (
+  select table_name, FALSE has_type 
+  from information_schema.tables 
+  where table_schema = :quote_myschema);
+
+update  af_ins a set has_type = foo.chk
+from (
+  select i.table_name, bool_or(i.column_name = 'type') chk 
+  from information_schema.columns  i
+  where i.table_schema = :quote_myschema
+  group by table_name
+) foo 
+where foo.table_name = a.table_name;
+
+DO LANGUAGE plpgsql $$ 
+  DECLARE 
+    any_has_type boolean;
+  BEGIN
+    any_has_type := (
+      SELECT bool_or(has_type) 
+      FROM af_ins
+    );
+
+    IF NOT any_has_type THEN
+      UPDATE tbl_options
+      SET opt_value = 'false'
+      WHERE opt_name = 'filter_persistent_sources';
+    END IF;
+END $$;
 
 do language plpgsql $$ begin 
-	if (select count(*) from af_ins where table_name = 'af_in') = 1 then 
-		delete  from af_ins where table_name != 'af_in';
-	else
-		delete from af_ins where  table_name !~ 'af_in_[0-9]'; 
-	end if ; 
+  if (select count(*) from af_ins where table_name = 'af_in') = 1 then 
+    delete from af_ins where table_name != 'af_in'; 
+  else 
+    delete from af_ins where  table_name !~ 'af_in_[0-9]'; 
+  end if ; 
 end $$;
-
-
 
 
 do language plpgsql $$ begin
@@ -782,56 +864,40 @@ raise notice 'tool: start importing, %', clock_timestamp();
 end $$;
 
 do language plpgsql $$ 
-declare
-myrow record;
-begin
+  declare 
+    myrow record; 
+    s varchar; 
+    i bigint;
+  begin
 
-for myrow in select table_name from af_ins order by table_name loop
-	raise notice 'tool: myrow , %', myrow;
-	-- if VIIRS, confidence is not numeric...  -- grab relevent fields
-        -- FIXME lots of extra field related to time stamp.  clean them in production version, when i feel more confident with date calcs
-	-- execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
-	-- 	row_number()  over (order by gid),
-	-- 	geom,
-	-- 	longitude,
-	-- 	latitude,
-	-- 	scan, 
-	-- 	track,
-	-- 	acq_date,
-	-- 	acq_time,
-	-- 	date( acq_date + 
-	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-	-- 			mins:= substring(acq_time, 3, 2)::int)) ,
-	-- 	cast(acq_date as timestamp without time zone) +
-	-- 		make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-	-- 			mins:= substring(acq_time, 3, 2)::int) ,
-	-- 	instrument,
-	-- 	(instrument=''MODIS'' and confidence::integer >= 20) or (instrument = ''VIIRS'' and confidence::character(1) != ''l'')
-	-- 	from ' || myrow.table_name || ';';
-	-- 	--confidence >= 20 --modis
-	-- 	--confidence != \'l\' -- viirs
--- turned out that NRT dataset doesnt have instrument field, only satellite.  so i create one based on satellite field here
-	execute 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident) select
-		row_number()  over (order by gid),
-		geom,
-		longitude,
-		latitude,
-		scan, 
-		track,
-		acq_date,
-		acq_time,
-		date( acq_date + 
-			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-				mins:= substring(acq_time, 3, 2)::int)) ,
-		cast(acq_date as timestamp without time zone) +
-			make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
-				mins:= substring(acq_time, 3, 2)::int) ,
-			case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
-		((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l'')
-		from ' || myrow.table_name || ';';
-		--confidence >= 20 --modis
-		--confidence != \'l\' -- viirs
-end loop;
+    for myrow in select table_name,has_type from af_ins order by table_name loop 
+      raise notice 'tool: myrow , %', myrow; 
+
+      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select 
+      row_number()  over (order by gid), 
+      geom, 
+      longitude, 
+      latitude, 
+      scan, 
+      track, 
+      acq_date, 
+      acq_time, 
+      date( acq_date + 
+        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
+          mins:= substring(acq_time, 3, 2)::int)) , 
+      cast(acq_date as timestamp without time zone) + 
+        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
+          mins:= substring(acq_time, 3, 2)::int) , 
+      case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end, 
+      ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
+      case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
+      ' from ' || myrow.table_name || ';'; 
+
+      raise notice 's: %', s; 
+      i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));
+      execute s; 
+      i := log_checkout(i, (select count(*) from work_pnt) );
+    end loop;
 end $$;
 
 do language plpgsql $$ begin
@@ -839,19 +905,60 @@ raise notice 'tool: import done, %', clock_timestamp();
 end $$;
 
 -- drop low confidence points
-delete from work_pnt
---where confidence < 20;
-where not confident;
+DO LANGUAGE plpgsql $$
+  declare
+    i bigint;
+  begin
+    i := log_checkin('drop low confience', 'work_pnt', (select count(*) from work_pnt)); 
+    delete from work_pnt 
+    where not confident;
+    i := log_checkout(i, (select count(*) from work_pnt) );
+  END
+  $$;
 
 do language plpgsql $$ begin
 raise notice 'tool: dropping low condifence done, %', clock_timestamp();
 end $$;
 
+DO LANGUAGE plpgsql $$ 
+  DECLARE
+    filter_persistent_sources boolean;
+    i bigint;
+  BEGIN 
+    -- only when filter_persistent_sources is True, 
+    -- drop volcano and "other" anomaly (not vegetation burn) 
+    filter_persistent_sources := (
+      SELECT opt_value 
+      FROM tbl_options 
+      WHERE opt_name = 'filter_persistent_sources'
+    ); 
+    
+    IF filter_persistent_sources THEN 
+      i := log_checkin('drop persistent', 'work_pnt', (select count(*) from work_pnt)); 
+      DELETE FROM work_pnt 
+      WHERE anomtype = 1 OR anomtype = 2; 
+      i := log_checkout(i, (select count(*) from work_pnt) );
+
+      raise notice 'tool: dropping volcano/other persistent done, %', clock_timestamp(); 
+    ELSE 
+      raise notice 'tool: no special treatment for volcano/other persistent';
+    END IF; 
+  END 
+$$;
+
+
 -- dup tropics
-insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident)
-select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident from work_pnt
-where abs(lat) <= 23.5 and instrument = 'MODIS'
-;
+DO LANGUAGE plpgsql $$ 
+  DECLARE
+    i bigint;
+  BEGIN 
+    i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
+    insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype)
+    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident, anomtype from work_pnt
+    where abs(lat) <= 23.5 and instrument = 'MODIS';
+    i := log_checkout(i, (select count(*) from work_pnt) );
+  END;
+$$;
 do language plpgsql $$ begin
 raise notice 'tool: duplicating tropics done, %', clock_timestamp();
 end $$;
