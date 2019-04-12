@@ -802,7 +802,7 @@ begin
 
 for myrow in select table_name,has_type from af_ins order by table_name loop
 	raise notice 'tool: myrow , %', myrow;
-s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select
+        s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select
 		row_number()  over (order by gid),
 		geom,
 		longitude,
@@ -836,16 +836,23 @@ end $$;
 
 -- drop low confidence points
 delete from work_pnt
---where confidence < 20;
 where not confident;
 
 do language plpgsql $$ begin
 raise notice 'tool: dropping low condifence done, %', clock_timestamp();
 end $$;
 
+-- drop volcano and "other" anomaly (not vegetation burn)
+delete from work_pnt
+where anomtype = 1 or anomtype = 2;
+
+do language plpgsql $$ begin
+raise notice 'tool: dropping volcano/other persistent done, %', clock_timestamp();
+end $$;
+
 -- dup tropics
-insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident)
-select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident from work_pnt
+insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype)
+select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident, anomtype from work_pnt
 where abs(lat) <= 23.5 and instrument = 'MODIS'
 ;
 do language plpgsql $$ begin
