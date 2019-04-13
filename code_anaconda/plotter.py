@@ -87,21 +87,18 @@ class Plotter(object):
                 FROM foo
                 ;""" % schema_table)
         x = self.cur.fetchone()
-        print(x)
+        print('x:', x)
         x = np.array(x)
         x[:2] = np.floor(x[:2])
         x[2:] = np.ceil(x[2:])
-        print(x)
+        print('x:', x)
 
         # determine raser structure
         # i am using 6 sec raster, and 32 256 overview
         # for now assume that o_32 resultion fits all
         d = x[2:] - x[:2]
-        print(d)
         n = np.ceil(d * (60 * 60 / (6 ))).astype(int)
-        print(n)
         n = np.ceil(d * (60 * 60 / (6 * 32))).astype(int)
-        print(n)
 
         dx = 32*6/60/60
 
@@ -110,7 +107,7 @@ class Plotter(object):
         WITH foo as (
             SELECT 
             floor( ( ( ST_X(geom) ) - ( %(x0)f ) ) / %(dx)f ) idx,
-            %(ny)d - floor( ( ( ST_Y(geom) ) - ( %(y0)f ) ) / %(dx)f ) + 1 jdx
+            floor( ( ( %(y1)f ) - ( ST_Y(geom) ) ) / %(dx)f ) jdx
             FROM %(st)s
         )
         SELECT idx, jdx, count(*)
@@ -125,15 +122,11 @@ class Plotter(object):
             sn = schema_name,
             st = schema_table,
             )
-        print(qry)
         self.cur.execute(qry)
         cnts = np.array(self.cur.fetchall())
-        #print(cnts)
-        print(cnts.dtype)
 
         arr = np.zeros(n[::-1])
         arr[cnts[:,1].astype(int), cnts[:,0].astype(int)] = cnts[:,2]
-        print(arr)
 
         vsipath = '/vsimem/from_postgis'
 
@@ -151,9 +144,6 @@ class Plotter(object):
         b.SetNoDataValue(0)
         b.WriteArray(arr)
 
-        dsx = drv.CreateCopy('test2.tif', ds, strict=0)
-        dsx = None
-        del dsx
 
 
 
