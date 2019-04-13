@@ -68,17 +68,12 @@ class Plotter(object):
 
     def mk_density(self, schema_table):
 
+        # split schema name out...
         x = schema_table.split('.')
         assert len(x) == 2
         schema_name, table_name = x
 
         # determine bbox
-        self.cur.execute("""
-                SELECT ST_Extent(geom) bbox FROM %s
-                ;""" % schema_table)
-        x = self.cur.fetchone()
-        print(x)
-
         self.cur.execute("""
                 WITH foo AS (
                 SELECT ST_Extent(geom) bbox FROM %s
@@ -86,9 +81,7 @@ class Plotter(object):
                 SELECT ST_XMin(foo.bbox), ST_YMin(foo.bbox), ST_XMax(foo.bbox), ST_YMax(foo.bbox)
                 FROM foo
                 ;""" % schema_table)
-        x = self.cur.fetchone()
-        print('x:', x)
-        x = np.array(x)
+        x = np.array(self.cur.fetchone())
         x[:2] = np.floor(x[:2])
         x[2:] = np.ceil(x[2:])
         print('x:', x)
@@ -96,11 +89,10 @@ class Plotter(object):
         # determine raser structure
         # i am using 6 sec raster, and 32 256 overview
         # for now assume that o_32 resultion fits all
+        dx = 32*6/60/60
         d = x[2:] - x[:2]
-        n = np.ceil(d * (60 * 60 / (6 ))).astype(int)
         n = np.ceil(d * (60 * 60 / (6 * 32))).astype(int)
 
-        dx = 32*6/60/60
 
         # count density (do thie in database as scratch table)
         qry = """ 
@@ -115,9 +107,7 @@ class Plotter(object):
         GROUP BY idx, jdx
         ;""" % dict(
             x0 = x[0],
-            y0 = x[1],
             y1 = x[3],
-            ny = n[1],
             dx = dx,
             sn = schema_name,
             st = schema_table,
@@ -135,7 +125,7 @@ class Plotter(object):
         ds = drv.Create(vsipath, xsize = arr.shape[1], ysize = arr.shape[0],
                 bands = 1    , eType = gdal.GDT_Float32)
 
-        ds.SetGeoTransform([x[0], dx, 0, x[3]+dx, 0, -dx ])
+        ds.SetGeoTransform([x[0], dx, 0, x[3], 0, -dx ])
         srs = osr.SpatialReference()
         srs.ImportFromEPSG(4326)
         ds.SetProjection(srs.ExportToWkt())
@@ -144,6 +134,9 @@ class Plotter(object):
         b.SetNoDataValue(0)
         b.WriteArray(arr)
 
+        dsx = drv.CreateCopy('test2.tif', ds, strict=0)
+        dsx = None
+        del dsx
 
 
 
