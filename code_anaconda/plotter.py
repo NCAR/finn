@@ -119,6 +119,7 @@ class Plotter(object):
         ;""" % dict(
             x0 = x[0],
             y0 = x[1],
+            y1 = x[3],
             ny = n[1],
             dx = dx,
             sn = schema_name,
@@ -141,14 +142,18 @@ class Plotter(object):
         ds = drv.Create(vsipath, xsize = arr.shape[1], ysize = arr.shape[0],
                 bands = 1    , eType = gdal.GDT_Float32)
 
-        ds.SetGeoTransform([x[0], dx, 0, x[1], 0, -dx ])
+        ds.SetGeoTransform([x[0], dx, 0, x[3]+dx, 0, -dx ])
         srs = osr.SpatialReference()
         srs.ImportFromEPSG(4326)
         ds.SetProjection(srs.ExportToWkt())
         
         b = ds.GetRasterBand(1)
-        b.SetNoDataValue(-9)
+        b.SetNoDataValue(0)
         b.WriteArray(arr)
+
+        dsx = drv.CreateCopy('test2.tif', ds, strict=0)
+        dsx = None
+        del dsx
 
 
 
