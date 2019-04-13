@@ -457,10 +457,8 @@ For (1), you can do it by Windows Explorer, for example.  User appropriate metho
 For (2), one way to do this is remove stop/remove all containers, remove images, remove volumes.
 
 ```
-docker stop finn
-docker container rm finn
-docker image rm finn
-docker volume rm pg_data
+docker system prune --all -f 
+docker system prune --volumes -f
 ```
 
 An easier way to remove docker components for Windows is to uninstall the docker desktop.  Go to `Control Panel` ==> `Programs and Features` and unistall `Docker Desktop`.  The action wipes out the Linux virtual machine (Hyper-V virtual machine) created for Docker, and in effect wipe everything out.  You can then start from Section 1.

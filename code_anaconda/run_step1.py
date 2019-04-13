@@ -45,7 +45,9 @@ def get_first_last_day(tag):
     return (firstday, lastday)
 
 # TODO make dt0 and dt1 to be firstday/lastday, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
-def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver=None, run_prep=True, run_work=True):
+def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver='v7m', run_prep=True, run_work=True,
+        filter_persistent_sources = False
+        ):
 
     schema = 'af_%s' % tag
 
@@ -97,7 +99,9 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
     # run the prep script
     if run_prep:
         print("starting prep: %s" % datetime.datetime.now())
-        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), '-v', ('tag=%s' % tag)]
+        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
+                '-v', ('tag=%s' % tag), 
+                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources) ]
         print(cmd)
         subprocess.run(cmd, check=True)
     else:
