@@ -126,8 +126,16 @@ class Plotter(object):
         for st in schema_table:
             arr = count_density( st, ext, dx, arr)
 
-        #arr = np.log10(arr)
-        arr = np.sqrt(arr)
+        # 
+
+        # TODO maybe i need to look at median as well?
+        cmax = np.amax(arr)
+        if cmax > 2000:
+            np.seterr(divide = 'ignore')
+            arr = np.log10(arr)
+            np.seterr(divide = 'warn')
+        elif cmax > 20:
+            arr = np.sqrt(arr)
 
 
 
