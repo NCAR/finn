@@ -220,6 +220,13 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
     set search_path to "{schema}",raster,public;
 
     set client_min_messages to warning;
+
+    DO LANGUAGE plpgsql $$ 
+      DECLARE
+        i bigint;
+      BEGIN 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+
     with
     piece as (
             -- prepare polygon sections
@@ -268,6 +275,9 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
                     ) bar 
             ) baz
     ) quz where rnk = 1;
+        i := log_checkout(i, (select count(*) from tbl_{tag_tbl}) );
+      END;
+    $$;
     set client_min_messages to notice;
 
     -- TODO save rnk==2 as well, and check if i feel confortable picking just rnk1.
@@ -294,6 +304,13 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
     set search_path to "{schema}",raster,public;
 
     set client_min_messages to warning;
+
+    DO LANGUAGE plpgsql $$ 
+      DECLARE
+        i bigint;
+      BEGIN 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+
     with
     piece as (
             -- prepare polygon sections
@@ -328,6 +345,10 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
     ) foo 
     ; 
 
+        i := log_checkout(i, (select count(*) from tbl_{tag_tbl}) );
+      END;
+    $$;
+
 
 
     set client_min_messages to notice;
@@ -350,13 +371,22 @@ def mkcmd_insert_table_polygons(tag_tbl, tag_var, variable_in, schema):
     cmd = """
     set search_path to "{schema}",raster,public;
 
-    with crs as (
-    select d.polyid, r.{variable_in} from rst_{tag_tbl} r 
-            inner join work_div_oned as d
-            on st_intersects(r.geom, st_centroid(d.geom))
-            )
-            insert into tbl_{tag_tbl} (polyid, v_{tag_var})
-            select * from crs;
+    DO LANGUAGE plpgsql $$ 
+      DECLARE
+        i bigint;
+      BEGIN 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+    
+        with crs as (
+        select d.polyid, r.{variable_in} from rst_{tag_tbl} r 
+                inner join work_div_oned as d
+                on st_intersects(r.geom, st_centroid(d.geom))
+                )
+                insert into tbl_{tag_tbl} (polyid, v_{tag_var})
+                select * from crs;
+        i := log_checkout(i, (select count(*) from tbl_{tag_tbl}) );
+      END;
+    $$;
 
     do language plpgsql $$ begin
     raise notice 'tool: {tag_tbl} done, %', clock_timestamp();

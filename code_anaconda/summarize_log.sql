@@ -29,7 +29,7 @@ WITH foo AS (
 ), baz AS (
 
   SELECT * FROM foo
-  WHERE NOT (log_event = 'agg to large' OR log_event = 'subdiv')
+  WHERE NOT (log_event = 'agg to large' OR log_event = 'subdiv' OR log_event like 'join %')
 
   UNION ALL
 
@@ -42,6 +42,11 @@ WITH foo AS (
   SELECT f.log_id, f.log_event, f.log_nrec_change, b.n_lrg, b.n_div, f.log_time_finish
   FROM
   (SELECT * FROM foo WHERE log_event = 'subdiv') f, bar b
+
+  UNION ALL
+  SELECT * FROM foo
+  WHERE (log_event like 'join %')
+
 )
 SELECT * from baz;
 
