@@ -53,11 +53,12 @@ def main(tag, fnames):
         cmd += [fname]
         print('\ncmd:\n%s\n' % ' '.join(cmd))
         print(cmd)
-        subprocess.run(cmd, check=True)
-#            p1 = Popen(cmd)#, stdout=PIPE)
-    #    p2 = Popen(['psql',], stdin=p1.stdout, stdout = fo)
-    #    print( p2.communicate())
-#            p1.communicate()
+        try:
+            subprocess.run(cmd, check=True, stderr=PIPE)
+        except subprocess.CalledProcessError as err: 
+            cmd0 = cmd[0]
+            print(f"\nERROR from {cmd0}: \n\n", err.stderr.decode(),)
+            raise
 
 def check_raster_contains_fire(rst, fire):
     dct = dict(rst=rst, fire=fire)

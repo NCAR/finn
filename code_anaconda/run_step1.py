@@ -103,7 +103,11 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
                 '-v', ('tag=%s' % tag), 
                 '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources) ]
         print(cmd)
-        subprocess.run(cmd, check=True)
+        try:
+            subprocess.run(cmd, check=True, stderr=PIPE)
+        except subprocess.CalledProcessError as err: 
+            print(f"\nERROR from 'step1_prep': \n\n", err.stderr.decode(),)
+            raise
     else:
         pass
 
@@ -125,4 +129,8 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
             cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
             #print(cmd)
             #subprocess.run(shlex.split(cmd), check=True)
-            subprocess.run(cmd, check=True)
+            try:
+                subprocess.run(cmd, check=True, stderr=PIPE)
+            except subprocess.CalledProcessError as err: 
+                print(f"\nERROR from 'step1_work': \n\n", err.stderr.decode(),)
+                raise
