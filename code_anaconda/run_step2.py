@@ -379,7 +379,7 @@ def mkcmd_insert_table_polygons(tag_tbl, tag_var, variable_in, schema):
     
         with crs as (
         select d.polyid, r.{variable_in} from rst_{tag_tbl} r 
-                inner join work_div_oned as d
+                right join work_div_oned as d
                 on st_intersects(r.geom, st_centroid(d.geom))
                 )
                 insert into tbl_{tag_tbl} (polyid, v_{tag_var})
