@@ -136,7 +136,9 @@ create table "{schema}"."{tblname}" (
     {varname} integer,
     {frcname} double precision,
     acq_date_lst date
-    );""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname)
+    );
+-- clean the left over log if any
+select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, tag_tbl=tag_tbl)
     return cmd
 
 def mkcmd_create_table_continuous(tag_tbl, tag_vars, schema):
@@ -149,7 +151,9 @@ create table "{schema}"."{tblname}" (
     polyid integer,
     {vardefs},
     acq_date_lst date
-    );""".format(   schema=schema, tblname=tblname, vardefs=', '.join(vardefs) )
+    );
+-- clean the left over log if any
+select log_purge('join {tag_tbl}'); """.format(   schema=schema, tblname=tblname, vardefs=', '.join(vardefs), tag_tbl=tag_tbl )
     return cmd
 
 def mkcmd_create_table_polygons(tag_tbl, tag_var, schema): 

@@ -138,6 +138,23 @@ $$
 $$
 LANGUAGE sql;
 
+CREATE OR REPLACE FUNCTION log_purge(_log_event varchar)
+RETURNS bigint AS
+$$
+  declare n bigint;
+  begin
+n := (select count(*) from tbl_log t where t.log_event = _log_event);
+
+  DELETE FROM tbl_log t
+  WHERE t.log_event = _log_event;
+
+
+return n;
+end;
+
+$$
+LANGUAGE plpgsql volatile;
+
 ----------------------------------------
 -- Part 2.0: testpy (info for python) --
 ----------------------------------------
