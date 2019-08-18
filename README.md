@@ -132,7 +132,7 @@ docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var
 docker volume create pg_data
 
 # Function to convert windows path to what docker likes
-filter docker-path { '/' + $_.tostring().substring(0,1).tolower() + $_.tostring().substr ing(1) -replace '\\', '/' -replace ':', ''}
+filter docker-path { '/' + $_.tostring().substring(0,1).tolower() + $_.tostring().substring(1) -replace '\\', '/' -replace ':', ''}
 
 # Create docker container and start
 docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
