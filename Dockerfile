@@ -2,7 +2,8 @@ FROM kartoza/postgis:10.0-2.4
 
 ENV PATH /opt/conda/bin:$PATH
 
-RUN apt-get update --fix-missing && apt-get install -y wget bzip2 ca-certificates \
+RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && 
+    apt-get install -y wget bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 postgresql-10-postgis-2.4 postgis git unzip
 
 RUN apt-get install -y curl grep sed dpkg postgresql-plpython3-10 unzip python3-pip sudo && \
