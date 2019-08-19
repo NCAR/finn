@@ -8,7 +8,7 @@ RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
     libglib2.0-0 libxext6 libsm6 libxrender1 postgresql-10-postgis-2.4 postgis git unzip
 
 RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo 
-RUN apt-get install -y postgresql-plpython3-10 
+RUN apt-get install -y postgresql-plpython3-11 
 RUN TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
     curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
     dpkg -i tini.deb && \
