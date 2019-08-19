@@ -134,7 +134,11 @@ def get_filelist(url):
     """download one page, look for <a href and get list of files"""
     
     # get the index.html
-    soup = BeautifulSoup(requests.get(url).text, features='html.parser')
+    try:
+        soup = BeautifulSoup(requests.get(url).text, features='html.parser')
+    except:
+        print("\n\nERROR:\nfailed url: " + url)
+        raise
 
     # get all the <a href= in the page
     filelist = [_['href'] for _ in soup.findAll('a', href=True)]
