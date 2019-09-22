@@ -7,6 +7,12 @@ import os
 import shlex
 import psycopg2
 
+# somehow, Mac version of docker appeared to be confuesed in encoding
+# i tell explicitly here that it is utf-8
+# right now (2019-09-20), step1 are the only part where i use "psql -f"
+# so setting it here would make sense, unless there is something more global
+os.environ['PGCLIENTENCODING']='utf-8'
+
 def get_first_last_day(tag):
     """Returns first and last day from active fire table"""
 
