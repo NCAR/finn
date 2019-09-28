@@ -60,7 +60,7 @@
 ; 
 ; ***********************************************************************************************************************
 
-pro x_global_fire_v2_02222019_yk3 , infile, simid, yearnum, todaydate
+pro x_global_fire_v2_02222019_yk3 , infile, simid, yearnum, input_lct, todaydate
 
 ; ##################################################################################
 ; USER INPUTS --- EDIT DATE AND SCENARIO HERE - this is for file naming purposes
@@ -940,12 +940,17 @@ preprocdir = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc'
     rstyearstr = strtrim(string(rstyearnum), 2)
     
     infile = preprocdir + '\work_' + simid + '\out_' + simid + '_modlct_' + rstyearstr + '_modvcf_' + rstyearstr + '_regnum.csv'
+
+    input_lct = 'majority' ; traditional behavior
+    ;input_lct = 'all'  ; choose this option when all LCT are exported in preprocessor
+
     print, infile
     print, simid
     print, yearnum
+    print, input_lct
     
     
-    x_global_fire_v2_02222019_yk3, infile, simid, yearnum, todaydate
+    x_global_fire_v2_02222019_yk3, infile, simid, yearnum, input_lct, todaydate
   
   endforeach
 end
