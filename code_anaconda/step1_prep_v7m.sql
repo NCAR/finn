@@ -30,6 +30,7 @@ CREATE TABLE work_pnt (
 	rawid integer,
 	fireid integer,
 	ndetect integer,
+	polyid integer,
 	geom_pnt geometry,
 	lon double precision,
 	lat double precision,
@@ -43,6 +44,7 @@ CREATE TABLE work_pnt (
 --	confidence integer,
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
+	frp double precision,
 	geom_sml geometry
 	);
 
@@ -885,13 +887,16 @@ do language plpgsql $$
     myrow record; 
     s varchar; 
     i bigint;
+    tblnrow bigint;
+    cumnrow bigint;
   begin
+    cumnrow := 0;
 
     for myrow in select table_name,has_type from af_ins order by table_name loop 
       raise notice 'tool: myrow , %', myrow; 
 
-      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select 
-      row_number()  over (order by gid), 
+      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype, frp) select 
+      '  || cumnrow || ' + (row_number()  over (order by gid)), 
       geom, 
       longitude, 
       latitude, 
@@ -908,11 +913,13 @@ do language plpgsql $$
       case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end, 
       ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
-      ' from ' || myrow.table_name || ';'; 
+      ', frp from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
       i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));
       execute s; 
+      GET DIAGNOSTICS tblnrow := ROW_COUNT;
+      cumnrow := cumnrow + tblnrow;
       i := log_checkout(i, (select count(*) from work_pnt) );
     end loop;
 end $$;
@@ -970,8 +977,8 @@ DO LANGUAGE plpgsql $$
     i bigint;
   BEGIN 
     i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
-    insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype)
-    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident, anomtype from work_pnt
+    insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype, frp)
+    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident, anomtype, frp from work_pnt
     where abs(lat) <= 23.5 and instrument = 'MODIS';
     i := log_checkout(i, (select count(*) from work_pnt) );
   END;
