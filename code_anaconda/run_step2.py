@@ -168,7 +168,7 @@ def mkcmd_create_table_polygons(tag_tbl, tag_var, schema):
     return mkcmd_create_table_thematic(tag_tbl, tag_var, schema)
 
 def mkcmd_create_table_input(tag_tbl, tag_var, schema): 
-    return mkcmd_create_table_thematic(tag_tbl, tag_var, schema)
+    return mkcmd_create_table_continuous(tag_tbl, [tag_var], schema)
 
 def mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema):
     tblname = 'out_' + '_'.join(tag_tbls)
