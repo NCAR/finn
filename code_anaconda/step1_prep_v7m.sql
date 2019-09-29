@@ -68,6 +68,7 @@ drop table if exists work_div;
 create table work_div (
 	polyid serial primary key ,
 	fireid integer,
+	cleanids integer[],
 	geom geometry,
 	acq_date_lst date,
 	area_sqkm double precision
