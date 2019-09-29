@@ -5,7 +5,7 @@ from run_step1 import get_first_last_day
 
 ver = 'v8b'
 
-def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=True):
+def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=True, export_frp=False):
 
     schema = 'af_{0}'.format( tag_af )
 
@@ -62,6 +62,14 @@ def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=T
             tag_tbls += [rstinfo['tag']]
             fldnames += ['v_'+rstinfo['variable']]
             fldtypes += ['integer']
+            dctfldtbl.update([['v_'+rstinfo['variable'] , tag_tbls[-1]]])
+        elif rstinfo['kind'] == 'input':
+            # arithmetic average of input field
+            cmd_prep += mkcmd_create_table_input(rstinfo['tag'], rstinfo['variable'], schema)
+            cmd_work += mkcmd_insert_table_input(rstinfo['tag'], rstinfo['variable'], rstinfo['variable_in'], schema)
+            tag_tbls += [rstinfo['tag']]
+            fldnames += ['v_'+rstinfo['variable']]
+            fldtypes += ['double precision']
             dctfldtbl.update([['v_'+rstinfo['variable'] , tag_tbls[-1]]])
         else:
             raise RuntimeError("unkown kind for raster: kind '{kind}' for raster '{tag}'".format(**rstinfo))
@@ -157,6 +165,9 @@ select log_purge('join {tag_tbl}'); """.format(   schema=schema, tblname=tblname
     return cmd
 
 def mkcmd_create_table_polygons(tag_tbl, tag_var, schema): 
+    return mkcmd_create_table_thematic(tag_tbl, tag_var, schema)
+
+def mkcmd_create_table_input(tag_tbl, tag_var, schema): 
     return mkcmd_create_table_thematic(tag_tbl, tag_var, schema)
 
 def mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema):
@@ -370,6 +381,41 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
             )
 
     return cmd
+
+def mkcmd_insert_table_input(tag_tbl, tag_var, variable_in, schema):
+    cmd = """
+    SET search_path TO "{schema}",raster,public;
+
+    DO LANGUAGE plpgsql $$ 
+      DECLARE
+        i bigint;
+      BEGIN 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+
+        WITH crs AS (
+        SELECT d.polyid, avg(r.{variable_in}) {variable_in} FROM work_pnt r
+            INNER JOIN work_div_oned AS d
+            ON d.polyid = r.polyid
+            GROUP BY d.polyid
+            )
+            INSERT INTO tbl_{tag_tbl} (polyid, v_{tag_var})
+            SELECT * from crs;
+        i := log_checkout(i, (SELECT count(*) FROM tbl_{tag_tbl}) );
+      END;
+    $$;
+
+    do language plpgsql $$ begin
+    raise notice 'tool: {tag_tbl} done, %', clock_timestamp();
+    end $$;
+    """.format(
+
+            schema=schema,
+            tag_tbl=tag_tbl,
+            tag_var=tag_var,
+            variable_in=variable_in,
+            )
+    return cmd
+
 
 def mkcmd_insert_table_polygons(tag_tbl, tag_var, variable_in, schema):
     cmd = """
