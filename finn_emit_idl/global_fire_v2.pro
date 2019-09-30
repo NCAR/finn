@@ -81,6 +81,20 @@ outdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outp
 close, /all
 
  t0 = systime(1) ;Procedure start time in seconds
+
+ ; read input option for how to treate flct
+ if strmatch(input_lct, 'maj*', /fold_case) then acknowledge_flct = BOOLEAN(0) else $
+ if strmatch(input_lct, 'all*', /fold_case) then acknowledge_flct = BOOLEAN(1) else $
+ begin
+   print,'unknwon "input_lct"', input_lct
+   print,'valid values are "majority" or "all"'
+   print,'  "majority" assumes that input has record for only majority LCT (traditional FINN approach)'
+   print,'  "all" assumes that input has flct which has fractional land cover, and all of LCT for each polygons are exported'
+   print,'pass appropriate option and rerun the code!
+   stop
+ endelse
+ 
+ 
     
 
 ; ##########################################################################
@@ -735,6 +749,10 @@ endif
 ; Emissions = area*BE*BMASS*EF
     ; Convert units to consistent units
      areanow = area[j]*1.0e6 ; convert km2 --> m2
+     if acknowledge_flct then begin 
+	     ; apply fractional land cover only if all LCTs for a given polygon are exported in preprocessor
+         areanow = areanow*flct[j] 
+     endif
      bmass = bmass/1000. ; convert g dm/m2 to kg dm/m2
 
 
