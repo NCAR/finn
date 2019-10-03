@@ -75,8 +75,13 @@ scen = 1
 ;infile = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc\work_modvrs_na_2012\out_modvrs_na_2012_modlct_2012_modvcf_2012_regnum.csv' ; 2012 MODIS/VIIRS regional file 3/16/2019
 ;infile = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc\work_mod_na_2012\out_mod_na_2012_modlct_2012_modvcf_2012_regnum.csv' ; 2012 MODIS regional file created 3/16/2019
 
-inpdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Inputs'
-outdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outputs'
+;inpdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Inputs'
+;outdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outputs'
+inpdir = './Inputs'
+outdir = './Outputs'
+if ~ file_test(outdir , /DIRECTORY) then begin
+	file_mkdir, outdir
+endif
 
 close, /all
 
@@ -127,7 +132,7 @@ close, /all
 ;  READ IN FUEL LOADING FILE
 ;  02/08/2019: ALL FUEL INPUTS ARE IN g/m2
 
-    fuelin = inpdir + '\Fuel_LOADS_NEW_022019.csv' ; 
+    fuelin = inpdir + '/Fuel_LOADS_NEW_022019.csv' ; 
 ;    infuel=ascii_template(fuelin)
 ;    fuel=read_ascii(fuelin, template=infuel)
     fuel=read_csv(fuelin)
@@ -144,7 +149,7 @@ close, /all
 ; 02/08/2019
 ; READ in LCT Fuel loading file from prior Texas FINN study
 ; This is a secondary fuel loading file for use in US ONLY
-  lctfuelin = inpdir + '\LCTFuelLoad_fuel4_revisit20190521.csv'
+  lctfuelin = inpdir + '/LCTFuelLoad_fuel4_revisit20190521.csv'
 ;  infuelLCT=ascii_template(LCTfuelin)
 ;  LCTfuel=read_ascii(LCTfuelin, template=infuelLCT)
   LCTfuel=read_csv(LCTfuelin)
@@ -155,7 +160,7 @@ close, /all
 
 ; EMISSION FACTOR FILE
 ; READ IN EMISSION FACTOR FILE
-    emisin = inpdir + '\Updated_EFs_02042019.csv' ; NEW FILE created and Added on 02/08/2019
+    emisin = inpdir + '/Updated_EFs_02042019.csv' ; NEW FILE created and Added on 02/08/2019
 ;    inemis=ascii_template(emisin)
 ;    emis=read_ascii(emisin, template=inemis)
     emis=read_csv(emisin, template=inemis)
@@ -190,7 +195,7 @@ print, "Finished reading in fuel and emission factor files"
 ; ****************************************************************************
 ; yk_undo:  file/path
 ;    outfile = 'E:\Data2\wildfire\TEXAS\NEW_PROJECT_2014\FINNv2\RUN_MAY2015\OUTPUT\FINNv2_'+ scename+'_'+ simid + '_'+ todaydate+'.txt'
-     outfile = outdir + '\' + simid + '_'+todaydate+'.txt'
+     outfile = outdir + '/' + simid + '_'+todaydate+'.txt'
           openw, 6, outfile
      print, 'opened output file: ', outfile
 
@@ -200,7 +205,7 @@ print, "Finished reading in fuel and emission factor files"
 
 
 ; CREATE AND OPEN A LOG FILE to go with output file
-    logfile = outdir + '\LOG_' + simid + '_'+todaydate+'.txt'
+    logfile = outdir + '/LOG_' + simid + '_'+todaydate+'.txt'
     openw, 9, logfile
     print, 'SET UP OUTPUT FILES'
 
@@ -922,24 +927,22 @@ printf, 9, ''
     close,/all   ;make sure ALL files are closed
 end
 
-pro global_fire_v2_02222019_yk3
+pro global_fire_v2
 ;pro x_global_fire_v2_02222019_yk , infile=infile, simid=simid, yearnum=yearnum, todaydate=todaydate
 ;infile = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc\work_modvrs_na_2012\out_modvrs_na_2012_modlct_2012_modvcf_2012_regnum.csv' ; 2012 MODIS/VIIRS regional file 3/16/2019
 
-preprocdir = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc'
+preprocdir = '../../from_pc'
 
   simids = [ $
- ; 'mod_na_2012_keeppersistent' $ 
- ; ,'modvrs_na_2012_keeppersistent'$
-   'mod_na_2012_droppersistent' $
-  ,'modvrs_na_2012_droppersistent' $
-  ,'modvrs_na_2013_droppersistent' $
-  ,'modvrs_na_2014_droppersistent' $
-  ,'modvrs_na_2015_droppersistent' $
-  ,'modvrs_na_2016_droppersistent' $
-  ,'modvrs_na_2017_droppersistent' $
+  'modvrs_na_2012' $
+  ,'modvrs_na_2013' $
+  ,'modvrs_na_2014' $
+  ,'modvrs_na_2015' $
+  ,'modvrs_na_2016' $
+  ,'modvrs_na_2017' $
+  ,'modvrs_na_2018' $
   ]
-  todaydate = '05212019'
+  todaydate = '10032019'
 
 ;  simids = [ $
 ;;  'modvrs_global_2016_droppersistent' $
@@ -957,10 +960,10 @@ preprocdir = 'D:\Data2\wildfire\TEXAS\New_2018\docker_201903\finn_preproc'
     rstyearnum = min([yearnum, 2017]) ; latest available now is 2017
     rstyearstr = strtrim(string(rstyearnum), 2)
     
-    infile = preprocdir + '\work_' + simid + '\out_' + simid + '_modlct_' + rstyearstr + '_modvcf_' + rstyearstr + '_regnum.csv'
+    infile = preprocdir + '/work_' + simid + '/out_' + simid + '_modlct_' + rstyearstr + '_modvcf_' + rstyearstr + '_regnum.csv'
 
-    input_lct = 'majority' ; traditional behavior
-    ;input_lct = 'all'  ; choose this option when all LCT are exported in preprocessor
+    ;input_lct = 'majority' ; traditional behavior
+    input_lct = 'all'  ; choose this option when all LCT are exported in preprocessor
 
     print, infile
     print, simid

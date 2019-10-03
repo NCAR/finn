@@ -31,14 +31,20 @@ firstday = -!values.f_infinity
 lastday = !values.f_infinity
 
 ; infile = 'D:\Data2\wildfire\TEXAS\New_2018\EMISSIONS_CODE\OUTPUT_FILES\MARCH2019\modvrs_na_2012_03172019.txt' ; modis+ viirs 2012 (3/17/2019)
-inpdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Inputs'
-outdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outputs\speciate'
+inpdir = './Inputs'
+outdir = './Outputs/speciate'
+
+if ~ file_test(outdir , /DIRECTORY) then begin
+	file_mkdir, outdir
+endif
+
+
 
 
 ;****************************************************************************************************
 ; CONVERSION FACTOR TABLE FOR VOCs
  
-     convert =inpdir + '\New_Speciation_FEB2019.csv' 
+     convert =inpdir + '/New_Speciation_FEB2019.csv' 
  ;     intemp2=ascii_template(convert)
  ;     speciate=read_ascii(convert, template=intemp2)
       speciate=read_csv(convert);, template=intemp2)
@@ -56,8 +62,8 @@ outdir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outp
 
  
 
-outfile = outdir + '\FINNv2_TXDomain_'+simid+'_'+tdydate+'_MOZ.txt' ; Ran on 11/03/2016
-checkfile = outdir + '\LOG_FINNv2_TXDomain_'+simid+'_'+tdydate+'_MOZ.txt'
+outfile = outdir + '/FINNv2_TXDomain_'+simid+'_'+tdydate+'_MOZ.txt' ; Ran on 11/03/2016
+checkfile = outdir + '/LOG_FINNv2_TXDomain_'+simid+'_'+tdydate+'_MOZ.txt'
 
 
 ; Edited the output file on 02/23/2009
@@ -495,21 +501,19 @@ close, /all
 print, 'Progran Ended! All done!'
 END
 
-pro speciate_mozart_finnv2_02082019b_4max_yk3
-  datadir = 'D:\Data2\wildfire\TEXAS\New_2018\emissions_code_yk\code_yk_201905\Outputs'
+pro speciate_mozart_finnv2
+  datadir = './Outputs'
   simids = [ $
-;  'mod_na_2012_keeppersistent' $
-   'mod_na_2012_droppersistent' $
-;  , 'modvrs_na_2012_keeppersistent' $
-  , 'modvrs_na_2012_droppersistent' $
-  , 'modvrs_na_2013_droppersistent' $
-  , 'modvrs_na_2014_droppersistent' $
-  , 'modvrs_na_2015_droppersistent' $
-  , 'modvrs_na_2016_droppersistent' $
- ,'modvrs_na_2017_droppersistent' $
+  'modvrs_na_2012' $
+  ,'modvrs_na_2013' $
+  ,'modvrs_na_2014' $
+  ,'modvrs_na_2015' $
+  ,'modvrs_na_2016' $
+  ,'modvrs_na_2017' $
+  ,'modvrs_na_2018' $
   ]
-  finndate = '05212019'
-  todaydate = '05212019'
+  finndate = '10032019'
+  todaydate = '10032019'
 
 
 ;  simids = [ $
@@ -525,7 +529,7 @@ pro speciate_mozart_finnv2_02082019b_4max_yk3
     x = simid.Split('_')
     yearstr = x[2]
     yearnum = fix(yearstr)
-    infile = datadir +  '\' + simid + '_' + finndate + '.txt'
+    infile = datadir +  '/' + simid + '_' + finndate + '.txt'
     print, infile
     print, simid
     print, yearnum
