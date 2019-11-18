@@ -278,7 +278,8 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
                             group by acq_date_lst, polyid
                     ) bar 
             ) baz
-    ) quz where rnk = 1;
+--    ) quz where rnk = 1;
+    ) quz ;-- where rnk = 1; -- modified 20190925, extract all LCT
         i := log_checkout(i, (select count(*) from tbl_{tag_tbl}) );
       END;
     $$;
