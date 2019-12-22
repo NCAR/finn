@@ -5,7 +5,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
     apt-get install -y wget bzip2 ca-certificates \
-    libglib2.0-0 libxext6 libsm6 libxrender1 postgresql-11-postgis-2.5 postgis git unzip
+    libglib2.0-0 libxext6 libsm6 libxrender1 postgis git unzip
 
 RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo 
 RUN apt-get install -y postgresql-plpython3-11 
@@ -51,7 +51,8 @@ RUN pip3 install numpy scipy networkx
 
 EXPOSE 8888
 
-COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
+# i dont think this works
+#COPY create_plpython3u.sql /docker-entrypoint-initdb.d/
 
 # default database settings
 ENV POSTGRES_USER=finn \
@@ -63,6 +64,22 @@ ENV POSTGRES_USER=finn \
     PGHOST=localhost \
     PGPORT=5432
 
-RUN echo "psql -d finn -c 'CREATE LANGUAGE plpython3u;'" >> /docker-entrypoint.sh
+
+# i dont think this works.   get rid of it
+#RUN echo "psql -d finn -c 'CREATE LANGUAGE plpython3u;'" >> /docker-entrypoint.sh
+
+# as of 2019-12-21, kartoza/postgis:11.0-2.5 has postgresql 11.6 and postgis
+# 3.0.0, for some reason.  And the binary does not have raster support at
+# compiler time.  I was told
+# https://github.com/kartoza/docker-postgis/issue/172 that raster support can
+# be enabled at run time
+
+ENV POSTGRES_MULTIPLE_EXTENSIONS=postgis,postgis_raster
+
+# the above to actually kick in i had to do below..., seems like?  Hope this
+# doesn't backfire when the postgis has raster enabled at compile time.  in
+# that case i will come back here and remove two lines around here
+
+RUN echo "psql -d finn -c 'create extension postgis_raster;'" >> /docker-entrypoint.sh
 
 ENTRYPOINT /docker-entrypoint.sh
