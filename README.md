@@ -77,12 +77,12 @@ To get this repository locally, use `git clone`:
 
 ```bash
 git clone hhttps://github.com/NCAR/finn-preprocessor.git
-cd finn_preprocessor
+cd finn-preprocessor
 ```
 
 Alternatively `Download ZIP` button is available at https://github.com/NCAR/finn-preprocessor (or direct link https://github.com/NCAR/finn-preprocessor/archive/master.zip )
 
-Next, copy your fire detection shapefile(s) into the directory ../finn_preprocessor/data/.
+Next, copy your fire detection shapefile(s) into the directory ../finn-preprocessor/data/.
 These files need to be UNZIPPED. 
 
 ### 4. Building the Docker image
@@ -166,10 +166,10 @@ Instead of `docker run` after restarting docker, You would try `docker start fin
   This sets the name for the container.  Happened to be the same as image's name, but you may choose other names (to have multiple containers out of one image).  You cannot use same name for two different containers, though, container name must be unique.
 * `-v $(pwd):/home/finn`  
   This makes $(pwd) (current working directory, where you downloaded FINN preprocessor by Git) to be accessible as `/home/finn` from inside the container being made ( [bind mounts](https://docs.docker.com/storage/bind-mounts/) ).  Therefore the change you make in FINN directory on your machine is reflected immediately in files in /home/finn in the container and vice versa, since they are identical file on the storage.  Our code/inputs/intermediate files/outputs is stored in FINN direoctory which becomes /home/finn when you look from the container.
-* (Linux) `-v ${HOME}/pg_data:/var/lib/postgresql`  
+* (Linux/Mac) `-v ${HOME}/pg_data:/var/lib/postgresql`  
   Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
-* (Windows/Mac) `-v pg_data:/var/lib/posrgresql`  
-  Unfortunately this setting does not work for Windows and Mac version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
+* (Windows) `-v pg_data:/var/lib/posrgresql`  
+  Unfortunately this setting does not work for Windows version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
 * `-p 5432:5432` and `-p 8888:8888`
   Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.
 * `-d`
@@ -216,11 +216,11 @@ If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost`
 From this point forward, leave the terminal open and move to the newly opened web browser. 
 
 To open the notebook, navigate to the `work_generic/` directory and open
-[`main_generic.ipynb`](http://localhost:8888/notebooks/work_generic/main_generic.ipynb)
-by double clicking on that file.  The code on this page runs the FINN
-preprocessor, including the components related to downloading MODIS land cover
-and vegetation data. The user is able to run a test case or to run a specific
-time and location for which the user has already downloaded fire detections.
+`main_generic.ipynb` by double clicking on that file.  The code on this page
+runs the FINN preprocessor, including the components related to downloading
+MODIS land cover and vegetation data. The user is able to run a test case or to
+run a specific time and location for which the user has already downloaded fire
+detections.
 
 #### 6.1 Run the test case
 
@@ -370,15 +370,15 @@ I try to write a notebook which allows this management/cleanup at some point, if
 
 ##### Overview of docker components
 
-:information_source: Diagram below shows components of docker involved in FINN preprocessor.
+:information_source: Diagram below shows components of docker involved in FINN preprocessor, same diagram as you see in subection 7.
 
 ![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
 The day-to-day task covered in this subsection 7 deals with docker container, represented by boxes starting with "Run" and ending with "Conteiner Rm".  Blue arrows indicates that container is running, and `docker exec` can be issued on the container.  "Stop"/"Start" cycle can be repeated as many times.  You will also note that `docker build` and `docker volume create` commands creates "image" and "volume" respectively.  These exists independently until you explicitly delete them.
 
-FINN preprocessor is designed to save data that you download/generate to be saved outside of Docker system for better persistence of data.  First, all of your downloaded files and intermediate data are stored in finn_preproc directory which you created near begining.  We are using docker's "bind-mount" method to access the directory both from inside and outside of docker.  
+FINN preprocessor is designed to save data that you download/generate to be saved outside of Docker system for better persistence of data.  First, all of your downloaded files and intermediate data are stored in finn-preprocessor directory which you created near begining.  We are using docker's "bind-mount" method to access the directory both from inside and outside of docker.  
 
-Another location where FINN store data is PostgreSQL (PostGIS) database.  For Linux users, this is $HOME/pg_data directory, and is "bind-mount"ed similarly to finn_preproc.  The data there can be reused (more later).  For Windows users, we created "named volume" pg_data by command `docker volume create pg_data`.  This will set a directory inside Linux virtual machine (Hyper-V), and docker container is going to access the space to store the database.  Life of docker named volume is independent of docker images and containers, and it persist unless you explicitly delete the volume.
+Another location where FINN store data is PostgreSQL (PostGIS) database.  For Linux/Mac users, this is $HOME/pg_data directory, and is "bind-mount"ed similarly to finn-preprocessor.  The data there can be reused (more later).  For Windows users, we created "named volume" pg_data by command `docker volume create pg_data`.  This will set a directory inside Linux virtual machine (Hyper-V), and docker container is going to access the space to store the database.  Life of docker named volume is independent of docker images and containers, and it persist unless you explicitly delete the volume.
 
 Following section has commands for deleting cocker components used in FINN.  With the exception of removing docker volumes, these have little effects on disk use, as FINN preprocer does not store data in containers/images.  
 
@@ -396,7 +396,7 @@ or
 docker container rm finn
 ```
 
-Note that this does not delete the files in finn_preproc directory, or the PostgreSQL database stored inside docker volume (Windows) or $HOME/pg_data (Linux).  It simply remove the container which can be easily recreated, by `docker run` command described in Section 5.1.  By using argumeents for `-v pg_data:/var/lib/postgresql` (or `-v ${HOME}/pg_data:/var/lib/postgresql` for Linux), the content of database is unaffected, and all the data you created earlier are still available as it was before removing the container.
+Note that this does not delete the files in finn_preproc directory, or the PostgreSQL database stored inside docker volume (Windows) or $HOME/pg_data (Linux/Mac).  It simply remove the container which can be easily recreated, by `docker run` command described in Section 5.1.  By using argumeents for `-v pg_data:/var/lib/postgresql` (or `-v ${HOME}/pg_data:/var/lib/postgresql` for Linux), the content of database is unaffected, and all the data you created earlier are still available as it was before removing the container.
 
 ##### Removing the image
 
@@ -412,7 +412,7 @@ or
 docker image rm finn
 ```
 
-Again, this does not remove any files in finn_preproc directory, or the PostgreSQL database.  Image can be recreated with `docker build` command described in Section 4.
+Again, this does not remove any files in finn-preprocessor directory, or the PostgreSQL database.  Image can be recreated with `docker build` command described in Section 4.
 
 
 ##### Removing the volume 
@@ -439,7 +439,7 @@ docker container rm finn
 docker image rm finn
 ```
 
-In the Terminal, navigate to main directory `../finn_preproc`  
+In the Terminal, navigate to main directory `../finn-preprocessor`  
 Then type:
 
 ```
@@ -466,7 +466,7 @@ For docker desktop for Windows, System taks tray have the whale icon for Docker 
 
 From our experiences, docker may appear to stop functioning because changes in your system.  We observed that
 
-- If you started VPN, docker may lose access to local storage. As a result you cannot see the conent of finn_preproc directory from docker (e.g. Jupyter Notebook).  Stop the VPN and restart the container (`docker stop finn` and then `docker start finn`)
+- If you started VPN, docker may lose access to local storage. As a result you cannot see the conent of finn-preprocessor directory from docker (e.g. Jupyter Notebook).  Stop the VPN and restart the container (`docker stop finn` and then `docker start finn`)
 - If you changed password for your machine or domain, it may affects docker.  On `Docker Desktop for Windows`, you can go to the setting (right click the system tray icon for docker), go to  `Shared Drive` tab, and `Reset credentials`.  Then enable the shared drive again.
 - You have to be in a user group `docker` in order to use docker.  Make sure that you are in `docker` user.  [Instruction for Docker Desktop for Windows are found here](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#2-add-yourself-to-docker-users-group).  Linux instruction is ["Manage Docker as a non-root user" section in thie page](https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user).
 
