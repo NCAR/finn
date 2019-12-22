@@ -13094,14 +13094,15 @@ div#notebook {
 <div class="text_cell_render border-box-sizing rendered_html">
 <p>To run the FINN preprocessor, you should specify the following:</p>
 <ol>
-<li><code>tag_af</code>: a tag or name for your active fire dataset, e.g., <code>'my_af_data'</code>.  See below for guidance for picking <code>tag_af</code>.</li>
+<li><code>tag_af</code>: a tag or name for your active fire dataset, e.g., 'modvrs_global_2018'.  See below for guidance for picking <code>tag_af</code>.</li>
 <li><code>af_fnames</code>: a list of file paths to active fire shape files (e.g., downloaded from <a href="https://firms.modaps.eosdis.nasa.gov/">FIRMS</a>) </li>
 <li><code>year_rst</code>: MODIS raster data year to be used for the analysis.  It is recommended to use the data from a year prior to the Active Fire data, as the impact of large fire may affects the VCF product of the year, resulting in smaller estimate of fuel loadings.</li>
-<li><code>filter_persistent_source</code>: ActiveFire product has inferred hot spot "type" field (0 = presumed vegetation fire, 1 = active volcano, 2 = other static land source, 3 = offshore) ref: Giglio et al. "MODIS Collection 6 Active Fire Product User’s Guide Revision B" 2018.  By making this option True, "1 active volcano" and "2 other static land source" are dropped.  Recommended to keep this True</li>
+<li><code>filter_persistent_source</code>: ActiveFire product has inferred hot spot "type" field (0 = presumed vegetation fire, 1 = active volcano, 2 = other static land source, 3 = offshore) ref: Table 9 of <a href="https://cdn.earthdata.nasa.gov/conduit/upload/10575/MODIS_C6_Fire_User_Guide_B.pdf">Giglio et al. "MODIS Collection 6 Active Fire Product User’s Guide Revision B" 2018</a>.  By making this option True, "1 active volcano" and "2 other static land source" are dropped.  Recommended to keep this True</li>
 </ol>
 <p>It is recommended to use descriptive name which identified data source (modis vs viirs), spatial extent and time period.  e.g. <code>modvrs_global_2018</code> for Modis/VIIRS combined detection for global scale modeling for year 2018, or <code>mod_tx_2012sum</code> for modis detection for Texas for Summer 2012 (definition of "summer" is implicit here).</p>
 <p>The variable <code>tag_af</code> is used as part of PostGIS database schema and table ("<a href="https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS">SQL Identifier</a>"), and you have to start with letter (a-z, A-Z) or underscore (_) followed by letter/underscore/digit (0-9).</p>
 <p>Final output files will be named "out_<i>tag_af</i><em>*.csv" and "out</em><i>tag_af</i>_*.shp".</p>
+<p>It is also recommended that you create copy of directory contining this notebook (<code>work_generic</code>) and process your custom run there, so that one activefire procerssing is housed in different directory.  Main reason is that this notebook is tied to GitHub repository.  So if the repository got updated and if you want to pull the changes, it may causes conflict if this file had modifications by you.  By making copy before you edit, main_generic.ipynb can be updated from repository.</p>
 <h3 id="Default-settings">Default settings<a class="anchor-link" href="#Default-settings">&#182;</a></h3><p>To use a small example dataset that is bundled with the FINN preprocessor, you can use the following settings:</p>
 <div class="highlight"><pre><span></span><span class="n">tag_af</span> <span class="o">=</span> <span class="s1">&#39;testOTS_092018&#39;</span>
 
@@ -13214,7 +13215,7 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Options below will delete the intermediate files at section 8, after the processing is finished.  Make these into True if you know that this notebook work (with your settings) and you don't need to review the intermediates.</p>
+<p>Options below specifies if extra output/log will be saved</p>
 
 </div>
 </div>
@@ -13222,6 +13223,31 @@ div#notebook {
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># save *.shp of the output, so that you can hold onto polygons</span>
+<span class="n">save_shp_of_output</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># save *.html version of this notebook upon exit, so that you can keep records</span>
+<span class="n">save_html_of_notebook</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Options below will delete the intermediate files at section 8, after the processing is finished.  Make these into True if you know that this notebook work (with your settings) and you don't need to review the intermediates.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># deletes entire schema in the database for the AF data processed in this notebook</span>
@@ -13267,7 +13293,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>env <span class="p">|</span> sort
@@ -13293,8 +13319,8 @@ EARTHDATAPW=J0N0Puedo
 EARTHDATAUSER=yosuke
 GIT_PAGER=cat
 HOME=/root
-HOSTNAME=42dcc930f6e0
-JPY_PARENT_PID=71
+HOSTNAME=2c22de7e4b23
+JPY_PARENT_PID=37
 KERNEL_LAUNCH_TIMEOUT=40
 LANG=en_US.UTF-8
 LANGUAGE=en_US:en
@@ -13331,7 +13357,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># python libraries</span>
@@ -13341,6 +13367,7 @@ TERM=xterm-color
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">shlex</span>
 <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlparse</span>
 <span class="kn">from</span> <span class="nn">importlib</span> <span class="kn">import</span> <span class="n">reload</span>
@@ -13360,6 +13387,7 @@ TERM=xterm-color
 <span class="kn">import</span> <span class="nn">export_shp</span>
 <span class="kn">import</span> <span class="nn">plotter</span>
 <span class="kn">import</span> <span class="nn">run_extra</span>
+<span class="kn">import</span> <span class="nn">notebook_util</span>
 </pre></div>
 
     </div>
@@ -13377,7 +13405,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>
@@ -13424,7 +13452,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>psql -d finn -c <span class="s2">&quot;select version();&quot;</span>
@@ -13450,9 +13478,9 @@ TERM=xterm-color
  PostgreSQL 11.6 (Debian 11.6-1.pgdg100+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 8.3.0-6) 8.3.0, 64-bit
 (1 row)
 
-                                                                                                                            postgis_full_version                                                                                                                            
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- POSTGIS=&#34;3.0.0 r17983&#34; [EXTENSION] PGSQL=&#34;110&#34; GEOS=&#34;3.7.1-CAPI-1.11.1 27a5e771&#34; PROJ=&#34;Rel. 5.2.0, September 15th, 2018&#34; GDAL=&#34;GDAL 2.4.0, released 2018/12/14&#34; LIBXML=&#34;2.9.4&#34; LIBJSON=&#34;0.12.1&#34; LIBPROTOBUF=&#34;1.3.1&#34; WAGYU=&#34;0.4.3 (Internal)&#34; TOPOLOGY RASTER [UNPACKAGED!]
+                                                                                                                postgis_full_version                                                                                                                 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ POSTGIS=&#34;3.0.0 r17983&#34; [EXTENSION] PGSQL=&#34;110&#34; GEOS=&#34;3.7.1-CAPI-1.11.1 27a5e771&#34; PROJ=&#34;Rel. 5.2.0, September 15th, 2018&#34; GDAL=&#34;GDAL 2.4.0, released 2018/12/14&#34; LIBXML=&#34;2.9.4&#34; LIBJSON=&#34;0.12.1&#34; LIBPROTOBUF=&#34;1.3.1&#34; WAGYU=&#34;0.4.3 (Internal)&#34; RASTER
 (1 row)
 
 </pre>
@@ -13473,7 +13501,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">!</span>psql -d finn -f ../code_anaconda/testpy.sql
@@ -13497,7 +13525,7 @@ TERM=xterm-color
                    testpy                    
 ---------------------------------------------
  3.7.3 (default, Apr  3 2019, 05:39:12)     +
- [GCC 8.3.0] | numpy: 1.17.4 | networkx: 2.4
+ [GCC 8.3.0] | numpy: 1.18.0 | networkx: 2.4
 (1 row)
 
 </pre>
@@ -13518,7 +13546,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">rst_import</span><span class="p">)</span>
@@ -13572,7 +13600,7 @@ TERM=xterm-color
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># check input file exists</span>
@@ -13707,7 +13735,7 @@ OK
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">af_import</span><span class="p">)</span>
@@ -13782,7 +13810,7 @@ ogr2ogr -progress -f PostgreSQL -overwrite PG:dbname=&#39;finn&#39; -lco SPATIAL
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">plotter</span><span class="p">)</span>
@@ -13862,7 +13890,7 @@ OrderedDict([(&#39;No Data Value&#39;, 0.0), (&#39;Min&#39;, None), (&#39;Max&#3
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">downloader</span><span class="p">)</span>
@@ -13907,12 +13935,12 @@ OrderedDict([(&#39;No Data Value&#39;, 0.0), (&#39;Min&#39;, None), (&#39;Max&#3
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>{&#39;n_tot&#39;: 2535, &#39;n_ok&#39;: 0, &#39;n_need&#39;: 2535, &#39;tiles_missing_lct&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;], &#39;tiles_missing_vcf&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;], &#39;tiles_required_lct&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;], &#39;tiles_required_vcf&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;]}
+<pre>{&#39;n_tot&#39;: 2535, &#39;n_ok&#39;: 2535, &#39;n_need&#39;: 0, &#39;tiles_missing_lct&#39;: [], &#39;tiles_missing_vcf&#39;: [], &#39;tiles_required_lct&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;], &#39;tiles_required_vcf&#39;: [&#39;h08v04&#39;, &#39;h08v05&#39;, &#39;h09v04&#39;, &#39;h09v05&#39;]}
 
-Some fire are not conained in raster
-Will download/import raster dataset
+All fire are is conained in raster
+no need to download/import raster dataset
 
-Region definiton shapefile will be imported
+no need to import Region definiton shapefile
 </pre>
 </div>
 </div>
@@ -13923,7 +13951,7 @@ Region definiton shapefile will be imported
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Date range of active fire</span>
@@ -13968,7 +13996,7 @@ last day in AF file: 2017-07-21
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># all raster downloads are stored in following dir</span>
@@ -13982,7 +14010,7 @@ last day in AF file: 2017-07-21
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># earthdata&#39;s URL for landcover and VCF</span>
@@ -14002,25 +14030,6 @@ last day in AF file: 2017-07-21
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>LCT downloads goes to ../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/
-VCF downloads goes to ../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
@@ -14032,7 +14041,7 @@ VCF downloads goes to ../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.0
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_lct</span><span class="p">:</span>
@@ -14041,36 +14050,6 @@ VCF downloads goes to ../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.0
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>../downloads
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/BROWSE.MCD12Q1.A2017001.h08v04.006.2019196133656.1.jpg
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/BROWSE.MCD12Q1.A2017001.h08v05.006.2019196133708.1.jpg
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/BROWSE.MCD12Q1.A2017001.h09v04.006.2019196133753.1.jpg
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/BROWSE.MCD12Q1.A2017001.h09v05.006.2019196133757.1.jpg
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf
-https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf.xml
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14085,7 +14064,7 @@ https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_lct</span><span class="p">:</span>
@@ -14093,27 +14072,6 @@ https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf ... OK
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14128,7 +14086,7 @@ https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_vcf</span><span class="p">:</span>
@@ -14139,40 +14097,10 @@ https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>../downloads
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/BROWSE.MOD44B.A2017065.h08v04.006.2018331115305.1.jpg
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/BROWSE.MOD44B.A2017065.h08v05.006.2018331122559.1.jpg
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/BROWSE.MOD44B.A2017065.h09v04.006.2018331122042.1.jpg
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/BROWSE.MOD44B.A2017065.h09v05.006.2018331123538.1.jpg
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v04.006.2018331164424.hdf
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v04.006.2018331164424.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v05.006.2018331164408.hdf
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v05.006.2018331164408.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v04.006.2018331164421.hdf
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v04.006.2018331164421.hdf.xml
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.006.2018331164408.hdf
-https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.006.2018331164408.hdf.xml
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_vcf</span><span class="p">:</span>
@@ -14180,27 +14108,6 @@ https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.00
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v04.006.2018331164424.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v05.006.2018331164408.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v04.006.2018331164421.hdf ... OK
-../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.006.2018331164408.hdf ... OK
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14222,7 +14129,7 @@ https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.00
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">workdir_lct</span> <span class="o">=</span> <span class="s1">&#39;../proc_rst_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">tag_lct</span>
@@ -14238,26 +14145,6 @@ https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.00
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>LCT preprocessing occurs in ../proc_rst_modlct_2017
-VCF preprocessing occurs in ../proc_rst_modvcf_2017
-RegNum preprocessing occurs in ../proc_rst_regnum
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14279,7 +14166,7 @@ RegNum preprocessing occurs in ../proc_rst_regnum
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_lct</span><span class="p">:</span>
@@ -14295,24 +14182,6 @@ RegNum preprocessing occurs in ../proc_rst_regnum
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>found 4 hdf files
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
@@ -14324,7 +14193,7 @@ RegNum preprocessing occurs in ../proc_rst_regnum
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_lct</span><span class="p">:</span>
@@ -14333,57 +14202,6 @@ RegNum preprocessing occurs in ../proc_rst_regnum
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>bname: MCD12Q1.A2017001
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v04.006.2019196133656.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v05.006.2019196133708.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v04.006.2019196133753.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v05.006.2019196133757.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf&#34;:MCD12 ...
-fc: 4
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -160 40 -150 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -150 40 -140 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -140 40 -130 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -140 30 -130 40 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -130 40 -120 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -130 30 -120 40 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 40 -110 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 30 -110 40 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 20 -110 30 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 40 -100 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 30 -100 40 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 20 -100 30 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -100 30 -90 40 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED= ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -100 20 -90 30 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED= ...
-1 of 14...
-2 of 14...
-3 of 14...
-4 of 14...
-5 of 14...
-6 of 14...
-7 of 14...
-8 of 14...
-9 of 14...
-10 of 14...
-11 of 14...
-12 of 14...
-13 of 14...
-14 of 14...
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14400,7 +14218,7 @@ It is located in schema "raster", table name either one of three, "rst_modlct_YY
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -14481,7 +14299,7 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_vcf</span><span class="p">:</span>
@@ -14498,28 +14316,10 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>found 4 hdf files
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_vcf</span><span class="p">:</span>
@@ -14531,61 +14331,10 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>bname: MOD44B.A2017065
-cmd: gdal_merge.py -separate -n 200 -init 0 0 100 -o ../proc_rst_modvcf_2017/mrg/MOD44B.A2017065.h08v04.006.2018331164424.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v04.0 ...
-cmd: gdal_merge.py -separate -n 200 -init 0 0 100 -o ../proc_rst_modvcf_2017/mrg/MOD44B.A2017065.h08v05.006.2018331164408.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h08v05.0 ...
-cmd: gdal_merge.py -separate -n 200 -init 0 0 100 -o ../proc_rst_modvcf_2017/mrg/MOD44B.A2017065.h09v04.006.2018331164421.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v04.0 ...
-cmd: gdal_merge.py -separate -n 200 -init 0 0 100 -o ../proc_rst_modvcf_2017/mrg/MOD44B.A2017065.h09v05.006.2018331164408.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/MOD44B.A2017065.h09v05.0 ...
-fc: 4
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -160 40 -150 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -150 40 -140 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -140 40 -130 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -140 30 -130 40 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -130 40 -120 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -130 30 -120 40 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 40 -110 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 30 -110 40 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -120 20 -110 30 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 40 -100 50 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 30 -100 40 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -110 20 -100 30 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TI ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -100 30 -90 40 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TIL ...
-cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -100 20 -90 30 -overwrite -r average -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TIL ...
-1 of 14...
-2 of 14...
-3 of 14...
-4 of 14...
-5 of 14...
-6 of 14...
-7 of 14...
-8 of 14...
-9 of 14...
-10 of 14...
-11 of 14...
-12 of 14...
-13 of 14...
-14 of 14...
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
@@ -14667,7 +14416,7 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_regnum</span><span class="p">:</span>
@@ -14686,7 +14435,7 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">need_to_import_regnum</span><span class="p">:</span>
@@ -14695,24 +14444,6 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[&#39;shp2pgsql&#39;, &#39;-d&#39;, &#39;-c&#39;, &#39;-s&#39;, &#39;4326&#39;, &#39;-I&#39;, &#39;../proc_rst_regnum/All_Countries.shp&#39;, &#39;raster.rst_regnum&#39;]
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -14733,7 +14464,7 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step1</span><span class="p">)</span>
@@ -14754,19 +14485,19 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>starting prep: 2019-12-22 02:22:51.542596
+<pre>starting prep: 2019-12-22 23:17:01.704331
 [&#39;psql&#39;, &#39;-f&#39;, &#39;../code_anaconda/step1_prep_v7m.sql&#39;, &#39;-v&#39;, &#39;tag=testOTS_092018&#39;, &#39;-v&#39;, &#39;filter_persistent_sources=True&#39;]
 (datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
 0
-starting work 2017-07-13: 2019-12-22 02:22:54.122415
-starting work 2017-07-14: 2019-12-22 02:22:55.642156
-starting work 2017-07-15: 2019-12-22 02:22:58.523863
-starting work 2017-07-16: 2019-12-22 02:23:03.703880
-starting work 2017-07-17: 2019-12-22 02:23:06.945884
-starting work 2017-07-18: 2019-12-22 02:23:09.102644
-starting work 2017-07-19: 2019-12-22 02:23:10.903574
-starting work 2017-07-20: 2019-12-22 02:23:12.418348
-starting work 2017-07-21: 2019-12-22 02:23:14.170270
+starting work 2017-07-13: 2019-12-22 23:17:03.345914
+starting work 2017-07-14: 2019-12-22 23:17:04.877396
+starting work 2017-07-15: 2019-12-22 23:17:07.537835
+starting work 2017-07-16: 2019-12-22 23:17:11.057749
+starting work 2017-07-17: 2019-12-22 23:17:14.060499
+starting work 2017-07-18: 2019-12-22 23:17:16.226233
+starting work 2017-07-19: 2019-12-22 23:17:17.991013
+starting work 2017-07-20: 2019-12-22 23:17:19.615939
+starting work 2017-07-21: 2019-12-22 23:17:21.452981
 </pre>
 </div>
 </div>
@@ -14784,7 +14515,7 @@ starting work 2017-07-21: 2019-12-22 02:23:14.170270
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step2</span><span class="p">)</span>
@@ -14805,18 +14536,18 @@ starting work 2017-07-21: 2019-12-22 02:23:14.170270
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>starting prep: 2019-12-22 02:23:16.178471
+<pre>starting prep: 2019-12-22 23:17:23.545034
 (datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
 0
-starting work 2017-07-13: 2019-12-22 02:23:16.675510
-starting work 2017-07-14: 2019-12-22 02:23:17.247087
-starting work 2017-07-15: 2019-12-22 02:23:18.248679
-starting work 2017-07-16: 2019-12-22 02:23:19.816957
-starting work 2017-07-17: 2019-12-22 02:23:21.262991
-starting work 2017-07-18: 2019-12-22 02:23:22.231753
-starting work 2017-07-19: 2019-12-22 02:23:22.935373
-starting work 2017-07-20: 2019-12-22 02:23:23.496392
-starting work 2017-07-21: 2019-12-22 02:23:24.155466
+starting work 2017-07-13: 2019-12-22 23:17:24.038671
+starting work 2017-07-14: 2019-12-22 23:17:24.595712
+starting work 2017-07-15: 2019-12-22 23:17:25.661332
+starting work 2017-07-16: 2019-12-22 23:17:27.169393
+starting work 2017-07-17: 2019-12-22 23:17:28.694800
+starting work 2017-07-18: 2019-12-22 23:17:29.684750
+starting work 2017-07-19: 2019-12-22 23:17:30.392398
+starting work 2017-07-20: 2019-12-22 23:17:30.940530
+starting work 2017-07-21: 2019-12-22 23:17:31.599248
 </pre>
 </div>
 </div>
@@ -14842,7 +14573,7 @@ starting work 2017-07-21: 2019-12-22 02:23:24.155466
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="prompt input_prompt">In&nbsp;[33]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">outdir</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
@@ -14856,7 +14587,7 @@ starting work 2017-07-21: 2019-12-22 02:23:24.155466
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[33]:</div>
+<div class="prompt input_prompt">In&nbsp;[34]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">schema</span> <span class="o">=</span> <span class="s1">&#39;af_&#39;</span> <span class="o">+</span> <span class="n">tag_af</span>
@@ -14871,7 +14602,7 @@ starting work 2017-07-21: 2019-12-22 02:23:24.155466
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[34]:</div>
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">export_shp</span><span class="p">)</span>
@@ -14912,7 +14643,7 @@ exporting: ./out_testOTS_092018_modlct_2017_modvcf_2017_regnum.shp ... Done
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[35]:</div>
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_extra</span><span class="p">)</span>
@@ -14942,15 +14673,15 @@ SET
 
  log_id |     log_event      | log_nrec_change | log_nrec_before | log_nrec_after |      log_time_finish       
 --------+--------------------+-----------------+-----------------+----------------+----------------------------
-      1 | import af_in_1     |             498 |               0 |            498 | 2019-12-22 02:22:53.700614
-      2 | import af_in_2     |            2037 |             498 |           2535 | 2019-12-22 02:22:53.783501
-      3 | drop low confience |            -159 |            2535 |           2376 | 2019-12-22 02:22:53.800953
-      4 | dup tropics        |               0 |            2376 |           2376 | 2019-12-22 02:22:53.81974
-     21 | agg to large       |           -2141 |            2376 |            235 | 2019-12-22 02:23:16.076701
-     22 | subdiv             |             581 |             235 |            816 | 2019-12-22 02:23:16.081713
-     47 | join modlct_2017   |             942 |               0 |            942 | 2019-12-22 02:23:24.563575
-     48 | join modvcf_2017   |             816 |               0 |            816 | 2019-12-22 02:23:24.72734
-     49 | join regnum        |             816 |               0 |            816 | 2019-12-22 02:23:24.962487
+      1 | import af_in_1     |             498 |               0 |            498 | 2019-12-22 23:17:02.898132
+      2 | import af_in_2     |            2037 |             498 |           2535 | 2019-12-22 23:17:02.99819
+      3 | drop low confience |            -159 |            2535 |           2376 | 2019-12-22 23:17:03.012363
+      4 | dup tropics        |               0 |            2376 |           2376 | 2019-12-22 23:17:03.028076
+     21 | agg to large       |           -2141 |            2376 |            235 | 2019-12-22 23:17:23.444744
+     22 | subdiv             |             581 |             235 |            816 | 2019-12-22 23:17:23.449645
+     47 | join modlct_2017   |             942 |               0 |            942 | 2019-12-22 23:17:32.012578
+     48 | join modvcf_2017   |             816 |               0 |            816 | 2019-12-22 23:17:32.187848
+     49 | join regnum        |             816 |               0 |            816 | 2019-12-22 23:17:32.431127
 (9 rows)
 
 
@@ -14994,7 +14725,7 @@ SET
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[36]:</div>
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">qry_af</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT table_schema || &#39;.&#39; || table_name AS table_full_name,</span>
@@ -15052,8 +14783,8 @@ SET
  af_testOTS_092018.tbl_modvcf_2017                    | 80 kB
  af_testOTS_092018.tbl_modlct_2017                    | 72 kB
  af_testOTS_092018.tbl_regnum                         | 56 kB
- af_testOTS_092018.af_ins                             | 16 kB
  af_testOTS_092018.tbl_options                        | 16 kB
+ af_testOTS_092018.af_ins                             | 16 kB
  af_testOTS_092018.tbl_log                            | 16 kB
  af_testOTS_092018.tbl_flddefs                        | 8192 bytes
 (15 rows)
@@ -15085,7 +14816,7 @@ Total
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[37]:</div>
+<div class="prompt input_prompt">In&nbsp;[38]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># cleans intermediate vector</span>
@@ -15120,7 +14851,7 @@ Total
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[38]:</div>
+<div class="prompt input_prompt">In&nbsp;[39]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;du&#39;</span><span class="p">,</span> <span class="s1">&#39;-csh&#39;</span><span class="p">,</span> <span class="n">ddir_lct</span><span class="p">,</span> <span class="n">ddir_vcf</span><span class="p">]</span>
@@ -15145,9 +14876,9 @@ Total
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Disk use by downloaded raster hdf files
-39M	../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/
-301M	../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/
-339M	total
+38M	../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/
+276M	../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/
+313M	total
 
 </pre>
 </div>
@@ -15159,7 +14890,7 @@ Total
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[39]:</div>
+<div class="prompt input_prompt">In&nbsp;[40]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;du&#39;</span><span class="p">,</span> <span class="s1">&#39;-csh&#39;</span><span class="p">,</span> <span class="n">workdir_lct</span><span class="p">,</span> <span class="n">workdir_vcf</span><span class="p">]</span>
@@ -15197,7 +14928,7 @@ Total
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[40]:</div>
+<div class="prompt input_prompt">In&nbsp;[41]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">qry_rst</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT table_schema || &#39;.&#39; || table_name AS table_full_name,</span>
@@ -15272,7 +15003,7 @@ Total for modlct_2017 and modvcf_2017
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[41]:</div>
+<div class="prompt input_prompt">In&nbsp;[42]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># cleans intermediate raster</span>
@@ -15281,7 +15012,7 @@ Total for modlct_2017 and modvcf_2017
     <span class="c1"># ditch entire download directory for the year</span>
     <span class="n">tgts</span> <span class="o">=</span> <span class="p">[</span><span class="n">ddir_lct</span><span class="p">,</span> <span class="n">ddir_vcf</span><span class="p">]</span>
     <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;rm&#39;</span><span class="p">,</span> <span class="s1">&#39;-fr&#39;</span><span class="p">,</span> <span class="p">]</span> <span class="o">+</span> <span class="n">tgts</span>
-
+    <span class="nb">print</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
     <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     
 <span class="k">if</span> <span class="n">wipe_intermediate_geotiff</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
@@ -15298,6 +15029,36 @@ Total for modlct_2017 and modvcf_2017
     
     <span class="n">rst_import</span><span class="o">.</span><span class="n">drop_tables</span><span class="p">(</span><span class="n">tag_lct</span><span class="p">)</span>
     <span class="n">rst_import</span><span class="o">.</span><span class="n">drop_tables</span><span class="p">(</span><span class="n">tag_vcf</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Save hardcopy of this notebook as html file</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">if</span> <span class="n">save_html_of_notebook</span><span class="p">:</span>
+    <span class="n">notebook_util</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">()</span>
+    <span class="n">nb_path</span> <span class="o">=</span> <span class="n">notebook_util</span><span class="o">.</span><span class="n">notebook_path</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">nb_path</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s1">&#39;jupyter nbconvert --to html &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">nb_path</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;html saved&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;save html failed&#39;</span><span class="p">)</span>
 </pre></div>
 
     </div>
