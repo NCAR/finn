@@ -8,7 +8,7 @@ Specifically, this is a PostGIS-based preprocessor. Given a point feature shapef
 
 Note - Paragraphs starting with an icon :information_source: can be skipped. They are FYI only.
 
-*Note - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (Docker Desktop for Windows).  There are extra information specific to different operations system, version of Docker product (Desktop vs. Toolbox), and please refer to them as needed.
+*Note* - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (Docker Desktop for Windows).  There are extra information specific to different operations system, version of Docker product (Desktop vs. Toolbox), and please refer to them as needed.
 
 * [Docker Desktop for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows), standard docker environment for recent version of Windows
 * [Docker Toolbox for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows), legacy implementation of docker for older version of Windows10 and older
@@ -71,7 +71,7 @@ Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Co
 
 ### 3. Acquiring this repository
 
-*Note for Windows Users: Open a `PowerShell` terminal and navigate to the directory on your computer where you want to store and run everything.*  
+*Note for Windows Users: Open a `PowerShell` terminal and navigate to the directory on your computer where you want to store and run command in sections 3, 4 and 5 of this README file.*  
 
 To get this repository locally, use `git clone`:
 
@@ -211,30 +211,43 @@ Note that your token (the part after `token=...`) will be different.
 
 If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address.
 
-See "Running the notebook" section below for actually running the tool.
-
 ### 6. Running the notebook
 
 From this point forward, leave the terminal open and move to the newly opened web browser. 
 
-To open the notebook, navigate to the `work_generic/` directory and open [`main_generic.ipynb`](http://localhost:8888/notebooks/work_generic/main_generic.ipynb) by double clicking on that file.  
-The code on this page runs the FINN preprocessor, including the components related to downloading MODIS land cover and vegetation data. The user is able to run a test case or to run a specific time and location for which the user has already downloaded fire detections.
+To open the notebook, navigate to the `work_generic/` directory and open
+[`main_generic.ipynb`](http://localhost:8888/notebooks/work_generic/main_generic.ipynb)
+by double clicking on that file.  The code on this page runs the FINN
+preprocessor, including the components related to downloading MODIS land cover
+and vegetation data. The user is able to run a test case or to run a specific
+time and location for which the user has already downloaded fire detections.
 
-Before running, the user must first edit the first cell (the coded part that is shaded in gray) in "Section 1". Instructions in Section 1 include information about what to edit. Read this and then edit the first cell. Make sure you have the correct path to the input fire detection shapefile(s) and the year. 
+#### 6.1 Run the test case
 
-Once you have edited the first cell, you can go ahead and run the code. 
+It is *highly recommended* at this point to run 'main_generic.ipynb' as it is, to verify that your local copy is working as expected.  If run is successful, your output should look something similar to 'main_generic.html' which is hard copy version of ipynb with results.
 
-This can be done a couple of ways. 
-
-You can press the `Run`  button at the top, which will run one cell at a time. (so you have to click it through the entire page), or you can go to `Cell` -> `Run All` from the top bar. 
+There are a few ways to run code.  You can press the `Run`  button at the top,
+which will run one cell at a time. (so you have to click it through the entire
+page), or you can go to `Cell` -> `Run All` from the top bar. 
 
 Next to each cell is `In [ ]:`. When there is a `In [*]:`, the cell is cued up to run. When there is a number in there, the results are finished. 
 
-At the end of the run, your FINN input file will be in the directory of the name that you chose in cell 1. The created file will be a comma-delimited file that can be used as input to the FINN emissions code. 
+At the end of the run, your FINN input file will be in the directory of the name that you chose in cell 1. For the test case it will be "out_testOTS_092018_modlct_2017_modvcf_2017_regnum.csv"  The created file will be a comma-delimited file that can be used as input to the FINN emissions code.
+
+#### 6.2 Run your case
+
+Once you run the test case successfully you are ready to run your case.
+
+It is recommened to create copy of work_generic directory, keeping only main_generic.ipynb, and do your work in separate directory.  In that way you can keep work related to one processing of active fire datasets in one place, not mixing with other results.
+
+Before running, user first edit the first cell (the coded part that is shaded in gray) in "Section 1". Instructions in Section 1 include information about what to edit. Read this and then edit the first cell. Make sure you have the correct path to the input fire detection shapefile(s) and the year. 
+
+There are three more cells in Section 1, although you can keep them as is.  They are for what raster dataset to use (not really supported well at this point, December 2019), creating extra ouput (all True by default) and deleting intermediate files (all False by default)
+
+Once you have edited the first cell, you can go ahead and run the code, as you did for test case.
+
 
 NOTE: If running a recent year, the year-specific MODIS LCT and VCF files may not be yet available. This will lead to an error statement in Section 5. If the year-specific data are unavailable, we recommend choosing the most recent year available for your processing. You will have to go back and edit the first cell and restart the kernel. 
-
-NOTE: work_generic/main_generic.ipynb may be overwritten when FINN preprocessor code is updated.  It is recommended for you to copy the file to different name, or even to create separate subdirectory work_XXX to start your work.  Added advantage of this practice is that you can track your work if you have multiple tasks.
 
 NOTE:  [Minimum in struction to use QGIS](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor) available to visualize burned area and raster dataset stored in PostGIS.
 
@@ -260,13 +273,19 @@ that is stopped.
 
 ##### Start again
 
-To start the container again and continue your work, use following command.
+To start the container again and continue your work, e.g. later days, use following command.
 
 ```bash
 docker start finn
 ```
 
-This command take you to the place right after `docker run`, as in section 5.1 above, except that creating new container, you are reusing the existing container.  
+This command take you to the place right after `docker run`, as in section 5.1 above, except that creating new container, you are reusing the existing container.  Generally no need to redo the "docker run".  Instead use "docker start" to reuse existing container.
+
+Once container is started, you can open the notebook using command in section 5.2
+
+```bash
+docker exec -it finn .....
+```
 
 ##### List running containers
 
@@ -282,6 +301,10 @@ If nothing is running, then all you will see is a header:
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS   
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
+
+:information_source: Diagram below shows components of docker involved in FINN preprocessor.  You would notice where this docker run, exec, start and stop fits in.
+
+![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
 ### 8 Database Backup/Restore
 
@@ -311,7 +334,11 @@ Now new container `finn_testrestore` has it's own PostGIS database (stored in `p
 
 ### 9. Tidy up by removing intermediate or unneeded data
 
-#### 9.1 Removing raw MODIS imagery and intermediate raster data
+#### 9.1 Removing intermediates as soon as code runs
+
+This is what i tried by four options near the beginging of script, Section 1., 'wipe_intermediate_vector_in_db', 'wipe_downloaded_hdf', 'wipe_intermediate_geotiff' and 'wipe_intermediate_rst_in_db'.  Problem is that it is not straight forward if user want to use this capability some later day (after the notebook shutdown, and later restarted), because variables being used are set in the code embedded in the middle of code, and restoring them is not stratighforward.  At this point, you may have to do manual delete as described in Sections 9.2 and 9.3.  
+
+#### 9.2 Removing raw MODIS imagery and intermediate raster data
 
 If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
@@ -324,7 +351,7 @@ cell at the end of a Jupyter notebook:
 
 The first command removes the `downloads` directory which has copy of raw MODIS imagery (hdf files) on EarthLab.  Second command removes all directories that starts with `proc_rst`, where intermediate raster files are created.  ALternatively you can use your system's methods (e.g. `rm` in terminal, Windows Explorer to remove files) to remove the files/directories.
 
-#### 9.2 Removing intermediate fire detection/burned area processing data
+#### 9.3 Removing intermediate fire detection/burned area processing data
 
 The active fire shape file you downloaded from FIRMS website is imported into PostGIS database, and has several intermediate format in the database.  The disk use by the database is checked from Jupyter notebook by `!du -sh /var/lib/postgresql`.  With annual, global processing using combined MODIS/VIIRS detection, disk use was 48GB.  
 
@@ -334,13 +361,12 @@ If you use linux, `du -sh $HOME/pg_data` .  This is where we decided to store da
 
 If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and finn preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
 
-In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  A query which does this clean-up will be provided soon.
+In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  At this point, suggested approach for manually deleting those intermediate would be to use QGIS to access the postgis database (hostname = localhost, port = 5432, databse = finn, user = finn, password = finn), use DB manager (from manu, Databae => DB Manager...), connect to database (PostGIS, new connection, and specify access information), and identify af_XXX schema where you dont need to keep, and also tables in raster schema for imported raster you dont need.
 
-**[TODO]** Adapt these methods to come up with such query: https://stackoverflow.com/questions/21361169/postgresql-drop-tables-with-query https://stackoverflow.com/questions/2596624/how-do-you-find-the-disk-size-of-a-postgres-postgresql-table-and-its-indexes .  With that, insturction would be `!psql -d finn -f the_wiper.sql`
+I try to write a notebook which allows this management/cleanup at some point, if i have enough time.  Let me know if you need this feature desperately, i try harder to find time.
 
-**[TODO]** In order to reclaim the disk space, the Hyper-V virtual machine's virtual image needs to be shrunk to smaller size.  Not sure this is automatic, or user need to go into Hyper-V manager.
 
-#### 9.3 Remove/Recreate/Update docker components
+#### 9.4 Remove/Recreate/Update docker components
 
 ##### Overview of docker components
 
