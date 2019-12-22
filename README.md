@@ -202,7 +202,7 @@ The Jupyter notebook (and the code there) will be run from a web browser.
 
 Open a web brower, and in address bar, copy/paste the URL in the last line.  In the above example it would be
 ```
-http://127.0.0.1:8889/?token=79886c8cc460ed522fbbb3d391a8c71492384e876e38434f
+http://127.0.0.1:8888/?token=9024c305edb954921c35832f3f7f47388326a14a804eb8cd
 ```
 
 This will take you to the Jupyter notebook. 
