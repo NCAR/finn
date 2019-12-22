@@ -189,7 +189,7 @@ docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no
 
 You should see something like the following in your terminal:
 
-```bash
+```
     
     To access the notebook, open this file in a browser:
         file:///root/.local/share/jupyter/runtime/nbserver-793-open.html
