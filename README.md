@@ -190,22 +190,23 @@ docker exec -it finn jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no
 You should see something like the following in your terminal:
 
 ```bash
-...
-Or copy and paste one of these URLs:
-        http://(604ea0e75121 or 127.0.0.1):8888/?token=a7217f195e3cdbfdf...
+    
+    To access the notebook, open this file in a browser:
+        file:///root/.local/share/jupyter/runtime/nbserver-793-open.html
+    Or copy and paste one of these URLs:
+        http://2daf0642bf75:8889/?token=79886c8cc460ed522fbbb3d391a8c71492384e876e38434f
+     or http://127.0.0.1:8889/?token=79886c8cc460ed522fbbb3d391a8c71492384e876e38434f
+
 ```
 
 The Jupyter notebook (and the code there) will be run from a web browser. 
 
-Open a web brower. First type in 
+Open a web brower, and in address bar, copy/paste the URL in the last line.  In the above example it would be
 ```
-localhost:
+http://127.0.0.1:8889/?token=79886c8cc460ed522fbbb3d391a8c71492384e876e38434f
 ```
-And copy the “8888/?....” in after the localhost as the web address. For example, you may type in something like this in your web browser: 
 
-`localhost:8888/?token=d81907a2a19dc112c68cf14f56bc4c9ebf65f575ab6944be`
-
-This address will take you to the Jupyter notebook. 
+This will take you to the Jupyter notebook. 
 
 Note that your token (the part after `token=...`) will be different.
 
