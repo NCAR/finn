@@ -65,9 +65,9 @@ Windows/Mac requires customization of Docker environment.
 
 Specific instuction for `Docker Desktop` can be found in the wiki page at [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  
 
-Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Configure Oracle VM Virtual Machine](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows#2-configure-oracle-vm-virtual-machine)
+Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Configure Oracle VM Virtual Machine](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows#2-configure-oracle-vm-virtual-machine) 
 
-**Make sure you do this before going further (after you install Docker to your computer).**
+** For Docker Toolbox, make sure you do this before going further (after you install Docker to your computer).**  Docker Desktop's configuration can be changed later as needed.
 
 ### 3. Acquiring this repository
 
@@ -232,7 +232,7 @@ page), or you can go to `Cell` -> `Run All` from the top bar.
 
 Next to each cell is `In [ ]:`. When there is a `In [*]:`, the cell is cued up to run. When there is a number in there, the results are finished. 
 
-At the end of the run, your FINN input file will be in the directory of the name that you chose in cell 1. For the test case it will be "out_testOTS_092018_modlct_2017_modvcf_2017_regnum.csv"  The created file will be a comma-delimited file that can be used as input to the FINN emissions code.
+At the end of the run, your FINN input file will be in the directory of the name that you chose in the first cell. For the test case it will be `"out_testOTS_092018_modlct_2017_modvcf_2017_regnum.csv"`.  The created file will be a comma-delimited file that can be used as input to the FINN emissions code.
 
 #### 6.2 Run your case
 
@@ -302,11 +302,13 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
 
-:information_source: Diagram below shows components of docker involved in FINN preprocessor.  You would notice where this docker run, exec, start and stop fits in.
+:information_source: Diagram below shows components of docker involved in FINN preprocessor.  You would notice where this docker run, exec, start and stop fits in.  Please refer to descriptoins in Section 9.4 below for more.
 
 ![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
 ### 8 Database Backup/Restore
+
+If for some reason you want to create a backoup copy of PostGIS database (the data used in finn-processors), here is how.  Keep in mind that final output are exported as CSV and SHP files.  Also, the content of database persists until you deliberately delete them (or unseeable system failure).  These are only needed for the capability of review work after the finn-preprocessor is removed, or you need to move the database as is from one machine to another.
 
 Databese backup can be done with `pg_dump` command.
 
@@ -333,6 +335,8 @@ Restore the database from backup `finn.dmp` that was created earlier.
 Now new container `finn_testrestore` has it's own PostGIS database (stored in `pg_data2` on docker virtual machine).  You can, for example, export the output (last part of `main_XXX.ipynb` to export output without running them.
 
 ### 9. Tidy up by removing intermediate or unneeded data
+
+The preprocessor accumurates intermediate data as files and also data in database.  This section describes how to reclaim diskspace used by finn-preprocessor.
 
 #### 9.1 Removing intermediates as soon as code runs
 
@@ -361,7 +365,9 @@ If you use linux, `du -sh $HOME/pg_data` .  This is where we decided to store da
 
 If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and finn preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
 
-In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  At this point, suggested approach for manually deleting those intermediate would be to use QGIS to access the postgis database (hostname = localhost, port = 5432, databse = finn, user = finn, password = finn), use DB manager (from manu, Databae => DB Manager...), connect to database (PostGIS, new connection, and specify access information), and identify af_XXX schema where you dont need to keep, and also tables in raster schema for imported raster you dont need.
+In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  At this point, suggested approach for manually deleting those intermediate would be to use QGIS to access the postgis database (hostname = localhost, port = 5432, databse = finn, user = finn, password = finn), use DB manager (from manu, Databae => DB Manager...), connect to database (PostGIS, new connection, and specify access information), and identify af_XXX schema where you dont need to keep, and also tables in raster schema for imported raster you dont need.  Please refer to the [mini-QGIS guide](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor), although it does not cover the part removing data.  It should help how to access the tables in the database.
+
+Another possibility is [pgAdmin 4](https://www.pgadmin.org/download/) which allows managing databse contents.  Lastly you can use psql (command line interface of postgresql).
 
 I try to write a notebook which allows this management/cleanup at some point, if i have enough time.  Let me know if you need this feature desperately, i try harder to find time.
 
@@ -472,7 +478,7 @@ From our experiences, docker may appear to stop functioning because changes in y
 
 ##### Recreate container/image/volume 
 
-From our experience, this usually does not resolves the "disaster", i.e. Docker suddenly stop working.  This is more of tidy up task.  Go through three kind of Docker `rm` commands to remove docker componets.  You can then start again from Section 4.
+From our experience, this usually does not resolves the "disaster", i.e. Docker suddenly stop working.  This is more of tidy up task.  Go through three kind of Docker `rm` commands to remove docker componets (container, image and volume).  You can then start again from Section 4.
 
 ##### Last resort, i.e. start over
 
