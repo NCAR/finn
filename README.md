@@ -108,10 +108,21 @@ Create and start the container via `docker run`, mounting the current working di
 
 **Note:** In the commands below, replace `yourusername` and `yourpassword` with your NASA EarthData username and password (note that if you have special characters in your username or password, you may need to escape those characters or use quotes, e.g., `password\!` or `'password!'`).  REMEMBER: If you do not have a NASA EarthData account, you can create one here: https://urs.earthdata.nasa.gov/  You should only have to do this once. 
 
-(Linux/Mac)
+(Linux)
 ```bash
+# Create directory in your home directory to store the database
 mkdir ${HOME}/pg_data
+
 docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+```
+
+(Mac)
+Same command for Linux may work but using volume mount may be more stable.
+```bash
+# Create named volume to store the database
+docker volume create pg_data
+
+docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
 (Windows Powershell for Docker Desktop, the latest Docker on Windows)
