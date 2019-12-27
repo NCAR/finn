@@ -369,7 +369,7 @@ def find_needed_tiles_polygons(poly,return_counts):
 
     o = ['h%02dv%02d' % (_[0], _[1]) for _ in oo]
     if return_counts:
-        o = dict(zip(o, cnt))
+        o = dict((_,np.nan) for _ in o)
     return o
     
 
