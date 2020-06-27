@@ -6,7 +6,9 @@ RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
     apt-get install -y wget bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 postgis git unzip
 
-RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo postgresql-plpython3-11 
+# 2020-06-27 somehow plpython3 seems to work out of box
+#RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo postgresql-plpython3-11 
+RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo
 
 RUN TINI_VERSION=`curl https://github.com/krallin/tini/releases/latest | grep -o "/v.*\"" | sed 's:^..\(.*\).$:\1:'` && \
     curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
@@ -41,12 +43,12 @@ RUN conda install -c conda-forge \
 	basemap
 
 # verify that gdal is importable
-RUN python -c "from osgeo import gdal"
+RUN /opt/conda/bin/python -c "from osgeo import gdal"
 
 # conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
-RUN pip3 install numpy scipy networkx
+RUN /usr/bin/pip3 install numpy scipy networkx
 
 EXPOSE 8888
 
