@@ -76,7 +76,7 @@ Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Co
 To get this repository locally, use `git clone`:
 
 ```bash
-git clone hhttps://github.com/NCAR/finn-preprocessor.git
+git clone https://github.com/NCAR/finn-preprocessor.git
 cd finn-preprocessor
 ```
 
