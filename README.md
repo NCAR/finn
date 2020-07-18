@@ -516,14 +516,17 @@ docker volume rm $(docker volume ls -q)
 After above being completed, you should get only one line each of column header, without actually having any entries.  Then the docker environment is clean and you can start over.
 
 ```
+# verify no container, expect one line shown below
 docker ps -a
 ```
 > CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 ```
+# verify no image, expect one line shown below
 docker images -a
 ```
 > REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 ```
+# verify no named volume, expect one line shown below
 docker volume ls
 ```
 > DRIVER              VOLUME NAME
