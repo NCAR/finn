@@ -498,13 +498,8 @@ To wipe everything and start over, you have to reomve (1) everytinng in finn_pos
 For (1), you can do it by Windows Explorer, for example.  User appropriate method for your system to remove files/directories.
 
 For (2), one way to do this is remove stop/remove all containers, remove images, remove volumes.
-<strike>
-```
-docker system prune --all -f 
-docker system prune --volumes -f
-```
- </strike>
- The above was not doing what i said, it only tidy up orphant stuff.  I have to do something like below. (Confirmed to work on GNU bash and Windows power shell)
+
+Series of commands below deos that on GNU bash and Windows power shell.
 
 ```
 # stop/delete all containers
@@ -516,6 +511,14 @@ docker rmi $(docker images -a -q)
 
 # delete named volumes
 docker volume rm $(docker volume ls -q)
+```
+
+After above being completed, you should get only one line each of column header, without actually having any entries.  Then the docker environment is clean and you can start over.
+
+```
+docker ps -a
+docker images -a
+docker volume ls
 ```
 
 An easier way to remove docker components for Windows is to uninstall the docker desktop.  Go to `Control Panel` ==> `Programs and Features` and unistall `Docker Desktop`.  The action wipes out the Linux virtual machine (Hyper-V virtual machine) created for Docker, and in effect wipe everything out.  You can then start from Section 1.
