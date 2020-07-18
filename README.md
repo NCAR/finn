@@ -517,8 +517,15 @@ After above being completed, you should get only one line each of column header,
 
 ```
 docker ps -a
+```
+> CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+```
 docker images -a
+```
+> REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+```
 docker volume ls
 ```
+> DRIVER              VOLUME NAME
 
 An easier way to remove docker components for Windows is to uninstall the docker desktop.  Go to `Control Panel` ==> `Programs and Features` and unistall `Docker Desktop`.  The action wipes out the Linux virtual machine (Hyper-V virtual machine) created for Docker, and in effect wipe everything out.  You can then start from Section 1.
