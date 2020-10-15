@@ -45,7 +45,7 @@ The following software must be downloaded and installed on your computer:
 
   (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product).  Project wiki page for `Docker Desktop for Windows` has [screen shots of installation steps](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#1-install-docker-ce). 
   
-  (Windows/Mac) NOTE on Oct 2020:  Earlier in 2020, [Docker Dashboard](https://docs.docker.com/desktop/dashboard/) is included in Windows and Mac version of Docker CE.  It appears slick, and it may simplify parts 5 and 7 of this README.  We will update instruction when we find time to experiment with this new feature.
+  (Windows/Mac) NOTE on Oct 2020:  Earlier in 2020, [Docker Dashboard](https://docs.docker.com/desktop/dashboard/) is included in Windows and Mac version of Docker Desktop.  It appears slick, and it may simplify parts 5 and 7 of this README.  We will update instruction when we find time to experiment with this new feature.
 
 * QGIS  
   https://qgis.org
