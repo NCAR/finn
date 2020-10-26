@@ -33,14 +33,14 @@ RUN conda install -c conda-forge \
 	gdal=2.4 \
   "libgfortran-ng=7.2" \
 	python=3.7 \
-	jupyterlab \
-	ncurses \
-	pyproj \
-	beautifulsoup4 \
-	shapely \
-	psycopg2 \
+	jupyterlab=2.2.9 \
+	ncurses=6.2 \
+	pyproj=1.9.6 \
+	beautifulsoup4=4.9.3 \
+	shapely=1.6.4 \
+	psycopg2=2.8.4 \
 	matplotlib=2.2.5 \
-	basemap
+	basemap=1.2.1
 
 # verify that gdal is importable
 RUN /opt/conda/bin/python -c "from osgeo import gdal"
