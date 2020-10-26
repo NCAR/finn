@@ -39,7 +39,7 @@ RUN conda install -c conda-forge \
 	beautifulsoup4 \
 	shapely \
 	psycopg2 \
-	matplotlib \
+	matplotlib=2.2.5 \
 	basemap
 
 # verify that gdal is importable
