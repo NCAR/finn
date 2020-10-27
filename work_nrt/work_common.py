@@ -4,8 +4,7 @@ import os
 import subprocess
 import re
 
-# TODO this should be done somewhere eles?  but before loading tools belose
-# maybe even before this python script got called
+# TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 os.environ['PGDATABASE'] = 'finn'
 os.environ['PGPASSWORD'] = 'finn'
 os.environ['PGUSER'] = 'finn'
@@ -14,6 +13,10 @@ os.environ['PGHOST'] = 'localhost'
 
 if 'EARTHDATAPW' not in os.environ:
     os.environ['EARTHDATAPW'] = input('EARTHDATAPW? ')
+
+os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
+
+
 
 # finn preproc codes
 sys.path = sys.path + ['../code_anaconda']

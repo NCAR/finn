@@ -6,6 +6,7 @@ import sys
 import os
 from urllib.parse import urlparse
 import glob
+import subprocess
 
 ## TODO this should be done somewhere eles?  but before loading tools belose
 ## maybe even before this python script got called
@@ -20,6 +21,7 @@ import glob
 sys.path = sys.path + ['../code_anaconda']
 import downloader
 import rst_import
+import polygon_import
 
 import work_common as common
 
@@ -41,6 +43,8 @@ def sec4_download_raster(year_rst, download_global_raster=True):
         print('no need to download/import raster dataset')
         need_to_import_lct = False
         need_to_import_vcf = False
+        tiles_required_lct = []
+        tiles_required_vcf = []
     else:
         print('Some fire are not conained in raster')
         print('Will download/import raster dataset')
@@ -86,6 +90,7 @@ def sec4_download_raster(year_rst, download_global_raster=True):
             'need_to_import_vcf': need_to_import_vcf,
             'need_to_import_regnum': need_to_import_regnum,
             'ddir_lct': ddir_lct,
+            'ddir_vcf': ddir_vcf,
             }
 
 def sec5_import_raster(year_rst, raster_tasks):
@@ -94,6 +99,7 @@ def sec5_import_raster(year_rst, raster_tasks):
     need_to_import_vcf = raster_tasks['need_to_import_vcf']
     need_to_import_regnum = raster_tasks['need_to_import_regnum']
     ddir_lct = raster_tasks['ddir_lct']
+    ddir_vcf = raster_tasks['ddir_vcf']
 
     workdir_lct = '../proc_rst_%s' % tag_lct
     workdir_vcf = '../proc_rst_%s' % tag_vcf
@@ -134,7 +140,7 @@ def sec5_import_raster(year_rst, raster_tasks):
                 check=True) 
             subprocess.run(['unzip', os.path.join(workdir_regnum, 'All_Countries.zip'), '-d' , 
                 workdir_regnum ], check=True)
-            polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, 'All_Countries.shp'))
+        polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, 'All_Countries.shp'))
 
 def main(year_rst=2019):
 
