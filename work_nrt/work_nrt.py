@@ -1,95 +1,102 @@
-# python libraries
-import subprocess
+#!/usr/bin/env python3
+
+"""run daily task of preprocess AF points to burned area"""
+
+## python libraries
 import os
 import sys
-import psycopg2
+#import psycopg2
 import re
-
-# this should be done somewhere eles?  but before loading tools belose
-# maybe even before this python script got called
-os.environ['PGDATABASE'] = 'finn'
-os.environ['PGPASSWORD'] = 'finn'
-os.environ['PGUSER'] = 'finn'
-os.environ['PGPORT'] = '25432'
-os.environ['PGHOST'] = 'localhost'
-
-# finn preproc codes
+import subprocess
+#
+## TODO this should be done somewhere eles?  but before loading tools belose
+## maybe even before this python script got called
+#os.environ['PGDATABASE'] = 'finn'
+#os.environ['PGPASSWORD'] = 'finn'
+#os.environ['PGUSER'] = 'finn'
+#os.environ['PGPORT'] = '25432'
+#os.environ['PGHOST'] = 'localhost'
+#
+## finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
-#import downloader
+##import downloader
 import af_import
-#import rst_import
-#import polygon_import
-import run_step1
-import run_step2
-import export_shp
-#import plotter
-import run_extra
-#import notebook_util
+##import rst_import
+##import polygon_import
+#import run_step1
+#import run_step2
+#import export_shp
+##import plotter
+#import run_extra
+##import notebook_util
 
 
 
-def sec1_user_config(tag_af, af_fnames, year_rst):
-
-    # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
-    tag_lct = 'modlct_%d' % year_rst
-    tag_vcf = 'modvcf_%d' % year_rst
-
-    # tag for the region number polygon
-    tag_regnum = 'regnum'
-
-    # definition of variables in the raster files
-    rasters = [ 
-        { 
-            'tag': tag_lct, 
-            'kind': 'thematic', 
-            'variable': 'lct' 
-            }, 
-        { 
-            'tag': tag_vcf, 
-            'kind': 'continuous', 
-            'variables': ['tree', 'herb', 'bare'], 
-            }, 
-        { 
-            'tag': tag_regnum, 
-            'kind': 'polygons', 
-            'variable_in': 'region_num', 
-            'variable': 'regnum', 
-            }, 
-        ]
-
-    # save *.shp of the output, so that you can hold onto polygons
-    save_shp_of_output = True
-
-    # save *.html version of this notebook upon exit, so that you can keep records
-    save_html_of_notebook = True
-
-    # deletes entire schema in the database for the AF data processed in this notebook
-    wipe_intermediate_vector_in_db = False
-
-    # deletes hdf files downloaded from EARTHDATA for particular year used in this notebook
-    wipe_downloaded_hdf = False
-
-    # deletes intermediate geotiff files (found in proc_rst_XXX directory) for particular year used in this notebook
-    wipe_intermediate_geotiff = False
-
-    # deletes table of raster data imported into database (praticular year used in this notebook)
-    wipe_intermediate_rst_in_db = False
-
-    return locals()
+import work_common as common
 
 
-def sec2_check_environment(out):
-
-    #out.write('\n'.join([k + '=' + os.environ[k] for  k in sorted(os.environ)]) + '\n\n')
-
-    out.write('system environment inside docker container, for debugging purpose\n\n')
-    subprocess.run(['env' , '|', 'sort'], stdout=out, shell=True)
-
-    subprocess.run(['psql', '-c', 'select version();'], stdout = out)
-    subprocess.run(['psql', '-c', 'select postgis_full_version();'], stdout = out)
-
-    subprocess.run(['psql', '-f', '../code_anaconda/testpy.sql'], stdout = out)
-    
+#def sec1_user_config(tag_af, af_fnames, year_rst):
+#
+#    # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
+#    tag_lct = 'modlct_%d' % year_rst
+#    tag_vcf = 'modvcf_%d' % year_rst
+#
+#    # tag for the region number polygon
+#    tag_regnum = 'regnum'
+#
+#    # definition of variables in the raster files
+#    rasters = [ 
+#        { 
+#            'tag': tag_lct, 
+#            'kind': 'thematic', 
+#            'variable': 'lct' 
+#            }, 
+#        { 
+#            'tag': tag_vcf, 
+#            'kind': 'continuous', 
+#            'variables': ['tree', 'herb', 'bare'], 
+#            }, 
+#        { 
+#            'tag': tag_regnum, 
+#            'kind': 'polygons', 
+#            'variable_in': 'region_num', 
+#            'variable': 'regnum', 
+#            }, 
+#        ]
+#
+#    # save *.shp of the output, so that you can hold onto polygons
+#    save_shp_of_output = True
+#
+#    # save *.html version of this notebook upon exit, so that you can keep records
+#    save_html_of_notebook = True
+#
+#    # deletes entire schema in the database for the AF data processed in this notebook
+#    wipe_intermediate_vector_in_db = False
+#
+#    # deletes hdf files downloaded from EARTHDATA for particular year used in this notebook
+#    wipe_downloaded_hdf = False
+#
+#    # deletes intermediate geotiff files (found in proc_rst_XXX directory) for particular year used in this notebook
+#    wipe_intermediate_geotiff = False
+#
+#    # deletes table of raster data imported into database (praticular year used in this notebook)
+#    wipe_intermediate_rst_in_db = False
+#
+#    return locals()
+#
+#
+#def sec2_check_environment(out):
+#
+#    #out.write('\n'.join([k + '=' + os.environ[k] for  k in sorted(os.environ)]) + '\n\n')
+#
+#    out.write('system environment inside docker container, for debugging purpose\n\n')
+#    subprocess.run(['env' , '|', 'sort'], stdout=out, shell=True)
+#
+#    subprocess.run(['psql', '-c', 'select version();'], stdout = out)
+#    subprocess.run(['psql', '-c', 'select postgis_full_version();'], stdout = out)
+#
+#    subprocess.run(['psql', '-f', '../code_anaconda/testpy.sql'], stdout = out)
+#    
 
 def sec3_import_af(out):
     # check input file exists
@@ -192,16 +199,22 @@ def sec3_import_af(out):
     
 
 
-def main(tag_af='testOTS_092018', af_fnames=[
-        '../sample_datasets/fire/testOTS_092018/fire_archive_M6_23960.shp',
-            '../sample_datasets/fire/testOTS_092018/fire_archive_V1_23961.shp',
-            ], year_rst=2017):
+# TODO get rid of default values
+# TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
+def main(tag_af=None, af_fnames=None, year_rst=None):
+
+    if all([tag_af is None, af_fnames is None, year_rst==None]): 
+        tag_af = common.testinputs['tag_af']
+        af_fnames = common.testinputs['af_fnames']
+        year_rst = common.testinputs['year_rst']
+
+
     out = sys.stdout
 
-    user_config = sec1_user_config(tag_af, af_fnames, year_rst)
+    user_config = common.sec1_user_config(tag_af, af_fnames, year_rst)
     globals().update(user_config)
 
-    sec2_check_environment(out=out)
+    common.sec2_check_environment(out=out)
 
     sec3_import_af(out=out)
 
