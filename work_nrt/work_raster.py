@@ -8,28 +8,19 @@ from urllib.parse import urlparse
 import glob
 import subprocess
 
-## TODO this should be done somewhere eles?  but before loading tools belose
-## maybe even before this python script got called
-#os.environ['PGDATABASE'] = 'finn'
-#os.environ['PGPASSWORD'] = 'finn'
-#os.environ['PGUSER'] = 'finn'
-#os.environ['PGPORT'] = '25432'
-#os.environ['PGHOST'] = 'localhost'
-
-
 # finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
 import downloader
 import rst_import
 import polygon_import
 
+# common part for NRT procesiing
 import work_common as common
 
 def sec4_download_raster(year_rst, download_global_raster=True):
     # always grab global
     if download_global_raster:
-    #if True:
-        results_indb = downloader.find_tiles_indb(data='POLYGON((-180 89,-180 -89,180 -89,180 89,-180 89))', 
+        results_indb = downloader.find_tiles_indb(data='POLYGON((-180 89,-180 -89,180 -89,180 89,-180 89))',
                                                  knd='wkt')#, tag_lct=tag_lct, tag_vcf=tag_vcf)
     else:
         results_indb = downloader.find_tiles_indb(data='"af_%s"' % tag_af, 
