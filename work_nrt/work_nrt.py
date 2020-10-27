@@ -19,16 +19,11 @@ import subprocess
 #
 ## finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
-##import downloader
 import af_import
-##import rst_import
-##import polygon_import
-#import run_step1
-#import run_step2
-#import export_shp
-##import plotter
-#import run_extra
-##import notebook_util
+import run_step1
+import run_step2
+import export_shp
+import run_extra
 
 
 
@@ -196,7 +191,20 @@ def sec3_import_af(out):
         print(p.stdout.decode())
 
 
-    
+def sec6_process_activefire():
+    run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources)
+    run_step2.main(tag_af, rasters)
+
+def sec7_export_output():
+    outdir = '.'
+    shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
+
+    schema = 'af_' + tag_af
+    tblname = 'out_{0}_{1}_{2}'.format(tag_lct, tag_vcf, tag_regnum)
+    flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
+
+    export_shp.main(outdir, schema, tblname, flds, shpname)
+    run_extra.summarize_log(tag_af)
 
 
 # TODO get rid of default values
@@ -217,6 +225,10 @@ def main(tag_af=None, af_fnames=None, year_rst=None):
     common.sec2_check_environment(out=out)
 
     sec3_import_af(out=out)
+
+    sec6_process_activefire()
+
+    sec7_export_output()
 
 if __name__ == '__main__':
     main()

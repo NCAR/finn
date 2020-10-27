@@ -32,7 +32,11 @@ testinputs = {
         'year_rst':2017,
         }
 
+
 def sec1_user_config(tag_af, af_fnames, year_rst):
+
+    # hard-wired options
+    filter_persistent_sources = True
 
     # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
     tag_lct = 'modlct_%d' % year_rst
