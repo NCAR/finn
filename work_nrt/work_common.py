@@ -5,11 +5,23 @@ import subprocess
 import re
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
-os.environ['PGDATABASE'] = 'finn'
-os.environ['PGPASSWORD'] = 'finn'
-os.environ['PGUSER'] = 'finn'
-os.environ['PGPORT'] = '25432'
-os.environ['PGHOST'] = 'localhost'
+
+use_docker=False
+
+if use_docker:
+    os.environ['PGDATABASE'] = 'finn'
+    os.environ['PGPASSWORD'] = 'finn'
+    os.environ['PGUSER'] = 'finn'
+    os.environ['PGPORT'] = '25432'
+    os.environ['PGHOST'] = 'localhost'
+else:
+    # native veersion on acon-finn
+    os.environ['PGDATABASE'] = 'postgres'
+    if 'PGPASSWORD' not in os.environ:
+        os.environ['PGPASSWORD'] = input('PGPASSWORD? ')
+    os.environ['PGUSER'] = 'postgres'
+    os.environ['PGPORT'] = '5432'
+    os.environ['PGHOST'] = ''
 
 if 'EARTHDATAPW' not in os.environ:
     os.environ['EARTHDATAPW'] = input('EARTHDATAPW? ')

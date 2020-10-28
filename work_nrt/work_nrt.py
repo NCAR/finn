@@ -8,6 +8,7 @@ import sys
 #import psycopg2
 import re
 import subprocess
+import argparse
 #
 ## TODO this should be done somewhere eles?  but before loading tools belose
 ## maybe even before this python script got called
@@ -230,6 +231,22 @@ def main(tag_af=None, af_fnames=None, year_rst=None):
 
     sec7_export_output()
 
+
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+
+    required_named = parser.add_argument_group('required arguments')
+
+    required_named.add_argument('-t', '--tag_af', 
+            default=None, required=True, help='tag for AF processing', type=str)
+    required_named.add_argument('-y', '--year_rst', 
+            default=None, required=True, help='dataset year for raster', type=int)
+    parser.add_argument('af_fnames', 
+            default=None, nargs='+', help='AF file name(s)', type=str)
+
+    args = parser.parse_args()
+
+    
+    main(**vars(args))
 
