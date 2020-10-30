@@ -947,14 +947,8 @@ do language plpgsql $$
       track, 
       acq_date, 
       time_to_char(acq_time),
---      date( acq_date +
---        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
---          mins:= substring(acq_time, 3, 2)::int)) ,
-      get_acq_datetime_lst(acq_date, acq_time, longitude),
---      cast(acq_date as timestamp without time zone) +
---        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int,
---          mins:= substring(acq_time, 3, 2)::int) ,
       date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
+      get_acq_datetime_lst(acq_date, acq_time, longitude),
       case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
       ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
