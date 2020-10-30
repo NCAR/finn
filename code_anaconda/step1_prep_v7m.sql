@@ -830,7 +830,47 @@ from foo;
 $$
 language sql volatile;
 
+---------------------------------------------------
+-- Part 2.7: get_acq_datetime (local solar time) --
+---------------------------------------------------
 
+create or replace function get_acq_datetime_lst(acq_date_utc date, acq_time_utc character, longitude double precision)
+returns timestamp without time zone as
+$$
+with foo as ( select acq_date_utc, acq_time_utc, longitude)
+select cast(acq_date_utc as timestamp without time zone) +
+        make_interval( hours:= substring(acq_time_utc, 1, 2)::int + round(longitude / 15)::int,
+          mins:= substring(acq_time_utc, 3, 2)::int)
+          from foo;
+
+$$
+language sql volatile;
+
+create or replace function get_acq_datetime_lst(acq_date_utc date, acq_time_utc time without time zone, longitude double precision)
+returns timestamp without time zone as
+$$
+with foo as ( select acq_date_utc, acq_time_utc, longitude)
+select  cast(acq_date_utc as timestamp without time zone) +
+        acq_time_utc +
+        make_interval( hours:=  round(longitude / 15)::int)
+          from foo;
+
+$$
+language sql volatile;
+
+create or replace function time_to_char(acq_time character)
+returns character as
+$$
+select acq_time;
+$$
+language sql volatile;
+
+create or replace function time_to_char(acq_time time without time zone)
+returns character as
+$$
+select to_char(acq_time, 'HH24MI');
+$$
+language sql volatile;
 
 
 
@@ -906,14 +946,10 @@ do language plpgsql $$
       scan, 
       track, 
       acq_date, 
-      acq_time, 
-      date( acq_date + 
-        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
-          mins:= substring(acq_time, 3, 2)::int)) , 
-      cast(acq_date as timestamp without time zone) + 
-        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
-          mins:= substring(acq_time, 3, 2)::int) , 
-      case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end, 
+      time_to_char(acq_time),
+      date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
+      get_acq_datetime_lst(acq_date, acq_time, longitude),
+      case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
       ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
       ' from ' || myrow.table_name || ';'; 

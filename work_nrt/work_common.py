@@ -6,15 +6,19 @@ import re
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-use_docker=False
+my_env = 'from_docker'
+#my_env = 'use_docker'
+#my_env = 'use_native'
 
-if use_docker:
+print(my_env)
+if my_env == 'use_docker':
+    # from docker at acom-finn
     os.environ['PGDATABASE'] = 'finn'
     os.environ['PGPASSWORD'] = 'finn'
     os.environ['PGUSER'] = 'finn'
     os.environ['PGPORT'] = '25432'
     os.environ['PGHOST'] = 'localhost'
-else:
+elif my_env == 'use_native':
     # native veersion on acon-finn
     os.environ['PGDATABASE'] = 'postgres'
     if 'PGPASSWORD' not in os.environ:
@@ -22,6 +26,16 @@ else:
     os.environ['PGUSER'] = 'postgres'
     os.environ['PGPORT'] = '5432'
     os.environ['PGHOST'] = ''
+elif my_env == 'from_docker':
+    # running from inside the docker, traditional use
+    os.environ['PGDATABASE'] = 'finn'
+    os.environ['PGPASSWORD'] = 'finn'
+    os.environ['PGUSER'] = 'finn'
+    os.environ['PGPORT'] = '5432'
+    os.environ['PGHOST'] = 'localhost'
+else:
+    raise RuntimeError
+
 
 if 'EARTHDATAPW' not in os.environ:
     os.environ['EARTHDATAPW'] = input('EARTHDATAPW? ')
