@@ -40,7 +40,7 @@ def sec3_import_af(out):
         if os.path.exists(af_fname):
             print("exists.")
             # if .zip file, need to expand.
-            if af_fname[-4:] == '.shp':
+            if af_fname[-4:].lower() in ('.shp', '.csv', '.txt'):
                 # you are good
                 print('OK')
             
@@ -175,6 +175,7 @@ if __name__ == '__main__':
             default=None, nargs='+', help='AF file name(s)', type=str)
 
     args = parser.parse_args()
+
 
     
     main(**vars(args))

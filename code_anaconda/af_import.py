@@ -5,6 +5,7 @@ import itertools
 import numpy as np
 import shlex
 import psycopg2
+from pathlib import Path
 
 def gdal_vernum_sys():
     """gets gdal verion from command line, not the python binding"""
@@ -34,6 +35,35 @@ def main(tag, fnames):
     subprocess.run(cmd, check=True)
 
     for i,fname in enumerate(fnames):
+
+        fname = Path(fname)
+
+        if fname.suffix == '.shp':
+            # shape file, straight to database
+            src = fname
+        elif fname.suffix in ('.csv', '.txt'):
+            # text file, wrap with vrt (virtual layer)
+            if fname.suffix == '.txt':
+                orig = 'CSV:' + fname.name
+            else:
+                orig = fname.name
+            src = fname.with_suffix('.vrt')
+            with open(src, 'w') as vrt:
+                vrt.write(
+                f"""
+<OGRVRTDataSource>
+    <OGRVRTLayer name="{fname.stem}">
+        <SrcDataSource relativeToVRT="1">{orig}</SrcDataSource>
+        <OpenOptions><OOI key="AUTODETECT_TYPE">YES</OOI></OpenOptions>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
+</OGRVRTLayer>
+</OGRVRTDataSource>""".strip())
+        else:
+            raise RuntimeError('Unknwon extenstion for AF file: ' + fname.suffix)
+
+
         tblname = 'af_in_%d' % (i+1)
 
         dbname = os.environ.get('PGDATABASE', 'finn')
@@ -50,7 +80,7 @@ def main(tag, fnames):
         cmd += ('-lco GEOMETRY_NAME=geom').split()  # match with what shp2pgsql was doing
         cmd += ('-lco FID=gid').split()  # match with what shp2pgsql was doing
         cmd += ['-nln', tblname]
-        cmd += [fname]
+        cmd += [str(src)]
         print('\ncmd:\n%s\n' % ' '.join(cmd))
         print(cmd)
         try:
