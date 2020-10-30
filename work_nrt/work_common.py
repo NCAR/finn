@@ -3,11 +3,12 @@ import sys
 import os
 import subprocess
 import re
+import getpass
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-my_env = 'from_docker'
-#my_env = 'use_docker'
+#my_env = 'from_docker'
+my_env = 'use_docker'
 #my_env = 'use_native'
 
 print(my_env)
@@ -22,7 +23,7 @@ elif my_env == 'use_native':
     # native veersion on acon-finn
     os.environ['PGDATABASE'] = 'postgres'
     if 'PGPASSWORD' not in os.environ:
-        os.environ['PGPASSWORD'] = input('PGPASSWORD? ')
+        os.environ['PGPASSWORD'] = getpass.getpass(prompt='PGPASSWORD? ')
     os.environ['PGUSER'] = 'postgres'
     os.environ['PGPORT'] = '5432'
     os.environ['PGHOST'] = ''
@@ -37,8 +38,10 @@ else:
     raise RuntimeError
 
 
+if 'EARTHDATAUSER' not in os.environ:
+    os.environ['EARTHDATAUSER'] = input('EARTHDATAUSER? ')
 if 'EARTHDATAPW' not in os.environ:
-    os.environ['EARTHDATAPW'] = input('EARTHDATAPW? ')
+    os.environ['EARTHDATAPW'] = getpass.getpass(prompt='EARTHDATAPW? ')
 
 os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
 
