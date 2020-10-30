@@ -147,9 +147,10 @@ def main(year_rst=2019):
 
     common.sec2_check_environment(out=out)
 
-    raster_tasks = sec4_download_raster(year_rst, download_global_raster=False)
+    raster_tasks = sec4_download_raster(year_rst, download_global_raster=True)
     sec5_import_raster(year_rst, raster_tasks)
 
 if __name__ == '__main__':
+    # TODO script to read year to download
     main()
 

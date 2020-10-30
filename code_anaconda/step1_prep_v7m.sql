@@ -872,7 +872,32 @@ select to_char(acq_time, 'HH24MI');
 $$
 language sql volatile;
 
+--------------------------
+-- Part 2.8: instrument --
+--------------------------
+--       case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
+create or replace function get_instrument(satellite character)
+returns character as
+$$
+select case left(satellite, 1)
+when 'T' then 'MODIS'
+when 'A' then 'MODIS'
+when 'N' then 'VIIRS'
+else null
+end;
+$$
+language sql volatile;
 
+-- viirs file has 'N', and OGR may treat it as boolean no, seems like.  so interpret false as viirs
+create or replace function get_instrument(satellite boolean)
+returns character as
+$$
+select case satellite
+when TRUE then null
+when FALSE then 'VIIRS'
+end;
+$$
+language sql volatile;
 
 -----------------------------------
 -- Part 3: Start processing data --
@@ -949,9 +974,9 @@ do language plpgsql $$
       time_to_char(acq_time),
       date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
       get_acq_datetime_lst(acq_date, acq_time, longitude),
-      case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
-      ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
-      case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
+      get_instrument(satellite),
+      case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 2 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
+      case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
       ' from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
