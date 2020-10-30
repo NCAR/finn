@@ -151,5 +151,6 @@ def main(year_rst=2019):
     sec5_import_raster(year_rst, raster_tasks)
 
 if __name__ == '__main__':
+    # TODO script to read year to download
     main()
 
