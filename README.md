@@ -44,6 +44,8 @@ The following software must be downloaded and installed on your computer:
   * (Mac) https://docs.docker.com/docker-for-mac/install/  
 
   (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product).  Project wiki page for `Docker Desktop for Windows` has [screen shots of installation steps](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#1-install-docker-ce). 
+  
+  (Windows/Mac) NOTE on Oct 2020:  Earlier in 2020, [Docker Dashboard](https://docs.docker.com/desktop/dashboard/) is included in Windows and Mac version of Docker Desktop.  It appears slick, and it may simplify parts 5 and 7 of this README.  We will update instruction when we find time to experiment with this new feature.
 
 * QGIS  
   https://qgis.org
@@ -499,9 +501,36 @@ For (1), you can do it by Windows Explorer, for example.  User appropriate metho
 
 For (2), one way to do this is remove stop/remove all containers, remove images, remove volumes.
 
+Series of commands below deos that on GNU bash and Windows power shell.
+
 ```
-docker system prune --all -f 
-docker system prune --volumes -f
+# stop/delete all containers
+docker stop $(docker ps -a -q)
+docker rm $(docker ps -a -q)
+
+# delete all images
+docker rmi $(docker images -a -q)
+
+# delete named volumes
+docker volume rm $(docker volume ls -q)
 ```
+
+After above being completed, you should get only one line each of column header, without actually having any entries.  Then the docker environment is clean and you can start over.
+
+```
+# verify no container, expect one line shown below
+docker ps -a
+```
+> CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+```
+# verify no image, expect one line shown below
+docker images -a
+```
+> REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+```
+# verify no named volume, expect one line shown below
+docker volume ls
+```
+> DRIVER              VOLUME NAME
 
 An easier way to remove docker components for Windows is to uninstall the docker desktop.  Go to `Control Panel` ==> `Programs and Features` and unistall `Docker Desktop`.  The action wipes out the Linux virtual machine (Hyper-V virtual machine) created for Docker, and in effect wipe everything out.  You can then start from Section 1.
