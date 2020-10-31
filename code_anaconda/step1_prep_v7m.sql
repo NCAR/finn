@@ -40,7 +40,6 @@ CREATE TABLE work_pnt (
 	acq_date_lst date,
 	acq_datetime_lst timestamp without time zone,
 	instrument character(5),
---	confidence integer,
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
 	geom_sml geometry
@@ -173,7 +172,7 @@ $$
     plpy.notice(2)
     return(s)
 $$ 
-language plpython3u volatile;
+language plpython3u stable;
 
 select testpy();
 
@@ -214,7 +213,7 @@ returns setof p2grp as
 $$
     """given edges, return connected components"""
     import time, datetime
-    t0 = time.time()
+    #t0 = time.time()
     import networkx as nx
     g = nx.Graph()
     g.add_edges_from((l,r) for (l,r) in zip(lhs,rhs))
@@ -235,7 +234,7 @@ $$
     return results
     
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpythonu volatile;
 
 -----------------------------------------
@@ -373,7 +372,7 @@ returns setof p2drp as $$
     return zip(todrop,others)
         
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -529,7 +528,7 @@ $$
     return lst[:-4]
 
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -570,7 +569,7 @@ select st_setsrid(st_collect(geom), st_srid(pnts))
 --select geom
 from thud;
 $$
-language sql volatile;
+language sql immutable;
 
 
 ---------------------------------------------
@@ -756,7 +755,7 @@ $$
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
     return lst
 $$
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -790,7 +789,7 @@ with foo as  (
 select st_setsrid(st_collect(geom), st_srid(pnts))
 from thud;
 $$
-language sql volatile;
+language sql immutable;
 
 
 
@@ -813,7 +812,7 @@ else 4 * pi() * a / (p * p)
 end
 from foo;
 $$
-language sql volatile;
+language sql immutable;
 
 create or replace function st_polsbypopper(geom geometry, use_spheroid boolean)
 returns double precision as
@@ -828,7 +827,7 @@ else 4 * pi() * a / (p * p)
 end
 from foo;
 $$
-language sql volatile;
+language sql immutable;
 
 ---------------------------------------------------
 -- Part 2.7: get_acq_datetime (local solar time) --
@@ -840,11 +839,11 @@ $$
 with foo as ( select acq_date_utc, acq_time_utc, longitude)
 select cast(acq_date_utc as timestamp without time zone) +
         make_interval( hours:= substring(acq_time_utc, 1, 2)::int + round(longitude / 15)::int,
-          mins:= substring(acq_time_utc, 3, 2)::int)
+          mins:= substring(acq_time_utc from '^\d\d:?(\d\d)')::int)
           from foo;
 
 $$
-language sql volatile;
+language sql immutable;
 
 create or replace function get_acq_datetime_lst(acq_date_utc date, acq_time_utc time without time zone, longitude double precision)
 returns timestamp without time zone as
@@ -856,21 +855,22 @@ select  cast(acq_date_utc as timestamp without time zone) +
           from foo;
 
 $$
-language sql volatile;
+language sql immutable;
 
 create or replace function time_to_char(acq_time character)
 returns character as
 $$
-select acq_time;
+-- get rid of : in the middle if there is, stick with old format
+select substring(acq_time from '^\d\d:?(\d\d)');
 $$
-language sql volatile;
+language sql immutable;
 
 create or replace function time_to_char(acq_time time without time zone)
 returns character as
 $$
 select to_char(acq_time, 'HH24MI');
 $$
-language sql volatile;
+language sql immutable;
 
 --------------------------
 -- Part 2.8: instrument --
@@ -886,7 +886,7 @@ when 'N' then 'VIIRS'
 else null
 end;
 $$
-language sql volatile;
+language sql immutable;
 
 -- viirs file has 'N', and OGR may treat it as boolean no, seems like.  so interpret false as viirs
 create or replace function get_instrument(satellite boolean)
@@ -897,7 +897,7 @@ when TRUE then null
 when FALSE then 'VIIRS'
 end;
 $$
-language sql volatile;
+language sql immutable;
 
 -----------------------------------
 -- Part 3: Start processing data --
@@ -975,7 +975,7 @@ do language plpgsql $$
       date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
       get_acq_datetime_lst(acq_date, acq_time, longitude),
       get_instrument(satellite),
-      case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 2 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
+      case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
       ' from ' || myrow.table_name || ';'; 
 
