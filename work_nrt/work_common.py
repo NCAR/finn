@@ -7,9 +7,9 @@ import getpass
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-my_env = 'from_docker'
 #my_env = 'use_docker'
-#my_env = 'use_native'
+my_env = 'use_native'
+#my_env = 'from_docker'
 
 print(my_env)
 if my_env == 'use_docker':
@@ -19,14 +19,21 @@ if my_env == 'use_docker':
     os.environ['PGUSER'] = 'finn'
     os.environ['PGPORT'] = '25432'
     os.environ['PGHOST'] = 'localhost'
+
+    # all raster downloads are stored in following dir
+    raster_download_rootdir = '../downloads'
+
 elif my_env == 'use_native':
     # native veersion on acon-finn
-    os.environ['PGDATABASE'] = 'postgres'
-    if 'PGPASSWORD' not in os.environ:
-        os.environ['PGPASSWORD'] = getpass.getpass(prompt='PGPASSWORD? ')
-    os.environ['PGUSER'] = 'postgres'
+    os.environ['PGDATABASE'] = 'finn'
+    os.environ['PGPASSWORD'] = 'finn'
+    os.environ['PGUSER'] = 'finn'
     os.environ['PGPORT'] = '5432'
     os.environ['PGHOST'] = ''
+
+    # all raster downloads are stored in following dir
+    raster_download_rootdir = '/home/finn/input_data/raster'
+
 elif my_env == 'from_docker':
     # running from inside the docker, traditional use
     os.environ['PGDATABASE'] = 'finn'
@@ -34,6 +41,10 @@ elif my_env == 'from_docker':
     os.environ['PGUSER'] = 'finn'
     os.environ['PGPORT'] = '5432'
     os.environ['PGHOST'] = 'localhost'
+
+    # all raster downloads are stored in following dir
+    raster_download_rootdir = '../downloads'
+
 else:
     raise RuntimeError
 
@@ -44,6 +55,7 @@ if 'EARTHDATAPW' not in os.environ:
     os.environ['EARTHDATAPW'] = getpass.getpass(prompt='EARTHDATAPW? ')
 
 os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
+
 
 
 
