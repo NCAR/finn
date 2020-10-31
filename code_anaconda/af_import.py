@@ -47,6 +47,7 @@ def main(tag, fnames):
                 orig = 'CSV:' + fname.name
             else:
                 orig = fname.name
+            nrec = sum(1 for _ in open(fname)) - 1
             src = fname.with_suffix('.vrt')
             with open(src, 'w') as vrt:
                 vrt.write(
@@ -58,7 +59,23 @@ def main(tag, fnames):
         <GeometryType>wkbPoint</GeometryType>
         <LayerSRS>WGS84</LayerSRS>
         <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
-</OGRVRTLayer>
+        <FeatureCount>{nrec}</FeatureCount>
+        <Field name="longitude" type="Real" />
+        <Field name="latitude" type="Real" />
+        <Field name="scan" type="Integer" />
+        <Field name="track" type="Integer" />
+        <Field name="acq_date" type="Date" />
+        <Field name="acq_time" type="String" />
+        <Field name="satellite" type="String" />
+        <Field name="confidence" type="String" />
+        <Field name="version" type="String" />
+        <Field name="brightness" type="Real" />
+        <Field name="bright_t31" type="Real" />
+        <Field name="bright_ti4" type="Real" />
+        <Field name="bright_ti5" type="Real" />
+        <Field name="frp" type="Real" />
+        <Field name="daynight" type="string" /> 
+    </OGRVRTLayer>
 </OGRVRTDataSource>""".strip())
         else:
             raise RuntimeError('Unknwon extenstion for AF file: ' + fname.suffix)
