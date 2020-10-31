@@ -7,8 +7,8 @@ import getpass
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-#my_env = 'use_docker'
-my_env = 'use_native'
+my_env = 'use_docker'
+#my_env = 'use_native'
 #my_env = 'from_docker'
 
 print(my_env)
