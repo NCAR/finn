@@ -8,6 +8,7 @@ import sys
 import re
 import subprocess
 import argparse
+from pathlib import Path
 #
 ## finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
@@ -125,21 +126,24 @@ def sec6_process_activefire():
     run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources)
     run_step2.main(tag_af, rasters)
 
-def sec7_export_output():
-    outdir = '.'
+def sec7_export_output(out_dir):
     shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
 
     schema = 'af_' + tag_af
     tblname = 'out_{0}_{1}_{2}'.format(tag_lct, tag_vcf, tag_regnum)
     flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
 
-    export_shp.main(outdir, schema, tblname, flds, shpname)
-    run_extra.summarize_log(tag_af)
+    export_shp.main(out_dir, schema, tblname, flds, shpname)
+    out_file = (out_dir / 'processing_summary.txt').open('w')
+    run_extra.summarize_log(tag_af, out_file)
 
 
 # TODO get rid of default values
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
-def main(tag_af, af_fnames, year_rst):
+def main(tag_af, af_fnames, year_rst, out_dir):
+
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     out = sys.stdout
 
@@ -152,7 +156,7 @@ def main(tag_af, af_fnames, year_rst):
 
     sec6_process_activefire()
 
-    sec7_export_output()
+    sec7_export_output(out_dir=out_dir)
 
 
 if __name__ == '__main__':
@@ -165,6 +169,8 @@ if __name__ == '__main__':
             default=None, required=True, help='tag for AF processing', type=str)
     required_named.add_argument('-y', '--year_rst', 
             default=None, required=True, help='dataset year for raster', type=int)
+    required_named.add_argument('-o', '--out_dir', 
+            default=None, required=True, help='output directory', type=str)
     parser.add_argument('af_fnames', 
             default=None, nargs='+', help='AF file name(s)', type=str)
 
