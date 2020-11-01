@@ -139,13 +139,7 @@ def sec7_export_output():
 
 # TODO get rid of default values
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
-def main(tag_af=None, af_fnames=None, year_rst=None):
-
-    if all([tag_af is None, af_fnames is None, year_rst==None]): 
-        tag_af = common.testinputs['tag_af']
-        af_fnames = common.testinputs['af_fnames']
-        year_rst = common.testinputs['year_rst']
-
+def main(tag_af, af_fnames, year_rst):
 
     out = sys.stdout
 

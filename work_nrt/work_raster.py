@@ -22,7 +22,7 @@ def sec4_download_raster(year_rst, download_global_raster=True):
     # always grab global
     if download_global_raster:
         results_indb = downloader.find_tiles_indb(data='POLYGON((-180 89,-180 -89,180 -89,180 89,-180 89))',
-                                                 knd='wkt')#, tag_lct=tag_lct, tag_vcf=tag_vcf)
+                                                 knd='wkt', tag_lct=tag_lct, tag_vcf=tag_vcf)
     else:
         results_indb = downloader.find_tiles_indb(data='"af_%s"' % tag_af, 
                                                   knd='schema', tag_lct=tag_lct, tag_vcf=tag_vcf)
@@ -31,14 +31,14 @@ def sec4_download_raster(year_rst, download_global_raster=True):
 
 
     if results_indb['n_need'] == 0:
-        print('All fire are is conained in raster')
+        print('All fire are contained in raster')
         print('no need to download/import raster dataset')
         need_to_import_lct = False
         need_to_import_vcf = False
         tiles_required_lct = []
         tiles_required_vcf = []
     else:
-        print('Some fire are not conained in raster')
+        print('Some fire are not contained in raster')
         print('Will download/import raster dataset')
         need_to_import_lct = (len(results_indb['tiles_missing_lct']) > 0)
         need_to_import_vcf = (len(results_indb['tiles_missing_vcf']) > 0)
@@ -133,10 +133,8 @@ def sec5_import_raster(year_rst, raster_tasks):
                 workdir_regnum ], check=True)
         polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, 'All_Countries.shp'))
 
-def main(year_rst):
+def main(year_rst, tag_af=None, af_fnames=None):
 
-    tag_af = None
-    af_fnames = None
 
     out = sys.stdout
 
@@ -145,16 +143,30 @@ def main(year_rst):
 
     common.sec2_check_environment(out=out)
 
-    raster_tasks = sec4_download_raster(year_rst, download_global_raster=True)
+    if not af_fnames:
+        download_global_raster = True
+    else:
+        download_global_raster = False
+    print( af_fnames, download_global_raster)
+
+    raster_tasks = sec4_download_raster(year_rst, download_global_raster=download_global_raster)
     sec5_import_raster(year_rst, raster_tasks)
 
 if __name__ == '__main__':
     # user specify which year to download
     parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('year_rst', default=None, type=int, help='Year of raster to be imported')
+    required_named = parser.add_argument_group('required arguments')
+
+    parser.add_argument('-t', '--tag_af', 
+            default=None, help='tag for AF processing', type=str)
+    required_named.add_argument('-y', '--year_rst', 
+            default=None, required=True, help='dataset year for raster', type=int)
+    parser.add_argument('af_fnames', 
+            default=None, nargs='*', help='AF file name(s)', type=str)
 
     args = parser.parse_args()
 
-    main(year_rst = args.year_rst)
+
+    main(**vars(args))
 

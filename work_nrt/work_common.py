@@ -57,8 +57,6 @@ if 'EARTHDATAPW' not in os.environ:
 os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
 
 
-
-
 # finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
 
