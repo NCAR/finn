@@ -105,9 +105,20 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
     # run the prep script
     if run_prep:
         print("starting prep: %s" % datetime.datetime.now())
+
+        def to_date(x):
+            if x is None:
+                o = ''
+            else:
+                # datetime
+                o = x.strftime('%Y-%m-%d')
+            return o
+            
         cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
                 '-v', ('tag=%s' % tag), 
-                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources) ]
+                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
+                '-v', ('date_range=%s' %  f"[{to_date(firstday)},{to_date(lastday)}]"),
+                ]
         print(cmd)
         try:
             subprocess.run(cmd, check=True, stderr=PIPE)

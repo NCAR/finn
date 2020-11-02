@@ -8,7 +8,12 @@
 SET search_path TO :ident_myschema , public;
 SHOW search_path;
 
+-- filter persistanct source or not
 \set my_filter_persistent_sources :filter_persistent_sources
+\set
+
+-- first/last date (in local time) to retain.  pass string of YYYY-MM-DD, or N
+\set my_date_range '\'':date_range'\''
 \set
 
 \set ON_ERROR_STOP on
@@ -89,7 +94,8 @@ CREATE table tbl_options(
 );
 INSERT INTO tbl_options (opt_name, opt_value)
 VALUES
-('filter_persistent_sources', :my_filter_persistent_sources )
+('filter_persistent_sources', :my_filter_persistent_sources ),
+('date_range', :my_date_range )
 ;
 
 DROP TABLE IF EXISTS tbl_log;
@@ -989,6 +995,28 @@ end $$;
 do language plpgsql $$ begin
 raise notice 'tool: import done, %', clock_timestamp();
 end $$;
+
+-- drop by date
+DO LANGUAGE plpgsql $$
+  declare
+    i bigint;
+    rng daterange;
+  begin
+    rng := (select opt_value::daterange FROM tbl_options WHERE opt_name = 'date_range');
+    if rng <> '[,]'::daterange  then
+      raise notice 'tool: rng, %', rng;
+
+      i := log_checkin('drop detes of no interest', 'work_pnt', (select count(*) from work_pnt)); 
+      delete from work_pnt
+      where not (acq_date_lst <@ rng);
+      i := log_checkout(i, (select count(*) from work_pnt)); 
+      raise notice 'tool: dropping dates of no interest done, %', clock_timestamp(); 
+    else
+      raise notice 'tool: no dates of interst defined';
+    end if;
+  end
+$$;
+
 
 -- drop low confidence points
 DO LANGUAGE plpgsql $$

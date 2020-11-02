@@ -9,6 +9,7 @@ import re
 import subprocess
 import argparse
 from pathlib import Path
+import datetime
 #
 ## finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
@@ -19,9 +20,7 @@ import export_shp
 import run_extra
 
 
-
 import work_common as common
-
 
 
 def sec3_import_af(out):
@@ -58,8 +57,10 @@ def sec3_import_af(out):
                     # find what shp file included...?
                     raise RuntileError('specify .shp file in af_names list!')
                     arcname,sname = None, None
+
             else:
                 raise RuntimeError('specify .shp file in af_names list!')
+
         else:
             print("doesn't exist.")
             
@@ -86,6 +87,7 @@ def sec3_import_af(out):
                         zname = os.path.join( pn, 'DL_FIRE_%s.zip' % arcname)
                         sname = fn
                         print('  found zip: %s' % zname)
+
                     else:
                         # see if it's NRT data
                         m = re_shp_nrt.match(fn)
@@ -95,7 +97,6 @@ def sec3_import_af(out):
                             zname = af_fname[:-4] + '.zip'
                             sname = fn
                             print('  found zip: %s' % zname)
-
 
                         else:
                             raise RuntimeError('cannot find file: %s' % af_fname)
@@ -122,9 +123,10 @@ def sec3_import_af(out):
         print(p.stdout.decode())
 
 
-def sec6_process_activefire():
-    run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources)
-    run_step2.main(tag_af, rasters)
+def sec6_process_activefire(firstday=None, lastday=None):
+    run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources, firstday=firstday, lastday=lastday)
+    run_step2.main(tag_af, rasters, firstday=firstday, lastday=lastday)
+
 
 def sec7_export_output(out_dir):
     shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
@@ -140,12 +142,17 @@ def sec7_export_output(out_dir):
 
 # TODO get rid of default values
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
-def main(tag_af, af_fnames, year_rst, out_dir):
+def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None):
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     out = sys.stdout
+
+    if firstday is not None:
+        firstday = datetime.datetime.strptime(str(firstday), '%Y%j').date()
+    if lastday is not None:
+        lastday = datetime.datetime.strptime(str(lastday), '%Y%j').date()
 
     user_config = common.sec1_user_config(tag_af, af_fnames, year_rst)
     globals().update(user_config)
@@ -154,7 +161,7 @@ def main(tag_af, af_fnames, year_rst, out_dir):
 
     sec3_import_af(out=out)
 
-    sec6_process_activefire()
+    sec6_process_activefire(firstday, lastday)
 
     sec7_export_output(out_dir=out_dir)
 
@@ -167,6 +174,10 @@ if __name__ == '__main__':
 
     required_named.add_argument('-t', '--tag_af', 
             default=None, required=True, help='tag for AF processing', type=str)
+    required_named.add_argument('-fd', '--firstday', 
+            default=None, required=False, help='first date (YYYYJJJ, local time) to output', type=int)
+    required_named.add_argument('-ld', '--lastday', 
+            default=None, required=False, help='last date (YYYYJJJ, local time) to output', type=int)
     required_named.add_argument('-y', '--year_rst', 
             default=None, required=True, help='dataset year for raster', type=int)
     required_named.add_argument('-o', '--out_dir', 
@@ -175,8 +186,7 @@ if __name__ == '__main__':
             default=None, nargs='+', help='AF file name(s)', type=str)
 
     args = parser.parse_args()
-
-
     
     main(**vars(args))
+
 
