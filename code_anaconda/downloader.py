@@ -136,7 +136,11 @@ def get_extent(dsname):
     dsname = Path(dsname)
     if dsname.suffix in ('.csv', '.txt'):
         dsname = af_import.mk_vrt(dsname)
+    if not dsname.is_file:
+        raise RuntimeError(f'file doesnt exist: {str(dsname)}')
     ds = ogr.Open(str(dsname))
+    if ds is None:
+        raise RuntimeError(f'cannot open {str(dsname)}')
     ext =ds.GetLayer().GetExtent()
     del ds
 

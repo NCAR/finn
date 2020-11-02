@@ -7,9 +7,9 @@ import getpass
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-my_env = 'use_docker'
-#my_env = 'use_native'
-#my_env = 'from_docker'
+#my_env = 'use_docker'
+my_env = 'use_native'
+#my_env = 'from_inside_docker'
 
 print(my_env)
 if my_env == 'use_docker':
@@ -34,7 +34,7 @@ elif my_env == 'use_native':
     # all raster downloads are stored in following dir
     raster_download_rootdir = '/home/finn/input_data/raster'
 
-elif my_env == 'from_docker':
+elif my_env == 'from_inside_docker':
     # running from inside the docker, traditional use
     os.environ['PGDATABASE'] = 'finn'
     os.environ['PGPASSWORD'] = 'finn'
@@ -49,6 +49,8 @@ else:
     raise RuntimeError
 
 
+# user should put thse into .bashrc, i'd think.  for example
+# export EARTHDATAUSER=yosuke
 if 'EARTHDATAUSER' not in os.environ:
     os.environ['EARTHDATAUSER'] = input('EARTHDATAUSER? ')
 if 'EARTHDATAPW' not in os.environ:
@@ -61,15 +63,6 @@ os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
 sys.path = sys.path + ['../code_anaconda']
 
 import rst_import
-
-testinputs = {
-        'tag_af': 'testOTS_092018',
-        'af_fnames': [ 
-            '../sample_datasets/fire/testOTS_092018/fire_archive_M6_23960.shp',
-            '../sample_datasets/fire/testOTS_092018/fire_archive_V1_23961.shp',
-            ], 
-        'year_rst':2017,
-        }
 
 
 def sec1_user_config(tag_af, af_fnames, year_rst):
