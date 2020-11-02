@@ -267,15 +267,20 @@ def get_dates(schema, combined=False):
     lst = []
     for i in itertools.count():
         tbl = 'af_in_%d' % (i+1)
-        st = '%s.%s' % (schema, tbl)
+        st = '"%s"."%s"' % (schema, tbl)
+
         try:
+            #cur.execute("""SELECT '%s'::regclass;""" % st)
+            print("""SELECT '%s'::regclass;""" % st)
             cur.execute("""SELECT '%s'::regclass;""" % st)
+
         except psycopg2.ProgrammingError as e:
             # no such table
             if i == 0:
                 # something is wrong..., no af_in at all??
                 raise e
             break
+        print("""select distinct acq_date from %s;""" % st)
         cur.execute("""select distinct acq_date from %s;""" % st)
         dates = cur.fetchall()
         dates = np.array([r[0] for r in dates])

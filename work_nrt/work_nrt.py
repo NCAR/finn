@@ -124,6 +124,17 @@ def sec3_import_af(out):
 
 
 def sec6_process_activefire(firstday=None, lastday=None):
+    # make sure that user pick the dates enclosed in AF files
+    if any(_ is not None for _ in (firstday, lastday)):
+        dates0 = af_import.get_dates('af_' + tag_af, combined=True)
+        dates = dates0[:]
+        if firstday is not None:
+            dates = [_ for _ in dates if _ >= firstday]
+        if lastday is not None:
+            dates = [_ for _ in dates if _ <= lastday]
+        if not dates:
+            raise RuntimeError(f'No first/lastday are not included in AF files, fst/lstday=[{firstday},{lastday}],af[{min(dates0)},{max(dates0)}]')
+
     run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources, firstday=firstday, lastday=lastday)
     run_step2.main(tag_af, rasters, firstday=firstday, lastday=lastday)
 
