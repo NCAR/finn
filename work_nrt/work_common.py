@@ -8,8 +8,8 @@ import getpass
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
 #my_env = 'use_docker'
-my_env = 'use_native'
-#my_env = 'from_inside_docker'
+#my_env = 'use_native'
+my_env = 'from_inside_docker'
 
 print(my_env)
 if my_env == 'use_docker':
@@ -36,6 +36,8 @@ elif my_env == 'use_native':
 
 elif my_env == 'from_inside_docker':
     # running from inside the docker, traditional use
+    # this works, but since volumes are mapped, path in the hoschine do not be the same from inside the docker (just like any
+    # disk sharing)
     os.environ['PGDATABASE'] = 'finn'
     os.environ['PGPASSWORD'] = 'finn'
     os.environ['PGUSER'] = 'finn'

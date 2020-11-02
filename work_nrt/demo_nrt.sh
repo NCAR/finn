@@ -8,7 +8,7 @@ out_dir=/home/finn/output_data/fire/$tag
 # TODO specify days of interest
 # TODO die prematury, if nothing left after removing by date
 
-# grab annual global raster
+# grab annual global raster (can be commented out if you know that it's already imported into the database)
 python3 ./work_raster.py -y 2019
 
 

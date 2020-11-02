@@ -17,6 +17,6 @@ How to run this tool from command line, for NRT processing.
 * demo_oregin.sh<br />
 Script to reproduce the Oregon test case processing, with this new interface
 
-At this point, database that is distributed as docker container can be used.  System version of database should work with the same script too, by setting database access settings appropriately (found in work_common.py near the top, PGPORT etc).
+At this point, database that is distributed as docker container can be used.  System version of database should work with the same script too, by setting database access settings appropriately (found in work_common.py near the top, PGPORT etc).  
 
 
