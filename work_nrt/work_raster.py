@@ -8,24 +8,36 @@ from urllib.parse import urlparse
 import glob
 import subprocess
 import argparse
+from functools import reduce
 
 # finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
 import downloader
 import rst_import
 import polygon_import
+from af_import import mk_vrt
 
 # common part for NRT procesiing
 import work_common as common
 
-def sec4_download_raster(year_rst, download_global_raster=True):
+def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None):
     # always grab global
     if download_global_raster:
         results_indb = downloader.find_tiles_indb(data='POLYGON((-180 89,-180 -89,180 -89,180 89,-180 89))',
                                                  knd='wkt', tag_lct=tag_lct, tag_vcf=tag_vcf)
     else:
-        results_indb = downloader.find_tiles_indb(data='"af_%s"' % tag_af, 
-                                                  knd='schema', tag_lct=tag_lct, tag_vcf=tag_vcf)
+        #results_indb = downloader.find_tiles_indb(data='"af_%s"' % tag_af, 
+        #                                          knd='schema', tag_lct=tag_lct, tag_vcf=tag_vcf)
+        # may have trouble when points distributes across opposite prime meridian.  
+        extents = [downloader.get_extent(_) for _ in af_fnames]
+
+        ex = reduce(lambda x,y: tuple(f(p,q) for p,q,f in zip(x,y,(min,max,min,max))) , extents)
+        wkt = ','.join(['{} {}'.format(ex[i],ex[j]) for i,j in [(0,2),(0,3),(1,3),(1,2),(0,2)]])
+        wkt = 'POLYGON((' + wkt + '))'
+
+
+        results_indb = downloader.find_tiles_indb(data=wkt,
+                                                  knd='wkt', tag_lct=tag_lct, tag_vcf=tag_vcf)
     print(results_indb)
     print()
 
@@ -149,7 +161,7 @@ def main(year_rst, tag_af=None, af_fnames=None):
         download_global_raster = False
     print( af_fnames, download_global_raster)
 
-    raster_tasks = sec4_download_raster(year_rst, download_global_raster=download_global_raster)
+    raster_tasks = sec4_download_raster(year_rst, download_global_raster=download_global_raster, af_fnames=af_fnames)
     sec5_import_raster(year_rst, raster_tasks)
 
 if __name__ == '__main__':

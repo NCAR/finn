@@ -20,38 +20,17 @@ def gdal_vernum_sys():
             break
     return o
 
-
-
-def main(tag, fnames):
-    if isinstance(fnames, str):
-        fnames = [fnames]
-    schema = 'af_' + tag
-    cmd = ['psql', '-c', 
-            'DROP SCHEMA IF EXISTS "%s" CASCADE;' % schema]
-    subprocess.run(cmd, check=True)
-    #cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
-    cmd = ['psql', '-c', 'CREATE SCHEMA "%s";' % schema]
-    print(cmd)
-    subprocess.run(cmd, check=True)
-
-    for i,fname in enumerate(fnames):
-
-        fname = Path(fname)
-
-        if fname.suffix == '.shp':
-            # shape file, straight to database
-            src = fname
-        elif fname.suffix in ('.csv', '.txt'):
-            # text file, wrap with vrt (virtual layer)
-            if fname.suffix == '.txt':
-                orig = 'CSV:' + fname.name
-            else:
-                orig = fname.name
-            nrec = sum(1 for _ in open(fname)) - 1
-            src = fname.with_suffix('.vrt')
-            with open(src, 'w') as vrt:
-                vrt.write(
-                f"""
+def mk_vrt(fname):
+    """create .vrt file for csv(or txt)"""
+    if fname.suffix == '.txt':
+        orig = 'CSV:' + fname.name
+    else:
+        orig = fname.name
+    nrec = sum(1 for _ in open(fname)) - 1
+    src = fname.with_suffix('.vrt')
+    with open(src, 'w') as vrt:
+        vrt.write(
+        f"""
 <OGRVRTDataSource>
     <OGRVRTLayer name="{fname.stem}">
         <SrcDataSource relativeToVRT="1">{orig}</SrcDataSource>
@@ -77,6 +56,31 @@ def main(tag, fnames):
         <Field name="daynight" type="string" /> 
     </OGRVRTLayer>
 </OGRVRTDataSource>""".strip())
+    return src
+
+
+def main(tag, fnames):
+    if isinstance(fnames, str):
+        fnames = [fnames]
+    schema = 'af_' + tag
+    cmd = ['psql', '-c', 
+            'DROP SCHEMA IF EXISTS "%s" CASCADE;' % schema]
+    subprocess.run(cmd, check=True)
+    #cmd = 'psql -c "CREATE SCHEMA %s;"' % schema
+    cmd = ['psql', '-c', 'CREATE SCHEMA "%s";' % schema]
+    print(cmd)
+    subprocess.run(cmd, check=True)
+
+    for i,fname in enumerate(fnames):
+
+        fname = Path(fname)
+
+        if fname.suffix == '.shp':
+            # shape file, straight to database
+            src = fname
+        elif fname.suffix in ('.csv', '.txt'):
+            # text file, wrap with vrt (virtual layer)
+            src = mk_vrt(fname)
         else:
             raise RuntimeError('Unknwon extenstion for AF file: ' + fname.suffix)
 
