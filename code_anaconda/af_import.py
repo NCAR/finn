@@ -267,7 +267,7 @@ def get_dates(schema, combined=False):
     lst = []
     for i in itertools.count():
         tbl = 'af_in_%d' % (i+1)
-        st = '"%s"."%s"' % (schema, tbl)
+        st = '%s.%s' % (schema, tbl)
 
         try:
             #cur.execute("""SELECT '%s'::regclass;""" % st)
