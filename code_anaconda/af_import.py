@@ -20,6 +20,43 @@ def gdal_vernum_sys():
             break
     return o
 
+def mk_vrt(fname):
+    """create .vrt file for csv(or txt)"""
+    if fname.suffix == '.txt':
+        orig = 'CSV:' + fname.name
+    else:
+        orig = fname.name
+    nrec = sum(1 for _ in open(fname)) - 1
+    src = fname.with_suffix('.vrt')
+    with open(src, 'w') as vrt:
+        vrt.write(
+        f"""
+<OGRVRTDataSource>
+    <OGRVRTLayer name="{fname.stem}">
+        <SrcDataSource relativeToVRT="1">{orig}</SrcDataSource>
+        <OpenOptions><OOI key="AUTODETECT_TYPE">YES</OOI></OpenOptions>
+        <GeometryType>wkbPoint</GeometryType>
+        <LayerSRS>WGS84</LayerSRS>
+        <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
+        <FeatureCount>{nrec}</FeatureCount>
+        <Field name="longitude" type="Real" />
+        <Field name="latitude" type="Real" />
+        <Field name="scan" type="Integer" />
+        <Field name="track" type="Integer" />
+        <Field name="acq_date" type="Date" />
+        <Field name="acq_time" type="String" />
+        <Field name="satellite" type="String" />
+        <Field name="confidence" type="String" />
+        <Field name="version" type="String" />
+        <Field name="brightness" type="Real" />
+        <Field name="bright_t31" type="Real" />
+        <Field name="bright_ti4" type="Real" />
+        <Field name="bright_ti5" type="Real" />
+        <Field name="frp" type="Real" />
+        <Field name="daynight" type="string" /> 
+    </OGRVRTLayer>
+</OGRVRTDataSource>""".strip())
+    return src
 
 
 def main(tag, fnames):
@@ -43,23 +80,7 @@ def main(tag, fnames):
             src = fname
         elif fname.suffix in ('.csv', '.txt'):
             # text file, wrap with vrt (virtual layer)
-            if fname.suffix == '.txt':
-                orig = 'CSV:' + fname.name
-            else:
-                orig = fname.name
-            src = fname.with_suffix('.vrt')
-            with open(src, 'w') as vrt:
-                vrt.write(
-                f"""
-<OGRVRTDataSource>
-    <OGRVRTLayer name="{fname.stem}">
-        <SrcDataSource relativeToVRT="1">{orig}</SrcDataSource>
-        <OpenOptions><OOI key="AUTODETECT_TYPE">YES</OOI></OpenOptions>
-        <GeometryType>wkbPoint</GeometryType>
-        <LayerSRS>WGS84</LayerSRS>
-        <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
-</OGRVRTLayer>
-</OGRVRTDataSource>""".strip())
+            src = mk_vrt(fname)
         else:
             raise RuntimeError('Unknwon extenstion for AF file: ' + fname.suffix)
 
@@ -247,14 +268,19 @@ def get_dates(schema, combined=False):
     for i in itertools.count():
         tbl = 'af_in_%d' % (i+1)
         st = '%s.%s' % (schema, tbl)
+
         try:
+            #cur.execute("""SELECT '%s'::regclass;""" % st)
+            print("""SELECT '%s'::regclass;""" % st)
             cur.execute("""SELECT '%s'::regclass;""" % st)
+
         except psycopg2.ProgrammingError as e:
             # no such table
             if i == 0:
                 # something is wrong..., no af_in at all??
                 raise e
             break
+        print("""select distinct acq_date from %s;""" % st)
         cur.execute("""select distinct acq_date from %s;""" % st)
         dates = cur.fetchall()
         dates = np.array([r[0] for r in dates])
