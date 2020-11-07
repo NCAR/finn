@@ -1,4 +1,4 @@
-create extension plpython3u;
+create extension if not exists plpython3u;
 
 create or replace function python_ver()
 returns text as
