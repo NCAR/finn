@@ -48,7 +48,10 @@ RUN /opt/conda/bin/python -c "from osgeo import gdal"
 # conda's networkx cannot be accessed, stuck with debian's python for plpython (set at compile time)
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
-RUN /usr/bin/pip3 install numpy scipy networkx
+# also i SOULD specify version of library so that results are reproducible...
+#RUN /usr/bin/pip3 install numpy scipy networkx
+#RUN /usr/bin/pip3 install numpy==1.18.0 scipy networkx==2.4 # versions in finn2.2-preproc1.2a
+RUN /usr/bin/pip3 install numpy==1.19.4 scipy==1.5.4 networkx==2.5 # versions installed as of 2020-11-07
 
 EXPOSE 8888
 
