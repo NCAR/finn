@@ -139,7 +139,7 @@ def sec6_process_activefire(firstday=None, lastday=None):
     run_step2.main(tag_af, rasters, firstday=firstday, lastday=lastday)
 
 
-def sec7_export_output(out_dir):
+def sec7_export_output(out_dir, summary_file=None):
     shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
 
     schema = 'af_' + tag_af
@@ -147,13 +147,16 @@ def sec7_export_output(out_dir):
     flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
 
     export_shp.main(out_dir, schema, tblname, flds, shpname)
-    out_file = (out_dir / 'processing_summary.txt').open('w')
-    run_extra.summarize_log(tag_af, out_file)
+    run_extra.summarize_log(tag_af, summary_file)
+
+    # summarize database space use by AF
+    run_extra.db_use_af(tag_af, summary_file)
 
 
-# TODO get rid of default values
+
+
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
-def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None):
+def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None, summary_file=None):
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -174,7 +177,11 @@ def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None):
 
     sec6_process_activefire(firstday, lastday)
 
-    sec7_export_output(out_dir=out_dir)
+    #summary_file = (out_dir / 'processing_summary.txt').open('w')
+    if summary_file:
+        summary_file = Path(summary_file).open('a')
+    sec7_export_output(out_dir=out_dir, summary_file=summary_file)
+
 
 
 if __name__ == '__main__':
@@ -185,14 +192,16 @@ if __name__ == '__main__':
 
     required_named.add_argument('-t', '--tag_af', 
             default=None, required=True, help='tag for AF processing', type=str)
-    required_named.add_argument('-fd', '--firstday', 
+    parser.add_argument('-fd', '--firstday', 
             default=None, required=False, help='first date (YYYYJJJ, local time) to output', type=int)
-    required_named.add_argument('-ld', '--lastday', 
+    parser.add_argument('-ld', '--lastday', 
             default=None, required=False, help='last date (YYYYJJJ, local time) to output', type=int)
     required_named.add_argument('-y', '--year_rst', 
             default=None, required=True, help='dataset year for raster', type=int)
     required_named.add_argument('-o', '--out_dir', 
             default=None, required=True, help='output directory', type=str)
+    parser.add_argument('-s', '--summary_file', 
+            default=None, required=False, help='summary filename', type=str)
     parser.add_argument('af_fnames', 
             default=None, nargs='+', help='AF file name(s)', type=str)
 

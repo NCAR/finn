@@ -1,25 +1,51 @@
 #!/bin/bash
 
-#data_dir=../data
+# identifier of the af dataset
 tag=modvrs_nrt_2020299 
+
+# downloaded FIRMS AF data
 data_dir=/home/finn/input_data/fire
+
+# processed burned area information
 out_dir=/home/finn/output_data/fire/$tag
 
-# TODO die prematury, if nothing left after removing by date
+# optionally processing summary and disk use info can be saved in a file
+# remove "-s $summary_file" altogether, if you want this info to dumped to screen
+summary_file=$out_dir/processing_summary.txt
 
 ### # grab annual global raster (can be commented out if you know that it's already imported into the database)
 ### python3 ./work_raster.py -y 2019
 ### 
 
+if [ $? -ne 0 ]; then
+	echo problem in work_raster.py
+	exit 1
+fi
+
+
 # process af
 python3 ./work_nrt.py -t $tag -y 2019 \
 	-o $out_dir \
        	-fd 2020299 -ld 2020299 \
+        -s $summary_file \
 	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020298.txt \
 	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020299.txt \
 	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020298.txt \
 	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020299.txt
 
-# TODO write command to purge
+if [ $? -ne 0 ]; then
+	echo problem in work_nrt.py
+	exit 2
+fi
 
-psql -U finn -c "drop schema af_$tag cascade;"
+# Purge the intermediate results in the database
+python3 work_clean.py -t $tag \
+	-s $summary_file
+
+
+if [ $? -ne 0 ]; then
+	echo problem in work_clean.py
+	exit 3
+fi
+
+echo Done Successfully for $tag .
