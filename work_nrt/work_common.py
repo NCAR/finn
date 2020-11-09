@@ -73,8 +73,10 @@ def sec1_user_config(tag_af, af_fnames, year_rst):
     filter_persistent_sources = True
 
     # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
-    tag_lct = 'modlct_%d' % year_rst
-    tag_vcf = 'modvcf_%d' % year_rst
+    #tag_lct = 'modlct_%d' % year_rst
+    #tag_vcf = 'modvcf_%d' % year_rst
+    tag_lct = 'modlct_%s' % year_rst
+    tag_vcf = 'modvcf_%s' % year_rst
 
     # tag for the region number polygon
     tag_regnum = 'regnum'
