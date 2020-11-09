@@ -135,7 +135,7 @@ create table "{schema}"."{tblname}" (
     polyid integer,
     {varname} integer,
     {frcname} double precision,
-    acq_date_lst date
+    acq_date_use date
     );
 -- clean the left over log if any
 select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, tag_tbl=tag_tbl)
@@ -150,7 +150,7 @@ drop table if exists "{schema}"."{tblname}";
 create table "{schema}"."{tblname}" (
     polyid integer,
     {vardefs},
-    acq_date_lst date
+    acq_date_use date
     );
 -- clean the left over log if any
 select log_purge('join {tag_tbl}'); """.format(   schema=schema, tblname=tblname, vardefs=', '.join(vardefs), tag_tbl=tag_tbl )
@@ -173,7 +173,7 @@ create table "{schema}"."{tblname}" (
     geom geometry,
     cen_lon double precision,
     cen_lat double precision,
-    acq_date_lst date,
+    acq_date_use date,
     area_sqkm double precision,
     {valdef}
     );""".format(
@@ -197,22 +197,22 @@ def mkcmd_create_table_oned():
             polyid integer,
             fireid integer,
             geom geometry,
-            acq_date_lst date,
+            acq_date_use date,
             area_sqkm double precision
             );
 
-    insert into work_div_oned (polyid, fireid, geom, acq_date_lst, area_sqkm)
-    select polyid, fireid, geom, acq_date_lst, area_sqkm
-    from work_div where acq_date_lst = :oned::date;
+    insert into work_div_oned (polyid, fireid, geom, acq_date_use, area_sqkm)
+    select polyid, fireid, geom, acq_date_use, area_sqkm
+    from work_div where acq_date_use = :oned::date;
     do language plpgsql $$
             declare
-            cur cursor for select acq_date_lst from work_div_oned limit 1;
+            cur cursor for select acq_date_use from work_div_oned limit 1;
             rec record;
             begin
             raise notice 'tool: oneday done, %', clock_timestamp();
             open cur;
             fetch cur into rec;
-            raise notice 'tool: oned is, %', rec.acq_date_lst;
+            raise notice 'tool: oned is, %', rec.acq_date_use;
     end $$;
     """
     return cmd
@@ -243,18 +243,18 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             st_clip(r.rast, d.geom) as clp,
             -- safe guarded version that i wrote for postgis 2.3.  hopefully i dont need this anyrmore
             -- st_clip_fuzzy(r.rast, d.geom) as clp,
-            d.acq_date_lst
+            d.acq_date_use
             from rst_{tag_tbl} as r
             inner join
             work_div_oned as d
             on st_intersects(r.rast, d.geom)
     )
-    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, acq_date_lst)
+    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, acq_date_use)
     select 
     polyid, 
     val, 
     (cnt::float)/(tcnt::float) as afrac, 
-    acq_date_lst 
+    acq_date_use 
     from (
             -- record majority class
             select 
@@ -262,20 +262,20 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             (pvc).value as val,
             (pvc).count as cnt,
             tcnt,
-            acq_date_lst ,
+            acq_date_use ,
             row_number() over (partition by polyid order by (pvc).count desc) as rnk
             from (
                     -- count pixels grouped by raster value
                     select polyid,
                     st_valuecount(clp) as pvc,
                     st_count(clp) as tcnt,
-                    acq_date_lst
+                    acq_date_use
                     from (
                             select polyid,
                             st_union(clp) as clp,
-                            acq_date_lst
+                            acq_date_use
                             from piece
-                            group by acq_date_lst, polyid
+                            group by acq_date_use, polyid
                     ) bar 
             ) baz
 --    ) quz where rnk = 1;
@@ -301,7 +301,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
     varnames = ['v_{0}'.format(_) for _ in tag_vars]
     nvar = len(varnames)
 
-    expr_lst = ', '.join(varnames)
+    expr_use = ', '.join(varnames)
     expr_mean = ', \n'.join('(stats{seq}).mean as val{seq}'.format( seq =  _+1) for _ in range(nvar))
     expr_summary = ', \n'.join('st_summarystatsagg(p.clp, {seq}, true) as stats{seq}'.format(seq =  _+1) for _ in range(nvar))
 
@@ -328,25 +328,25 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
             st_clip(r.rast, d.geom) as clp, 
             -- safe guarded version that i wrote for postgis 2.3.  hopefully i dont need this anyrmore
             --st_clip_fuzzy(r.rast, d.geom) as clp, 
-            d.acq_date_lst
+            d.acq_date_use
             from rst_{tag_tbl} as r
             inner join
             work_div_oned as d
             on st_intersects(r.rast, d.geom)
     ) 
-    insert into tbl_{tag_tbl} (polyid, {expr_lst}, acq_date_lst) 
+    insert into tbl_{tag_tbl} (polyid, {expr_use}, acq_date_use) 
     select 
     polyid, 
     {expr_mean},
-    acq_date_lst
+    acq_date_use
     from (
             -- calculate raster stats
             select 
             p.polyid,
             {expr_summary},
-            p.acq_date_lst
+            p.acq_date_use
             from piece as p
-            group by p.polyid, p.acq_date_lst
+            group by p.polyid, p.acq_date_use
     ) foo 
     ; 
 
@@ -365,7 +365,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
     """.format(
             schema=schema,
             tag_tbl=tag_tbl,
-            expr_lst=expr_lst,
+            expr_use=expr_use,
             expr_mean=expr_mean,
             expr_summary=expr_summary,
             )
@@ -418,11 +418,11 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
 
 
     cmd = """
-    insert into {tblname} (polyid, fireid, geom, cen_lon, cen_lat, acq_date_lst, area_sqkm, {flddsts})
-    select d.polyid, d.fireid, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_lst, d.area_sqkm, 
+    insert into {tblname} (polyid, fireid, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
+    select d.polyid, d.fireid, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
     {fldsrcs}
     from (
-    select polyid, fireid, geom, acq_date_lst, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
+    select polyid, fireid, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
     {joins}
     ;
 
