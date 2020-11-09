@@ -39,14 +39,14 @@ if [ $? -ne 0 ]; then
 	exit 2
 fi
 
-# Purge the intermediate results in the database
-python3 work_clean.py -t $tag \
-	-s $summary_file
-
-
-if [ $? -ne 0 ]; then
-	echo problem in work_clean.py
-	exit 3
-fi
+### # Purge the intermediate results in the database
+### python3 work_clean.py -t $tag \
+### 	-s $summary_file
+### 
+### 
+### if [ $? -ne 0 ]; then
+### 	echo problem in work_clean.py
+### 	exit 3
+### fi
 
 echo Done Successfully for $tag .

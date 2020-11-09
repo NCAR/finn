@@ -52,8 +52,12 @@ def get_first_last_day(tag):
 
 # TODO make dt0 and dt1 to be firstday/lastday, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
 def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver='v7m', run_prep=True, run_work=True,
-        filter_persistent_sources = False
+        filter_persistent_sources = False, date_definition = 'LST',
         ):
+   
+
+    if date_definition not in ('LST', 'UTC'):
+        raise ValueError(f"date_definition has to be 'LST' or 'UTC': '{date_definition}'")
 
     schema = 'af_%s' % tag
 
@@ -118,6 +122,7 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
                 '-v', ('tag=%s' % tag), 
                 '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
                 '-v', ('date_range=%s' %  f"[{to_date(firstday)},{to_date(lastday)}]"),
+                '-v', ('date_definition=%s' %  date_definition), 
                 ]
         print(cmd)
         try:
