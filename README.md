@@ -115,7 +115,7 @@ Create and start the container via `docker run`, mounting the current working di
 # Create directory in your home directory to store the database
 mkdir ${HOME}/pg_data
 
-docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+docker run --name finn -v $(pwd):/home/finn -v ${HOME}/pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
 (Mac)
@@ -124,7 +124,7 @@ Same command for Linux may work but using volume mount may be more stable.
 # Create named volume to store the database
 docker volume create pg_data
 
-docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
 (Windows Powershell for Docker Desktop, the latest Docker on Windows)
@@ -136,7 +136,7 @@ docker volume create pg_data
 filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
 
 # Create docker container and start
-docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
 (Windows Powershell for Docker Toolbox, the legacy Docker on Windows)
@@ -148,7 +148,7 @@ docker volume create pg_data
 filter docker-path { '/' + $_.tostring().substring(0,1).tolower() + $_.tostring().substring(1) -replace '\\', '/' -replace ':', ''}
 
 # Create docker container and start
-docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
+docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
 
 
@@ -183,8 +183,8 @@ Instead of `docker run` after restarting docker, You would try `docker start fin
   Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
 * (Windows) `-v pg_data:/var/lib/posrgresql`  
   Unfortunately this setting does not work for Windows version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
-* `-p 5432:5432` and `-p 8888:8888`
-  Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.
+* `-p 127.0.0.1:5432:5432` and `-p 8888:8888`
+  Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.  `127.0.0.1` part is to let only the machine with the address, i.e., the host machine running the docker container, to access the port.
 * `-d`
   Makes the container be detached from the terminal you created container (makes it a daemon)
 * `-e EARTHDATAUSER=yourusename` and `-e EARTHDATAPW=yourpassword`
