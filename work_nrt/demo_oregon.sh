@@ -16,6 +16,10 @@ if [ -f $summary_file ]; then
 	rm -f $summary_file
 fi
 
+use_utc=yes
+
+
+
 # grab  relevant raster (it doensn't download/import if necessary raster data already exist in the database)
 python3 ./work_raster.py -t $tag -y 2016 \
 	$data_dir/fire_archive_M6_23960.shp \

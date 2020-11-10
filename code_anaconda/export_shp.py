@@ -2,11 +2,13 @@ import os, re
 import subprocess
 from subprocess import Popen
 
-def main(odir, schema, tblname, flds, shpname=None, csvonly=False):
+def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definition='LST'):
     if shpname is None:
         shpname = tblnam + '.shp'
 
     csvname = os.path.join(odir, re.sub('.shp$' , '.csv', shpname))
+
+    #TODO acq_date field name to have either _lst or _utc
 
     
     # get the attribute table

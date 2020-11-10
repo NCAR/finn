@@ -68,9 +68,17 @@ import rst_import
 
 
 def sec1_user_config(tag_af, af_fnames, year_rst):
+    """ hard-wired options"""
 
-    # hard-wired options
+
+    # if available, use the AF's flag to tliminate persistence thermal anomaly (anthropogenic, and volcanic)
+    # i think the flag is availabel on ly for archve version of product, not NRT
+    # for for NRT, this flag has no effect
     filter_persistent_sources = True
+
+    # specify if date is defined using approximate local solar time (LST) or coordinated universal time (UTC)
+    # LST is defined by adding integer # of hours to UTC, 24 * longitude / 360
+    date_definition = 'UTC'  
 
     # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
     #tag_lct = 'modlct_%d' % year_rst
