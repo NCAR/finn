@@ -34,15 +34,15 @@ def mk_vrt(fname):
 <OGRVRTDataSource>
     <OGRVRTLayer name="{fname.stem}">
         <SrcDataSource relativeToVRT="1">{orig}</SrcDataSource>
-        <OpenOptions><OOI key="AUTODETECT_TYPE">YES</OOI></OpenOptions>
+        <OpenOptions><OOI key="AUTODETECT_TYPE">NO</OOI></OpenOptions>
         <GeometryType>wkbPoint</GeometryType>
         <LayerSRS>WGS84</LayerSRS>
         <GeometryField encoding="PointFromColumns" x="longitude" y="latitude"/>
         <FeatureCount>{nrec}</FeatureCount>
         <Field name="longitude" type="Real" />
         <Field name="latitude" type="Real" />
-        <Field name="scan" type="Integer" />
-        <Field name="track" type="Integer" />
+        <Field name="scan" type="Real" />
+        <Field name="track" type="Real" />
         <Field name="acq_date" type="Date" />
         <Field name="acq_time" type="String" />
         <Field name="satellite" type="String" />
