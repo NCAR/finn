@@ -5,7 +5,7 @@ from run_step1 import get_first_last_day
 
 ver = 'v8b'
 
-def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=True):
+def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work=True):
 
     schema = 'af_{0}'.format( tag_af )
 
@@ -95,11 +95,11 @@ def main(tag_af, rasters, firstday=None, lastday=None, run_prep=True, run_work=T
 
     if run_work: 
 
-        if firstday is None or lastday is None:
-            firstday, lastday = get_first_last_day(tag_af)
+        if first_day is None or last_day is None:
+            first_day, last_day = get_first_last_day(tag_af)
 
-        dt0 = firstday
-        dt1 = lastday + datetime.timedelta(days=1)
+        dt0 = first_day
+        dt1 = last_day + datetime.timedelta(days=1)
 
         # process each day, store output into tables
         dates = [dt0 + datetime.timedelta(days=n) for n in

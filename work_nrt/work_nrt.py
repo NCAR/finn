@@ -123,22 +123,22 @@ def sec3_import_af(out):
         print(p.stdout.decode())
 
 
-def sec6_process_activefire(firstday=None, lastday=None):
+def sec6_process_activefire(first_day=None, last_day=None):
     # make sure that user pick the dates enclosed in AF files
-    if any(_ is not None for _ in (firstday, lastday)):
+    if any(_ is not None for _ in (first_day, last_day)):
         dates0 = af_import.get_dates('af_' + tag_af, combined=True)
         dates = dates0[:]
-        if firstday is not None:
-            dates = [_ for _ in dates if _ >= firstday]
-        if lastday is not None:
-            dates = [_ for _ in dates if _ <= lastday]
+        if first_day is not None:
+            dates = [_ for _ in dates if _ >= first_day]
+        if last_day is not None:
+            dates = [_ for _ in dates if _ <= last_day]
         if not dates:
-            raise RuntimeError(f'No first/lastday are not included in AF files, fst/lstday=[{firstday},{lastday}],af[{min(dates0)},{max(dates0)}]')
+            raise RuntimeError(f'No first/last_day are not included in AF files, fst/lstday=[{first_day},{last_day}],af[{min(dates0)},{max(dates0)}]')
 
     run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
-            firstday=firstday, lastday=lastday,
+            first_day=first_day, last_day=last_day,
             date_definition=date_definition)
-    run_step2.main(tag_af, rasters, firstday=firstday, lastday=lastday)
+    run_step2.main(tag_af, rasters, first_day=first_day, last_day=last_day)
 
 
 def sec7_export_output(out_dir, summary_file=None):
@@ -159,7 +159,7 @@ def sec7_export_output(out_dir, summary_file=None):
 
 
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
-def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None, 
+def main(tag_af, af_fnames, year_rst, out_dir, first_day=None, last_day=None, 
         summary_file=None):
 
     out_dir = Path(out_dir)
@@ -167,10 +167,10 @@ def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None,
 
     out = sys.stdout
 
-    if firstday is not None:
-        firstday = datetime.datetime.strptime(str(firstday), '%Y%j').date()
-    if lastday is not None:
-        lastday = datetime.datetime.strptime(str(lastday), '%Y%j').date()
+    if first_day is not None:
+        first_day = datetime.datetime.strptime(str(first_day), '%Y%j').date()
+    if last_day is not None:
+        last_day = datetime.datetime.strptime(str(last_day), '%Y%j').date()
 
     user_config = common.sec1_user_config(tag_af, af_fnames, year_rst)
     globals().update(user_config)
@@ -179,7 +179,7 @@ def main(tag_af, af_fnames, year_rst, out_dir, firstday=None, lastday=None,
 
     sec3_import_af(out=out)
 
-    sec6_process_activefire(firstday, lastday)
+    sec6_process_activefire(first_day, last_day)
 
     #summary_file = (out_dir / 'processing_summary.txt').open('w')
     if summary_file:
@@ -197,10 +197,10 @@ if __name__ == '__main__':
     required_named.add_argument('-t', '--tag_af', 
             default=None, required=True, help='tag for AF processing', type=str)
 
-    parser.add_argument('-fd', '--firstday', 
+    parser.add_argument('-fd', '--first_day', 
             default=None, required=False, 
             help='first date (YYYYJJJ, local time) to output', type=int)
-    parser.add_argument('-ld', '--lastday', 
+    parser.add_argument('-ld', '--last_day', 
             default=None, required=False, 
             help='last date (YYYYJJJ, local time) to output', type=int)
 
