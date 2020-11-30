@@ -129,16 +129,20 @@ def mkcmd_create_table_thematic(tag_tbl, tag_var, schema):
     tblname = 'tbl_{0}'.format( tag_tbl )
     varname = 'v_{0}'.format( tag_var )
     frcname = 'f_{0}'.format( tag_var )
+    cntname = 'cv_{0}'.format( tag_var )
+    tctname = 'ct_{0}'.format( tag_var )
     cmd = """
 drop table if exists "{schema}"."{tblname}";
 create table "{schema}"."{tblname}" (
     polyid integer,
     {varname} integer,
     {frcname} double precision,
+    {cntname} integer,
+    {tctname} integer,
     acq_date_use date
     );
 -- clean the left over log if any
-select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, tag_tbl=tag_tbl)
+select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, cntname=cntname, tctname=tctname, tag_tbl=tag_tbl)
     return cmd
 
 def mkcmd_create_table_continuous(tag_tbl, tag_vars, schema):
@@ -249,11 +253,13 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             work_div_oned as d
             on st_intersects(r.rast, d.geom)
     )
-    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, acq_date_use)
+    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, cv_{tag_var}, ct_{tag_var}, acq_date_use)
     select 
     polyid, 
     val, 
     (cnt::float)/(tcnt::float) as afrac, 
+    cnt,
+    tcnt,
     acq_date_use 
     from (
             -- record majority class
@@ -284,10 +290,6 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
       END;
     $$;
     set client_min_messages to notice;
-
-    -- TODO save rnk==2 as well, and check if i feel confortable picking just rnk1.
-    -- flag records with concern.
-
 
     do language plpgsql $$ begin
     raise notice 'tool: {tag_tbl} done, %', clock_timestamp();
