@@ -21,10 +21,13 @@ dfs = {
         knd : pd.read_csv(ddir / f'modvrs_nrt_2020299_{knd}/out_modvrs_nrt_2020299_{knd}_modlct_2019_modvcf_2019_regnum.csv') 
         for knd in knds}
 # polyid  fireid    cen_lon    cen_lat acq_date_utc  area_sqkm  v_lct     f_lct     v_tree     v_herb      v_bare  v_regnum
-cnt_fire = {knd: len(np.unique(df.fireid)) for knd, df in dfs.items()}
+cnt_fire = pd.DataFrame({knd: len(np.unique(df.fireid)) for knd, df in dfs.items()}, index=['cnt_fire'])
 print(cnt_fire)
-tot_area = {knd: sum(df.area_sqkm * df.f_lct) for knd, df in dfs.items()}
+tot_area = pd.DataFrame({knd: sum(df.area_sqkm * df.f_lct) for knd, df in dfs.items()}, index=['total_area'])
 print(tot_area)
-area_by_lct = { knd: df.assign(**{'parea_sqkm': df.f_lct * df.area_sqkm}).groupby('v_lct').agg({'parea_sqkm': 'sum'}) 
-        for knd,df in dfs.items()}
+#area_by_lct = { knd: df.assign(**{'parea_sqkm': df.f_lct * df.area_sqkm}).groupby('v_lct').agg({'parea_sqkm': 'sum'}) 
+#        for knd,df in dfs.items()}
+area_by_lct = pd.concat({ knd: df.assign(**{'parea_sqkm': df.f_lct * df.area_sqkm}).groupby('v_lct').agg({'parea_sqkm': 'sum'}) 
+        for knd,df in dfs.items()},
+        axis=1)
 print(area_by_lct)
