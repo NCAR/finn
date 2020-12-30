@@ -158,9 +158,9 @@ def sec2_check_environment(out):
     out.write('system environment inside docker container, for debugging purpose\n\n')
     subprocess.run(['env' , '|', 'sort'], stdout=out, shell=True)
 
-    subprocess.run(['psql', '-c', 'select version();'], stdout = out)
-    subprocess.run(['psql', '-c', 'select postgis_full_version();'], stdout = out)
+    subprocess.run(['psql', '-c', 'select version();'], stdout = out, check=True)
+    subprocess.run(['psql', '-c', 'select postgis_full_version();'], stdout = out, chek=True)
 
-    subprocess.run(['psql', '-f', '../code_anaconda/testpy.sql'], stdout = out)
+    subprocess.run(['psql', '-f', '../code_anaconda/testpy.sql'], stdout = out, chek=True)
     
     rst_import.prep_modis_tile()
