@@ -24,7 +24,11 @@ drop table if exists work_div_oned;
 create temporary table work_pnt_oned (like work_pnt excluding constraints);
 create temporary table work_lrg_oned (like work_lrg excluding constraints);
 create temporary table work_div_oned (like work_div excluding constraints);
-alter table work_div_oned drop column polyid;
+--alter table work_div_oned drop column polyid;
+-- convenient to have a temporaly serial id for work_div
+CREATE TEMPORARY SEQUENCE tmp_div_seq OWNED BY work_div_oned.polyid;
+ALTER TABLE work_div_oned ALTER COLUMN polyid SET DEFAULT nextval('tmp_div_seq');
+ALTER TABLE work_div_oned ALTER COLUMN polyid SET NOT NULL;
 
 -- select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confidence, cleanid work_pnt from work_pnt   where acq_date_use = :oned::date limit 1;
 
@@ -638,18 +642,38 @@ do language plpgsql $$ begin
 raise notice 'tool: step3.8 (lone detections) done, %', clock_timestamp();
 end $$;
 
-----------------------------------------------
--- STEP 3.9: subdivided polygons attributes --
-----------------------------------------------
+-----------------------------------------------------
+-- STEP 3.9: list of points in subdivided polygons --
+-----------------------------------------------------
 
--- update work_div_oned set
--- area_sqkm = st_area(geom::geography) / 1000000.;
+-- TODO see how costly this is, and make this to be option if it is
+CREATE INDEX work_div_gix ON work_div_oned USING gist( geom );
 
+WITH foo AS (
+	SELECT p.cleanid, d.polyid 
+	FROM work_pnt_oned AS p INNER JOIN work_div_oned AS d 
+	ON d.geom && p.geom_pnt
+	AND ST_Within( p.geom_pnt, d.geom )
+), bar AS (
+	SELECT polyid, array_agg(cleanid) cleanids
+	FROM foo
+	GROUP BY polyid
+)
+UPDATE work_div_oned SET cleanids = bar.cleanids
+FROM bar
+WHERE work_div_oned.polyid = bar.polyid;
 
+do language plpgsql $$ begin
+raise notice 'tool: step3.9 (points in polygon) done, %', clock_timestamp();
+end $$;
+
+---------------------
+-- STEP 3.10: push --
+---------------------
 
 -- push
-insert into work_div(fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom, acq_date_use, area_sqkm from work_div_oned;
+insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm)
+select fireid, cleanids, geom, acq_date_use, area_sqkm from work_div_oned;
 
 
 do language plpgsql $$ begin
