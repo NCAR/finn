@@ -1,27 +1,36 @@
 #!/bin/bash
 
+#  'use_from_inside_docker' = use docker for everything.  
+#  to use this option, invoke this scrpt with
+#  this is close to the traditional notebook interface is doing
+#
+export FINN_DRIVER=from_inside_docker
+
+# using LST to compare against deault run
+export FINN_DATE_DEFINITION=LST
+
 # identifier of the af dataset
-tag=testOTS_092017 
+tag=testOTS_092018
 
 # downloaded FIRMS AF data
-data_dir=/home/finn/input_data/fire/$tag
+data_dir=/home/finn/input_data/fire/${tag}
 
 # processed burned area information
-out_dir=/home/finn/output_data/fire/$tag
+out_dir=/home/finn/output_data/fire/${tag}
+
 
 # optionally processing summary and disk use info can be saved in a file
 # remove "-s $summary_file" altogether, if you want this info to dumped to screen
-summary_file=$out_dir/processing_summary.txt
-if [ -f $summary_file ]; then
-	rm -f $summary_file
+summary_file=$out_dir/processing_summary_${tag}.txt
+
+if [ x$FINN_DRIVER == xfrom_inside_docker ]; then
+  # need to be sure that start processing from work_nrt dir
+  here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  cd $here
 fi
 
-use_utc=yes
-
-
-
-# grab  relevant raster (it doensn't download/import if necessary raster data already exist in the database)
-python3 ./work_raster.py -t $tag -y 2016 \
+# grab  relevant raster (it doensn't download/import if necessary raster data already imported into the database)
+python3 ./work_raster.py -t $tag -y 2017 \
 	$data_dir/fire_archive_M6_23960.shp \
 	$data_dir/fire_archive_V1_23961.shp
 
@@ -32,7 +41,7 @@ fi
 
 
 # process af
-python3 ./work_nrt.py -t $tag -y 2016 \
+python3 ./work_nrt.py -t $tag -y 2017 \
 	-o $out_dir \
         -s $summary_file \
 	$data_dir/fire_archive_M6_23960.shp \

@@ -2,20 +2,23 @@ import os, re
 import subprocess
 from subprocess import Popen
 
-def main(odir, schema, tblname, flds, shpname=None, csvonly=False):
+def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definition='LST'):
     if shpname is None:
         shpname = tblnam + '.shp'
 
     csvname = os.path.join(odir, re.sub('.shp$' , '.csv', shpname))
 
+    acq_date_used = "acq_date_" + date_definition.lower()
+
     
     # get the attribute table
     cmd = ['psql', '-c'] + [
-            "\COPY (SELECT polyid,fireid,cen_lon,cen_lat,acq_date_lst,area_sqkm,{flds} FROM \"{schema}\".\"{tblname}\") TO '{csvname}' DELIMITER ',' CSV HEADER".format(
+            "\COPY (SELECT polyid,fireid,cen_lon,cen_lat,acq_date_use as {acq_date_used},area_sqkm,{flds} FROM \"{schema}\".\"{tblname}\") TO '{csvname}' DELIMITER ',' CSV HEADER".format(
                 flds=','.join(flds),
                 schema=schema,
                 tblname=tblname,
-                csvname=csvname
+                csvname=csvname,
+                acq_date_used = acq_date_used,
                 )
             ]
     print('exporting: %s ...' % csvname, end=' ')

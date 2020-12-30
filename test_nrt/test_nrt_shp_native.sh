@@ -1,24 +1,19 @@
 #!/bin/bash
 
-# specify if docker will be used to run model
-#  'use_native' = no docker, everything installed on the host system
-#  'use_docker' = use postgis in docker.  some aux tool (gdal, psql, python etc) need to be installed to the system
-#  'use_from_inside_docker' = use docker for everything.  to use this option, invoke this scrpt with
-#    docker exec finn /home/finn/work_nrt/demo_nrt_from_inside_docker.sh
-#
+# use postgis installed natively on the system
 export FINN_DRIVER=use_native
 
 # use UTC to decide date, or approximate local solar time (LST)
 export FINN_DATE_DEFINITION=UTC
 
 # identifier of the af dataset
-tag=modvrs_nrt_2020299
+tag=modvrs_nrt_2020299_shp_native
 
 # downloaded FIRMS AF data
 data_dir=/home/finn/input_data/fire
 
 # processed burned area information
-out_dir=/home/finn/output_data/fire/${tag}
+out_dir=$HOME/output_data/fire/${tag}
 
 # optionally processing summary and disk use info can be saved in a file
 # remove "-s $summary_file" altogether, if you want this info to dumped to screen
@@ -45,10 +40,8 @@ python3 ./work_nrt.py -t $tag -y 2019 \
 	-o $out_dir \
        	-fd 2020299 -ld 2020299 \
         -s $summary_file \
-	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020298.txt \
-	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020299.txt \
-	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020298.txt \
-	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020299.txt
+	$data_dir/fire_nrt_M6_10032_filtered.shp \
+	$data_dir/fire_nrt_V1_10034.shp
 
 if [ $? -ne 0 ]; then
 	echo problem in work_nrt.py

@@ -1,24 +1,19 @@
 #!/bin/bash
 
-# specify if docker will be used to run model
-#  'use_native' = no docker, everything installed on the host system
-#  'use_docker' = use postgis in docker.  some aux tool (gdal, psql, python etc) need to be installed to the system
-#  'use_from_inside_docker' = use docker for everything.  to use this option, invoke this scrpt with
-#    docker exec finn /home/finn/work_nrt/demo_nrt_from_inside_docker.sh
-#
-export FINN_DRIVER=use_native
+# use postgis in docker container
+export FINN_DRIVER=use_docker
 
 # use UTC to decide date, or approximate local solar time (LST)
 export FINN_DATE_DEFINITION=UTC
 
 # identifier of the af dataset
-tag=modvrs_nrt_2020299
+tag=modvrs_nrt_2020299_docker
 
 # downloaded FIRMS AF data
 data_dir=/home/finn/input_data/fire
 
 # processed burned area information
-out_dir=/home/finn/output_data/fire/${tag}
+out_dir=$HOME/output_data/fire/${tag}
 
 # optionally processing summary and disk use info can be saved in a file
 # remove "-s $summary_file" altogether, if you want this info to dumped to screen

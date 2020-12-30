@@ -1,18 +1,13 @@
 #!/bin/bash
 
-# specify if docker will be used to run model
-#  'use_native' = no docker, everything installed on the host system
-#  'use_docker' = use postgis in docker.  some aux tool (gdal, psql, python etc) need to be installed to the system
-#  'use_from_inside_docker' = use docker for everything.  to use this option, invoke this scrpt with
-#    docker exec finn /home/finn/work_nrt/demo_nrt_from_inside_docker.sh
-#
-export FINN_DRIVER=use_native
+# run tool from inside docker, using postgis and all other tools provided in docker
+export FINN_DRIVER=from_inside_docker
 
 # use UTC to decide date, or approximate local solar time (LST)
 export FINN_DATE_DEFINITION=UTC
 
 # identifier of the af dataset
-tag=modvrs_nrt_2020299
+tag=modvrs_nrt_2020299_from_inside_docker
 
 # downloaded FIRMS AF data
 data_dir=/home/finn/input_data/fire
@@ -30,9 +25,9 @@ if [ x$FINN_DRIVER == xfrom_inside_docker ]; then
   cd $here
 fi
 
-### # grab annual global raster (can be commented out if you know that it's already imported into the database)
-### python3 ./work_raster.py -y 2019
-### 
+# grab annual global raster (can be commented out if you know that it's already imported into the database)
+python3 ./work_raster.py -y 2019
+
 
 if [ $? -ne 0 ]; then
 	echo problem in work_raster.py
@@ -55,14 +50,14 @@ if [ $? -ne 0 ]; then
 	exit 2
 fi
 
-# Purge the intermediate results in the database
-python3 work_clean.py -t $tag \
-	-s $summary_file
-
-
-if [ $? -ne 0 ]; then
-	echo problem in work_clean.py
-	exit 3
-fi
+### # Purge the intermediate results in the database
+### python3 work_clean.py -t $tag \
+### 	-s $summary_file
+### 
+### 
+### if [ $? -ne 0 ]; then
+### 	echo problem in work_clean.py
+### 	exit 3
+### fi
 
 echo Done Successfully for $tag .

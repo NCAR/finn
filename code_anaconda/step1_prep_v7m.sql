@@ -10,10 +10,12 @@ SHOW search_path;
 
 -- filter persistanct source or not
 \set my_filter_persistent_sources :filter_persistent_sources
-\set
 
 -- first/last date (in local time) to retain.  pass string of YYYY-MM-DD, or N
 \set my_date_range '\'':date_range'\''
+
+-- definition of date, approximate local solar time (LST) or coordinated universal time (UTC)
+\set my_date_definition '\'':date_definition'\''
 \set
 
 \set ON_ERROR_STOP on
@@ -44,6 +46,7 @@ CREATE TABLE work_pnt (
 	acq_time_utc character(4),
 	acq_date_lst date,
 	acq_datetime_lst timestamp without time zone,
+	acq_date_use date,
 	instrument character(5),
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
@@ -59,7 +62,7 @@ drop table if exists work_lrg;
 create table work_lrg (
 	fireid integer primary key not null,
 	geom_lrg geometry,
-	acq_date_lst date,
+	acq_date_use date,
 	ndetect integer,
 	area_sqkm double precision
 	);
@@ -71,7 +74,7 @@ create table work_div (
 	polyid serial primary key ,
 	fireid integer,
 	geom geometry,
-	acq_date_lst date,
+	acq_date_use date,
 	area_sqkm double precision
 	);
 
@@ -95,7 +98,8 @@ CREATE table tbl_options(
 INSERT INTO tbl_options (opt_name, opt_value)
 VALUES
 ('filter_persistent_sources', :my_filter_persistent_sources ),
-('date_range', :my_date_range )
+('date_range', :my_date_range ),
+('date_definition', :my_date_definition )
 ;
 
 DROP TABLE IF EXISTS tbl_log;
@@ -964,12 +968,25 @@ do language plpgsql $$
     myrow record; 
     s varchar; 
     i bigint;
+    date_definition varchar;
+    sdateuse varchar;
   begin
+    date_definition := (
+      SELECT opt_value 
+      FROM tbl_options 
+      WHERE opt_name = 'date_definition'
+    ); 
+    if date_definition = 'UTC' then
+      sdateuse := 'acq_date, ';
+    else 
+      sdateuse := 'date(get_acq_datetime_lst(acq_date, acq_time, longitude)), ';
+    end if;
+
 
     for myrow in select table_name,has_type from af_ins order by table_name loop 
       raise notice 'tool: myrow , %', myrow; 
 
-      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype) select 
+      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, acq_date_use, instrument, confident, anomtype) select 
       row_number()  over (order by gid), 
       geom, 
       longitude, 
@@ -979,7 +996,9 @@ do language plpgsql $$
       acq_date, 
       time_to_char(acq_time),
       date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
-      get_acq_datetime_lst(acq_date, acq_time, longitude),
+      get_acq_datetime_lst(acq_date, acq_time, longitude), 
+      ' ||
+      sdateuse || '
       get_instrument(satellite),
       case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
@@ -1008,7 +1027,7 @@ DO LANGUAGE plpgsql $$
 
       i := log_checkin('drop detes of no interest', 'work_pnt', (select count(*) from work_pnt)); 
       delete from work_pnt
-      where not (acq_date_lst <@ rng);
+      where not (acq_date_use <@ rng);
       i := log_checkout(i, (select count(*) from work_pnt)); 
       raise notice 'tool: dropping dates of no interest done, %', clock_timestamp(); 
     else

@@ -45,7 +45,7 @@ config_datacat = dict(
             # acronym Yosuke used, in the order Yosuke uses store data
             shortnames = ['lct'],
             # extra options for merge
-            mrg_opt = [''],
+            mrg_opt = [],
             rsmp_alg = 'mode',
             re_bname = re.compile('^MCD12Q1.A(\d\d\d\d)001'),
             ),
@@ -607,7 +607,13 @@ class Importer(object):
                     cmd_x = cmd_x[:255] + ' ...'
                 if os.path.exists(tifname): os.remove(tifname)
                 print('cmd: ' + cmd_x)
-                subprocess.run(cmd, check=True)
+                p = subprocess.run(cmd, check=True, stderr=subprocess.PIPE)
+                if p.stderr:
+                    print('cmd: ')
+                    for i,x in enumerate(cmd):
+                        print('\t', i, "=== '{}'".format(x))
+                    print(p.stderr.decode())
+                    raise
 
             buf.append(tifname)
         return buf
@@ -624,10 +630,13 @@ class Importer(object):
         # anaconda on win had trouble with long command line, ,so rewrote with -input_file_ist
         with open('tifnames.txt','w') as f:
             f.write('\n'.join(tifnames) + '\n')
-        cmd = 'gdalbuildvrt %s -input_file_list %s'  % ( vrtname, 'tifnames.txt')
-        status = os.system(cmd)
-        if status != 0:
-            raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+        assert os.path.exists('tifnames.txt')
+        #cmd = 'gdalbuildvrt %s -input_file_list %s'  % ( vrtname, 'tifnames.txt')
+        #status = os.system(cmd)
+        #if status != 0:
+        #    raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+        cmd = ['gdalbuildvrt', vrtname, '-input_file_list',  'tifnames.txt']
+        subprocess.run(cmd, check=True)
 
         # open the unified band
         ds = gdal.Open(vrtname)
@@ -815,10 +824,13 @@ class Importer(object):
         # anaconda on win had trouble with long command line, ,so rewrote with -input_file_ist
         with open('tifnames.txt','w') as f:
             f.write('\n'.join(tifnames) + '\n')
-        cmd = 'gdalbuildvrt %s -input_file_list %s'  % ( vrtname, 'tifnames.txt')
-        status = os.system(cmd)
-        if status != 0:
-            raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+        assert os.path.exists('tifnames.txt')
+        #cmd = 'gdalbuildvrt %s -input_file_list %s'  % ( vrtname, 'tifnames.txt')
+        #status = os.system(cmd)
+        #if status != 0:
+        #    raise RuntimeError('exit status %s, cmd = %s' % (status, cmd))
+        cmd = ['gdalbuildvrt',  vrtname, '-input_file_list', 'tifnames.txt']
+        subprocess.run(cmd, check=True)
 
         res = '-tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667'  # 6 sec
         prj = '-t_srs "%s"' % target_projection

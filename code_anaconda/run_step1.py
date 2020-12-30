@@ -42,18 +42,23 @@ def get_first_last_day(tag):
     if cnt_tropdup > 0:
         # trop fire should have been duplicated to carry over to next day
         # that means first day of the dataset is incomplete (missing carry over from the previous day)
-        firstday = dt01[0] + oned
+        first_day = dt01[0] + oned
     else:
         # can start using the first day's data
-        firstday = dt01[0]
-    lastday = dt01[1]
+        first_day = dt01[0]
+    last_day = dt01[1]
     
-    return (firstday, lastday)
+    return (first_day, last_day)
 
-# TODO make dt0 and dt1 to be firstday/lastday, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
-def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver='v7m', run_prep=True, run_work=True,
-        filter_persistent_sources = False
+# TODO make dt0 and dt1 to be first_day/last_day, and dont use python's indexing, make it more transparent.  do adjustment in run_step?.py files
+def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, ver='v7m', run_prep=True, run_work=True,
+        filter_persistent_sources = False,
+        date_definition = 'LST'
         ):
+   
+
+    if date_definition not in ('LST', 'UTC'):
+        raise ValueError(f"date_definition has to be 'LST' or 'UTC': '{date_definition}'")
 
     schema = 'af_%s' % tag
 
@@ -117,7 +122,8 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
         cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
                 '-v', ('tag=%s' % tag), 
                 '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
-                '-v', ('date_range=%s' %  f"[{to_date(firstday)},{to_date(lastday)}]"),
+                '-v', ('date_range=%s' %  f"[{to_date(first_day)},{to_date(last_day)}]"),
+                '-v', ('date_definition=%s' %  date_definition), 
                 ]
         print(cmd)
         try:
@@ -130,11 +136,11 @@ def main(tag, firstday=None, lastday=None, vorimp='scipy', gt=3, buf0=False, ver
 
 
     if run_work:
-        if firstday is None or lastday is None:
-            firstday, lastday = get_first_last_day(tag)
+        if first_day is None or last_day is None:
+            first_day, last_day = get_first_last_day(tag)
 
-        dt0 = firstday
-        dt1 = lastday + datetime.timedelta(days=1)
+        dt0 = first_day
+        dt1 = last_day + datetime.timedelta(days=1)
 
         dates = [dt0 + datetime.timedelta(days=n) for n in
                 range((dt1-dt0).days)]

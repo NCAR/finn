@@ -7,29 +7,49 @@ import getpass
 
 # TODO this should be done somewhere else?  maybe $HOME/.bashrc ? 
 
-#my_env = 'use_docker'
-my_env = 'use_native'
-#my_env = 'from_inside_docker'
+# three ways to run finn preprocessor:
+#
+# 'use_native':  postgresql installed on the machine, along with all other tools
+# (eg python, gdal tools, psql )to run preprocessor.  no docker involved
+#
+# 'use_docker':  use postgresql provided by docker, but everything else, use
+# the system installed tools.  start docker container (docker run or start)
+# and run the script from the machine
+#
+# 'from_inside_docker': this runs everythin inside docker, similar to the
+# standard way to run finn preprocessor.  The only difference is not to use
+# the jupytor notebook, but uses bash inside the docker.
+
+
+# default is use_native, or specified by user in environmen variable FINN_DRIVER
+my_env = os.environ.get('FINN_DRIVER', 'use_native')
+
+my_date_definition = os.environ.get('FINN_DATE_DEFINITION', 'UTC')
+
 
 print(my_env)
-if my_env == 'use_docker':
-    # from docker at acom-finn
-    os.environ['PGDATABASE'] = 'finn'
-    os.environ['PGPASSWORD'] = 'finn'
-    os.environ['PGUSER'] = 'finn'
-    os.environ['PGPORT'] = '25432'
-    os.environ['PGHOST'] = 'localhost'
 
-    # all raster downloads are stored in following dir
-    raster_download_rootdir = '../downloads'
+# thee port, dirnames are what's on ACOM@NCAR's machine, and you'd need to
+# fine tune how things are set up on your machine
 
-elif my_env == 'use_native':
+if my_env == 'use_native':
     # native veersion on acon-finn
     os.environ['PGDATABASE'] = 'finn'
     os.environ['PGPASSWORD'] = 'finn'
     os.environ['PGUSER'] = 'finn'
     os.environ['PGPORT'] = '5432'
     os.environ['PGHOST'] = ''
+
+    # all raster downloads are stored in following dir
+    raster_download_rootdir = '/home/finn/input_data/raster'
+
+elif my_env == 'use_docker':
+    # from docker at acom-finn
+    os.environ['PGDATABASE'] = 'finn'
+    os.environ['PGPASSWORD'] = 'finn'
+    os.environ['PGUSER'] = 'finn'
+    os.environ['PGPORT'] = '25432'  # in `docer run` i mapped port 5432 to 25432
+    os.environ['PGHOST'] = 'localhost'
 
     # all raster downloads are stored in following dir
     raster_download_rootdir = '/home/finn/input_data/raster'
@@ -45,10 +65,10 @@ elif my_env == 'from_inside_docker':
     os.environ['PGHOST'] = 'localhost'
 
     # all raster downloads are stored in following dir
-    raster_download_rootdir = '../downloads'
+    raster_download_rootdir = '../downloads'  # this is relative to `work_nrt` dir
 
 else:
-    raise RuntimeError
+    raise RuntimeError(f'Unknwon FINN_DEIVER: {FINN_DRIVER}')
 
 
 # user should put thse into .bashrc, i'd think.  for example
@@ -60,7 +80,6 @@ if 'EARTHDATAPW' not in os.environ:
 
 os.environ['PATH'] += os.pathsep + '/usr/pgsql-11/bin'
 
-
 # finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
 
@@ -68,9 +87,19 @@ import rst_import
 
 
 def sec1_user_config(tag_af, af_fnames, year_rst):
+    """ hard-wired options"""
 
-    # hard-wired options
+
+    # if available, use the AF's flag to tliminate persistence thermal anomaly (anthropogenic, and volcanic)
+    # i think the flag is availabel on ly for archve version of product, not NRT
+    # for for NRT, this flag has no effect
     filter_persistent_sources = True
+
+    # specify if date is defined using approximate local solar time (LST) or coordinated universal time (UTC)
+    # LST is defined by adding integer # of hours to UTC, 24 * longitude / 360
+    #date_definition = 'UTC'  
+    date_definition = my_date_definition
+
 
     # tag to identify datasets, automatically set to be modlct_YYYY, modvcf_YYYY
     #tag_lct = 'modlct_%d' % year_rst
