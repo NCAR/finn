@@ -8,7 +8,14 @@
 SET search_path TO :ident_myschema , public;
 SHOW search_path;
 
+-- filter persistanct source or not
 \set my_filter_persistent_sources :filter_persistent_sources
+
+-- first/last date (in local time) to retain.  pass string of YYYY-MM-DD, or N
+\set my_date_range '\'':date_range'\''
+
+-- definition of date, approximate local solar time (LST) or coordinated universal time (UTC)
+\set my_date_definition '\'':date_definition'\''
 \set
 
 \set ON_ERROR_STOP on
@@ -40,8 +47,8 @@ CREATE TABLE work_pnt (
 	acq_time_utc character(4),
 	acq_date_lst date,
 	acq_datetime_lst timestamp without time zone,
+	acq_date_use date,
 	instrument character(5),
---	confidence integer,
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
 	frp double precision,
@@ -57,7 +64,7 @@ drop table if exists work_lrg;
 create table work_lrg (
 	fireid integer primary key not null,
 	geom_lrg geometry,
-	acq_date_lst date,
+	acq_date_use date,
 	ndetect integer,
 	area_sqkm double precision
 	);
@@ -70,7 +77,7 @@ create table work_div (
 	fireid integer,
 	cleanids integer[],
 	geom geometry,
-	acq_date_lst date,
+	acq_date_use date,
 	area_sqkm double precision
 	);
 
@@ -93,7 +100,9 @@ CREATE table tbl_options(
 );
 INSERT INTO tbl_options (opt_name, opt_value)
 VALUES
-('filter_persistent_sources', :my_filter_persistent_sources )
+('filter_persistent_sources', :my_filter_persistent_sources ),
+('date_range', :my_date_range ),
+('date_definition', :my_date_definition )
 ;
 
 DROP TABLE IF EXISTS tbl_log;
@@ -166,12 +175,17 @@ returns text as
 $$
     import sys
     s = str(sys.version)
+    import numpy as np
+    import networkx as nx
+    s = s + ' | numpy: ' + np.__version__
+    s = s + ' | networkx: ' + nx.__version__
+    
     plpy.notice(s)
     s2 = str(sys.path)
     plpy.notice(2)
     return(s)
 $$ 
-language plpython3u volatile;
+language plpython3u stable;
 
 select testpy();
 
@@ -212,7 +226,7 @@ returns setof p2grp as
 $$
     """given edges, return connected components"""
     import time, datetime
-    t0 = time.time()
+    #t0 = time.time()
     import networkx as nx
     g = nx.Graph()
     g.add_edges_from((l,r) for (l,r) in zip(lhs,rhs))
@@ -220,7 +234,8 @@ $$
     #plpy.notice("g.order(): %d" % g.order())
     
     results = []
-    ccs = nx.connected_component_subgraphs(g)
+    #ccs = nx.connected_component_subgraphs(g)
+    ccs = [g.subgraph(_).copy() for _ in nx.connected_components(g)]
 
     for sg in ccs:
         clean0 = min(sg.nodes())
@@ -232,7 +247,7 @@ $$
     return results
     
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpythonu volatile;
 
 -----------------------------------------
@@ -278,7 +293,9 @@ returns setof p2drp as $$
 
     # cc is a group of points (connected components) 
     # that is close to each other
-    for icc,cc in enumerate(nx.connected_component_subgraphs(g)):
+    #for icc,cc in enumerate(nx.connected_component_subgraphs(g)):
+    for icc,cc in enumerate(nx.connected_components(g)):
+        cc = g.subgraph(cc).copy()
 
 #        plpy.notice(icc, cc.size())
         ccs = cc.size() + 1
@@ -368,7 +385,7 @@ returns setof p2drp as $$
     return zip(todrop,others)
         
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -524,7 +541,7 @@ $$
     return lst[:-4]
 
 $$ 
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -565,7 +582,7 @@ select st_setsrid(st_collect(geom), st_srid(pnts))
 --select geom
 from thud;
 $$
-language sql volatile;
+language sql immutable;
 
 
 ---------------------------------------------
@@ -751,7 +768,7 @@ $$
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
     return lst
 $$
-language plpython3u volatile;
+language plpython3u immutable;
 -- language plpython2u volatile;
 -- language plpythonu volatile;
 
@@ -785,7 +802,7 @@ with foo as  (
 select st_setsrid(st_collect(geom), st_srid(pnts))
 from thud;
 $$
-language sql volatile;
+language sql immutable;
 
 
 
@@ -808,7 +825,7 @@ else 4 * pi() * a / (p * p)
 end
 from foo;
 $$
-language sql volatile;
+language sql immutable;
 
 create or replace function st_polsbypopper(geom geometry, use_spheroid boolean)
 returns double precision as
@@ -823,11 +840,77 @@ else 4 * pi() * a / (p * p)
 end
 from foo;
 $$
-language sql volatile;
+language sql immutable;
 
+---------------------------------------------------
+-- Part 2.7: get_acq_datetime (local solar time) --
+---------------------------------------------------
 
+create or replace function get_acq_datetime_lst(acq_date_utc date, acq_time_utc character, longitude double precision)
+returns timestamp without time zone as
+$$
+with foo as ( select acq_date_utc, acq_time_utc, longitude)
+select cast(acq_date_utc as timestamp without time zone) +
+        make_interval( hours:= substring(acq_time_utc, 1, 2)::int + round(longitude / 15)::int,
+          mins:= substring(acq_time_utc from '^\d\d:?(\d\d)')::int)
+          from foo;
 
+$$
+language sql immutable;
 
+create or replace function get_acq_datetime_lst(acq_date_utc date, acq_time_utc time without time zone, longitude double precision)
+returns timestamp without time zone as
+$$
+with foo as ( select acq_date_utc, acq_time_utc, longitude)
+select  cast(acq_date_utc as timestamp without time zone) +
+        acq_time_utc +
+        make_interval( hours:=  round(longitude / 15)::int)
+          from foo;
+
+$$
+language sql immutable;
+
+create or replace function time_to_char(acq_time character)
+returns character as
+$$
+-- get rid of : in the middle if there is, stick with old format
+select substring(acq_time from '^\d\d:?(\d\d)');
+$$
+language sql immutable;
+
+create or replace function time_to_char(acq_time time without time zone)
+returns character as
+$$
+select to_char(acq_time, 'HH24MI');
+$$
+language sql immutable;
+
+--------------------------
+-- Part 2.8: instrument --
+--------------------------
+--       case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end,
+create or replace function get_instrument(satellite character)
+returns character as
+$$
+select case left(satellite, 1)
+when 'T' then 'MODIS'
+when 'A' then 'MODIS'
+when 'N' then 'VIIRS'
+else null
+end;
+$$
+language sql immutable;
+
+-- viirs file has 'N', and OGR may treat it as boolean no, seems like.  so interpret false as viirs
+create or replace function get_instrument(satellite boolean)
+returns character as
+$$
+select case satellite
+when TRUE then null
+when FALSE then 'VIIRS'
+end;
+$$
+language sql immutable;
 
 -----------------------------------
 -- Part 3: Start processing data --
@@ -888,15 +971,27 @@ do language plpgsql $$
     myrow record; 
     s varchar; 
     i bigint;
+    date_definition varchar;
+    sdateuse varchar;
     tblnrow bigint;
     cumnrow bigint;
   begin
+    date_definition := (
+      SELECT opt_value 
+      FROM tbl_options 
+      WHERE opt_name = 'date_definition'
+    ); 
+    if date_definition = 'UTC' then
+      sdateuse := 'acq_date, ';
+    else 
+      sdateuse := 'date(get_acq_datetime_lst(acq_date, acq_time, longitude)), ';
+    end if;
     cumnrow := 0;
 
     for myrow in select table_name,has_type from af_ins order by table_name loop 
       raise notice 'tool: myrow , %', myrow; 
 
-      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype, frp) select 
+      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, acq_date_use, instrument, confident, anomtype, frp) select 
       '  || cumnrow || ' + (row_number()  over (order by gid)), 
       geom, 
       longitude, 
@@ -904,17 +999,15 @@ do language plpgsql $$
       scan, 
       track, 
       acq_date, 
-      acq_time, 
-      date( acq_date + 
-        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
-          mins:= substring(acq_time, 3, 2)::int)) , 
-      cast(acq_date as timestamp without time zone) + 
-        make_interval( hours:= substring(acq_time, 1, 2)::int + round(longitude / 15)::int, 
-          mins:= substring(acq_time, 3, 2)::int) , 
-      case left(satellite,1) when ''T'' then ''MODIS'' when ''A'' then ''MODIS'' when ''N'' then ''VIIRS'' else null end, 
-      ((satellite::character(1)=''T'' or satellite::character(1)=''A'') and confidence::integer >= 20) or (satellite = ''N'' and confidence::character(1) != ''l''), ' || 
-      case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END || 
-      ', frp from ' || myrow.table_name || ';'; 
+      time_to_char(acq_time),
+      date(get_acq_datetime_lst(acq_date, acq_time, longitude)),
+      get_acq_datetime_lst(acq_date, acq_time, longitude), 
+      ' ||
+      sdateuse || '
+      get_instrument(satellite),
+      case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
+      case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
+      ', frp  from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
       i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));
@@ -928,6 +1021,28 @@ end $$;
 do language plpgsql $$ begin
 raise notice 'tool: import done, %', clock_timestamp();
 end $$;
+
+-- drop by date
+DO LANGUAGE plpgsql $$
+  declare
+    i bigint;
+    rng daterange;
+  begin
+    rng := (select opt_value::daterange FROM tbl_options WHERE opt_name = 'date_range');
+    if rng <> '[,]'::daterange  then
+      raise notice 'tool: rng, %', rng;
+
+      i := log_checkin('drop detes of no interest', 'work_pnt', (select count(*) from work_pnt)); 
+      delete from work_pnt
+      where not (acq_date_use <@ rng);
+      i := log_checkout(i, (select count(*) from work_pnt)); 
+      raise notice 'tool: dropping dates of no interest done, %', clock_timestamp(); 
+    else
+      raise notice 'tool: no dates of interst defined';
+    end if;
+  end
+$$;
+
 
 -- drop low confidence points
 DO LANGUAGE plpgsql $$

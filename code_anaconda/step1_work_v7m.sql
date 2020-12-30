@@ -30,22 +30,22 @@ CREATE TEMPORARY SEQUENCE tmp_div_seq OWNED BY work_div_oned.polyid;
 ALTER TABLE work_div_oned ALTER COLUMN polyid SET DEFAULT nextval('tmp_div_seq');
 ALTER TABLE work_div_oned ALTER COLUMN polyid SET NOT NULL;
 
--- select rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confidence, cleanid work_pnt from work_pnt   where acq_date_lst = :oned::date limit 1;
+-- select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confidence, cleanid work_pnt from work_pnt   where acq_date_use = :oned::date limit 1;
 
 insert into work_pnt_oned 
-(rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid)
-select rawid, geom_pnt, lon, lat, scan, track, acq_date_lst, confident, instrument, cleanid 
-from work_pnt where acq_date_lst = :oned::text::date;
+(rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid)
+select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid 
+from work_pnt where acq_date_use = :oned::text::date;
 
 do language plpgsql $$
 	declare
-	cur cursor for select acq_date_lst from work_pnt_oned limit 1;
+	cur cursor for select acq_date_use from work_pnt_oned limit 1;
 	rec record;
 	begin
 	raise notice 'tool: oneday done, %', clock_timestamp();
 	open cur;
 	fetch cur into rec;
-	raise notice 'tool: oned is, %', rec.acq_date_lst;
+	raise notice 'tool: oned is, %', rec.acq_date_use;
 end $$;
 
 
@@ -131,17 +131,17 @@ end $$;
 --   cleanid from lhs (lhs) 
 --   cleanid from rhs (rhs) 
 --   convex hull of the pair of small areas (geom_pair)
---   acquisition date in lst (acq_date_lst)
+--   acquisition date in lst (acq_date_use)
 --   fire id (start with empty) (fireid)
 drop table if exists tbl_adj_det;
 create temporary table tbl_adj_det as
-select aid as lhs, bid as rhs, st_convexhull(st_collect(ageom, bgeom)) as geom_pair, acq_date_lst, null::integer as fireid
+select aid as lhs, bid as rhs, st_convexhull(st_collect(ageom, bgeom)) as geom_pair, acq_date_use, null::integer as fireid
 from (
 	-- join work_pnt_oned to itself, and 
         -- find pair which is within distance criteria
 	select 
 	a.cleanid as aid,
-	a.acq_date_lst acq_date_lst,
+	a.acq_date_use acq_date_use,
 	a.lon as alon,
 	a.lat as alat,
 	a.pix_dx as adx, 
@@ -155,7 +155,7 @@ from (
 	b.geom_sml as bgeom
 from work_pnt_oned as a 
 inner join work_pnt_oned as b
-on a.acq_date_lst = b.acq_date_lst
+on a.acq_date_use = b.acq_date_use
 and a.geom_pix && b.geom_pix   -- THIS IS IMPORTANT, uses GIST!!!
 and st_dwithin(a.geom_pnt, b.geom_pnt, a.pix_dx + a.pix_dy + b.pix_dx + b.pix_dy)
 and a.cleanid < b.cleanid
@@ -184,7 +184,7 @@ from (
 	select pnt2grp(lhs, rhs) pnt2grp
 	from (
 		select array_agg(lhs) lhs, array_agg(rhs) rhs
-		from tbl_adj_det group by acq_date_lst  -- TODO add more grouping, like spatial, if i do
+		from tbl_adj_det group by acq_date_use  -- TODO add more grouping, like spatial, if i do
 	) foo
 ) bar;
 
@@ -234,7 +234,7 @@ end $$;
 update work_pnt_oned set
 fireid = cleanid,
 ndetect = 1
-where acq_date_lst = :oned::date 
+where acq_date_use = :oned::date 
 and fireid is null;
 
 
@@ -334,7 +334,7 @@ end $$;
 
 -- get necessary attributes for fire polygons
 update work_lrg_oned set
-acq_date_lst = p.acq_date_lst,
+acq_date_use = p.acq_date_use,
 ndetect = p.ndetect
 from work_pnt_oned as p
 where work_lrg_oned.fireid = p.fireid;
@@ -344,7 +344,7 @@ area_sqkm = st_area(geom_lrg, true) / 1000000.;
 
 -- export
 insert into work_lrg
-select fireid, geom_lrg, acq_date_lst, ndetect, area_sqkm
+select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm
 from work_lrg_oned;
 
 do language plpgsql $$ begin
@@ -367,12 +367,12 @@ drop table if exists tbl_close;
 create temporary table tbl_close as
 select aid as lhs, bid as rhs, 
 case when dist=0. then 1./(1./60./60.) else 1./dist end as invdist,
-acq_date_lst, fireid
+acq_date_use, fireid
 from (
 
 	select 
 	a.fireid as fireid,
-	a.acq_date_lst as acq_date_lst,
+	a.acq_date_use as acq_date_use,
 	a.cleanid as aid,
 	a.geom_pnt as ageom, 
 	b.cleanid as bid, 
@@ -380,7 +380,7 @@ from (
 	st_distance(a.geom_pnt, b.geom_pnt) as dist
 	from work_pnt_oned as a 
 	inner join work_pnt_oned as b
-	on a.acq_date_lst = b.acq_date_lst
+	on a.acq_date_use = b.acq_date_use
 	and a.fireid = b.fireid
 	and st_dwithin(a.geom_pnt, b.geom_pnt, .5/60.)
 	--and st_dwithin(a.geom_pnt, b.geom_pnt, .375*.5/60.)
@@ -453,12 +453,12 @@ end $$;
 -- start from work_pnt, drop pnts specified in tbl_toskim, and also substitute with mid-ponts if needed
 drop table if exists tmp_skmpnt;
 create temporary table tmp_skmpnt as
-select p.cleanid, p.fireid, p.geom_pnt, p.acq_date_lst 
+select p.cleanid, p.fireid, p.geom_pnt, p.acq_date_use 
 from work_pnt_oned p left join tbl_toskim s
 on p.cleanid = s.id
 where s.id is null
 union all
-select -p.cleanid, p.fireid, f.geom, p.acq_date_lst
+select -p.cleanid, p.fireid, f.geom, p.acq_date_use
 from work_pnt_oned p inner join tmp_fillers f
 on p.cleanid = f.id
 ;
@@ -477,8 +477,8 @@ end $$;
 -- use skimmed table to generate voronoi polygons
 drop table if exists tmp_vorpnts;
 create temporary table tmp_vorpnts as
-select fireid, st_collect(geom_pnt) as geom, acq_date_lst, count(fireid) as npnts from tmp_skmpnt
-group by acq_date_lst, fireid;
+select fireid, st_collect(geom_pnt) as geom, acq_date_use, count(fireid) as npnts from tmp_skmpnt
+group by acq_date_use, fireid;
 
 do language plpgsql $$ begin
 raise notice 'tool: step3.4a (tmp_vorpnts) done, %', clock_timestamp();
@@ -487,7 +487,7 @@ end $$;
 -- voronoi polygons when points are more than three
 drop table if exists tmp_vorpnts_gt3;
 create temporary table tmp_vorpnts_gt3 as
-select fireid, geom, acq_date_lst, npnts from tmp_vorpnts
+select fireid, geom, acq_date_use, npnts from tmp_vorpnts
 where npnts > 3;
 
 
@@ -495,7 +495,7 @@ drop table if exists tmp_vor;
 create temporary table tmp_vor (
 	fireid integer,
 	geom geometry,
-	acq_date_lst date
+	acq_date_use date
 );
 
 do language plpgsql $$
@@ -507,28 +507,28 @@ do language plpgsql $$
 			select t.fireid from tmp_vorpnts_gt3 as t
 			loop
 				with onefire as (
-					select vv.fireid, vv.geom, vv.acq_date_lst, vv.npnts
+					select vv.fireid, vv.geom, vv.acq_date_use, vv.npnts
 					from tmp_vorpnts_gt3 as vv
 					where vv.fireid = i_fireid
 				)
-				insert into tmp_vor (fireid, geom, acq_date_lst)
-				--select v.fireid, st_voronoipolygons(v.geom, 0., l.geom_lrg) as geom, v.acq_date_lst 
-				select v.fireid, st_voronoi_py(v.geom) as geom, v.acq_date_lst 
+				insert into tmp_vor (fireid, geom, acq_date_use)
+				--select v.fireid, st_voronoipolygons(v.geom, 0., l.geom_lrg) as geom, v.acq_date_use 
+				select v.fireid, st_voronoi_py(v.geom) as geom, v.acq_date_use 
 				--from tmp_vorpnts_gt3 as v 
 				from onefire as v 
 				--inner join work_lrg_oned as l 
-				--on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid
+				--on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid
 				--where v.npnts > 1;
 				where v.npnts > 3;
 			end loop;
 			exception
 			when others then
 				raise notice 'tool: died with i_fireid %', i_fireid;
-				for rec in select t.fireid, st_astext(t.geom) as wkt_pnt, t.acq_date_lst, t.npnts
+				for rec in select t.fireid, st_astext(t.geom) as wkt_pnt, t.acq_date_use, t.npnts
 					from  tmp_vorpnts_gt3 as t 
 					where t.fireid = i_fireid
 					loop
-						raise notice 'tool: fireid, wkt_pnt, acq_date_lst, npnts % % % %', rec.fireid, rec.wkt_pnt, rec.acq_date_lst, rec.npnts;
+						raise notice 'tool: fireid, wkt_pnt, acq_date_use, npnts % % % %', rec.fireid, rec.wkt_pnt, rec.acq_date_use, rec.npnts;
 					end loop;
 				raise notice 'tool: sqlerrm %', sqlerrm;
 				raise notice 'tool: sqlstate %', sqlstate;
@@ -543,8 +543,8 @@ end $$;
 
 drop table if exists tmp_vorpoly;
 create temporary table tmp_vorpoly  as 
-select st_makevalid((foo.dump).geom) as geom,  foo.fireid, foo.acq_date_lst from (
-	select st_dump(geom) as dump, fireid, acq_date_lst from tmp_vor) as foo;
+select st_makevalid((foo.dump).geom) as geom,  foo.fireid, foo.acq_date_use from (
+	select st_dump(geom) as dump, fireid, acq_date_use from tmp_vor) as foo;
 
 
 do language plpgsql $$ begin
@@ -554,16 +554,16 @@ end $$;
 
 
 -- divided into >3 piecies (using voronoi polygons)
--- insert into work_div_oned (fireid, geom, acq_date_lst)
--- --select l.fireid, st_setsrid(st_intersection(l.geom_lrg, v.geom), 4326) as geom,  l.acq_date_lst
--- --select l.fireid, st_intersection(l.geom_lrg, st_setsrid(v.geom, 4326)) as geom,  l.acq_date_lst
--- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_lst
+-- insert into work_div_oned (fireid, geom, acq_date_use)
+-- --select l.fireid, st_setsrid(st_intersection(l.geom_lrg, v.geom), 4326) as geom,  l.acq_date_use
+-- --select l.fireid, st_intersection(l.geom_lrg, st_setsrid(v.geom, 4326)) as geom,  l.acq_date_use
+-- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
 
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_lst
-	from tmp_vorpoly as v inner join work_lrg_oned as l on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid) --; -- and st_intersects(v.geom, l.geom_lrg);
-insert into work_div_oned (fireid, geom, acq_date_lst, area_sqkm)
-select fireid, geom, acq_date_lst, st_area(geom, true) / 1000000. from foo;
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	from tmp_vorpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid) --; -- and st_intersects(v.geom, l.geom_lrg);
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
 
 
 do language plpgsql $$ begin
@@ -579,14 +579,14 @@ end $$;
 -- polygon needs two or three points, use line(s) perpendicular to edge(s)
 drop table if exists tmp_cutter;
 create temporary table tmp_cutter as
-select fireid, st_cutter_py(geom) as geom, acq_date_lst from tmp_vorpnts
+select fireid, st_cutter_py(geom) as geom, acq_date_use from tmp_vorpnts
 where (npnts = 2 or npnts = 3);
 
 
 drop table if exists tmp_cutpoly;
 create temporary table tmp_cutpoly  as 
-select st_makevalid((foo.dump).geom) as geom,  foo.fireid, foo.acq_date_lst from (
-	select st_dump(geom) as dump, fireid, acq_date_lst from tmp_cutter) as foo;
+select st_makevalid((foo.dump).geom) as geom,  foo.fireid, foo.acq_date_use from (
+	select st_dump(geom) as dump, fireid, acq_date_use from tmp_cutter) as foo;
 
 
 do language plpgsql $$ begin
@@ -595,14 +595,14 @@ end $$;
 
 
 -- divided into 2 or 3 piecies (using line(s) perpenducular to edges)
--- insert into work_div_oned (fireid, geom, acq_date_lst)
--- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_lst
--- from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid;
+-- insert into work_div_oned (fireid, geom, acq_date_use)
+-- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+-- from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid;
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_lst
-	from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid)
-insert into work_div_oned (fireid, geom, acq_date_lst, area_sqkm)
-select fireid, geom,  acq_date_lst, st_area(geom, true) / 1000000. from foo;
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid)
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
+select fireid, geom,  acq_date_use, st_area(geom, true) / 1000000. from foo;
 
 do language plpgsql $$ begin
 raise notice 'tool: step3.6b (split with cutter) done, %', clock_timestamp();
@@ -622,19 +622,19 @@ end $$;
 -----------------------------------------------------
 
 -- undivided
--- insert into work_div_oned (fireid, geom, acq_date_lst)
--- select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_lst
--- from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid
+-- insert into work_div_oned (fireid, geom, acq_date_use)
+-- select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use
+-- from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid
 -- where v.npnts = 1;
 -- --where v.npnts <= 3;
 with foo as ( 
-	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_lst 
-	from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_lst = v.acq_date_lst and l.fireid = v.fireid 
+	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use 
+	from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid 
 	where v.npnts = 1 
 	--where v.npnts <= 3
 )
-insert into work_div_oned (fireid, geom, acq_date_lst, area_sqkm)
-select fireid, geom, acq_date_lst, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
 
 
 
@@ -672,8 +672,9 @@ end $$;
 ---------------------
 
 -- push
-insert into work_div(fireid, cleanids, geom, acq_date_lst, area_sqkm)
-select fireid, cleanids, geom, acq_date_lst, area_sqkm from work_div_oned;
+insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm)
+select fireid, cleanids, geom, acq_date_use, area_sqkm from work_div_oned;
+
 
 do language plpgsql $$ begin
 raise notice 'tool: step3 done, %', clock_timestamp();
