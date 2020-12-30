@@ -75,12 +75,14 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-        #print(cmd_prep)
-        with open(scrname_prep, 'w') as f:
-            f.write(cmd_prep)
-        #print(cmd_work)
-        with open(scrname_work, 'w') as f:
-            f.write(cmd_work)
+    # cmd_work += mkcmd_summarize(rasters)
+
+    #print(cmd_prep)
+    with open(scrname_prep, 'w') as f:
+        f.write(cmd_prep)
+    #print(cmd_work)
+    with open(scrname_work, 'w') as f:
+        f.write(cmd_work)
 
 
     # run the prep script
@@ -123,6 +125,27 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
     if True:
         # merge, export
         pass
+
+# def mkcmd_summarize(rasters):
+#     cmd = '''\n\n
+#     -- just put changes posteriori to the log
+#     -- time duration becoms meaningless...
+#     DO LANGUAGE plpgsql $$
+#       DECLARE
+#         i bigint;
+#       BEGIN
+# '''
+#     for rstinfo in rasters:
+#         cmd += '''
+#     i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})+(select count(*) from work_div_oned));
+#     i := log_checkout(i,                                (select count(*) from tbl_{tag_tbl})+(select count(*) from work_div_oned)) );
+#     '''.format(tag_tbl= rstinfo['tag'] )
+#
+#     cmd += '''
+#   END
+# $$;
+# '''
+#     return cmd
 
 # use the function to create tables
 def mkcmd_create_table_thematic(tag_tbl, tag_var, schema):
@@ -286,7 +309,7 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             ) baz
 --    ) quz where rnk = 1;
     ) quz ;-- where rnk = 1; -- modified 20190925, extract all LCT
-        i := log_checkout(i, (select count(*) from tbl_{tag_tbl}) );
+        i := log_checkout(i, (select count(*) from tbl_{tag_tbl}));
       END;
     $$;
     set client_min_messages to notice;
@@ -420,6 +443,12 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
 
 
     cmd = """
+    DO LANGUAGE plpgsql $$ 
+      DECLARE
+        i bigint;
+      BEGIN 
+        i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname})); 
+
     insert into {tblname} (polyid, fireid, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
     select d.polyid, d.fireid, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
     {fldsrcs}
@@ -427,6 +456,9 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
     select polyid, fireid, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
     {joins}
     ;
+        i := log_checkout(i, (select count(*) from {tblname}) );
+      END;
+    $$;
 
     do language plpgsql $$ begin
     raise notice 'tool: output table done, %', clock_timestamp();

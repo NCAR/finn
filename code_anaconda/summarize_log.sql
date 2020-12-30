@@ -14,10 +14,11 @@ WITH foo AS (
   SELECT 
   max(log_id) log_id,
   log_event,
-  sum(log_nrec_change) log_nrec_change,
-  min(log_nrec_before) log_nrec_before,
-  max(log_nrec_after) log_nrec_after,
-  max(log_time_finish) log_time_finish
+  sum(log_nrec_change) nrec_change,
+  min(log_nrec_before) nrec_before,
+  max(log_nrec_after) nrec_after,
+  max(log_time_finish) time_finish,
+  sum(log_time_elapsed) time_elapsed
   FROM tbl_log
   GROUP BY log_event
   ORDER BY log_id
@@ -29,23 +30,25 @@ WITH foo AS (
 ), baz AS (
 
   SELECT * FROM foo
-  WHERE NOT (log_event = 'agg to large' OR log_event = 'subdiv' OR log_event like 'join %')
+  WHERE NOT (log_event = 'agg to large' OR log_event = 'subdiv' OR log_event like 'join %' or log_event = 'merge all')
 
   UNION ALL
 
-  SELECT f.log_id, f.log_event, f.log_nrec_change, b.n_pnt, b.n_lrg, f.log_time_finish
+  SELECT f.log_id, f.log_event, f.nrec_change, b.n_pnt, b.n_lrg, f.time_finish, f.time_elapsed
   FROM
   (SELECT * FROM foo WHERE log_event = 'agg to large') f, bar b
 
   UNION ALL
 
-  SELECT f.log_id, f.log_event, f.log_nrec_change, b.n_lrg, b.n_div, f.log_time_finish
+  SELECT f.log_id, f.log_event, f.nrec_change, b.n_lrg, b.n_div, f.time_finish, f.time_elapsed
   FROM
   (SELECT * FROM foo WHERE log_event = 'subdiv') f, bar b
 
   UNION ALL
-  SELECT * FROM foo
-  WHERE (log_event like 'join %')
+  SELECT f.log_id, f.log_event, f.nrec_after - b.n_div, b.n_div, f.nrec_after, f.time_finish, f.time_elapsed
+   FROM foo f, bar b
+  WHERE (log_event like 'join %' or log_event = 'merge all')
+
 
 )
 SELECT * from baz;
