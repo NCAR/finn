@@ -48,7 +48,10 @@ def work(fnames):
 
 if __name__ == '__main__':
 
+    # regular output loc
     ddir = Path('../../output_data/fire')
+    # from inside docker
+    ddir2 = Path('../output_data/fire')
 
     knds = (
     'native', 
@@ -59,8 +62,11 @@ if __name__ == '__main__':
     'shp_from_inside_docker',
     )
 
-    fnames = {knd : 
-            ddir / f'modvrs_nrt_2020299_{knd}/out_modvrs_nrt_2020299_{knd}_modlct_2019_modvcf_2019_regnum.csv' 
+    fnames = {knd : f'modvrs_nrt_2020299_{knd}/out_modvrs_nrt_2020299_{knd}_modlct_2019_modvcf_2019_regnum.csv' 
             for knd in knds}
+
+    fnames = {knd: (ddir2 if 'from_inside_docker' in knd else ddir) / fname 
+            for knd,fname in fnames.items()}
+
     results = work(fnames)
     results.to_csv('compare_nrt_2020299.csv')
