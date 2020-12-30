@@ -5,7 +5,7 @@ from run_step1 import get_first_last_day
 
 ver = 'v8b'
 
-def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work=True, export_frp=False):
+def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work=True):
 
     schema = 'af_{0}'.format( tag_af )
 
