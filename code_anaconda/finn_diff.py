@@ -10,8 +10,8 @@ def prep(fname):
     df['v_tree'] = df['v_tree'].apply(lambda x:format(x, '.3f'))
     df['v_herb'] = df['v_herb'].apply(lambda x:format(x, '.3f'))
     df['v_bare'] = df['v_bare'].apply(lambda x:format(x, '.3f'))
-    if 'v_frp' in df.columns:
-        df['v_frp'] = df['v_frp'].apply(lambda x:format(x, '.1f'))
+#    if 'v_frp' in df.columns:
+#        df['v_frp'] = df['v_frp'].apply(lambda x:format(x, '.1f'))
     return df
 
 def compare(fname0, fname1, difference_only=True):
