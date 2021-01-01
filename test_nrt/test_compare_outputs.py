@@ -29,7 +29,6 @@ def work(fnames):
             }
 
     area_by_vcf = pd.DataFrame(area_by_vcf.values(), 
-            #index=area_by_vcf.keys()) 
             index=pd.MultiIndex.from_tuples([('by_vcf', _) for _ in area_by_vcf.keys()]))
     print(area_by_vcf)
 
