@@ -148,10 +148,17 @@ def get_extent(dsname):
 
 def get_filelist(url):
     """download one page, look for <a href and get list of files"""
+    soup = BeautifulSoup(requests.get(url).text, features='html.parser')
+
+
+    r = requests.get(url)
+    # catch anything but OK'
+    if r.status_code != 200:
+        r.raise_for_status()
     
     # get the index.html
     try:
-        soup = BeautifulSoup(requests.get(url).text, features='html.parser')
+        soup = BeautifulSoup(r.text, features='html.parser')
     except:
         print("\n\nERROR:\nfailed url: " + url)
         raise
