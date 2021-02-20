@@ -38,8 +38,8 @@ def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None
 
         results_indb = downloader.find_tiles_indb(data=wkt,
                                                   knd='wkt', tag_lct=tag_lct, tag_vcf=tag_vcf)
-    print(results_indb)
-    print()
+    #print(results_indb)
+    #print()
 
 
     if results_indb['n_need'] == 0:
@@ -75,15 +75,17 @@ def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None
     ddir_vcf = raster_download_rootdir +'/'+ ''.join(urlparse(url_vcf)[1:3])
 
     if any((need_to_import_lct, need_to_import_vcf)):
-        print('LCT downloads goes to %s' % ddir_lct)
-        print('VCF downloads goes to %s' % ddir_vcf)
+        print('LCT downloads goes to: %s' % ddir_lct)
+        print('VCF downloads goes to: %s' % ddir_vcf)
 
-    print(url_lct)
-    print(tiles_required_lct)
+    print('URL for LCT:', url_lct)
+    print('Tiles required for LCT:', tiles_required_lct)
     if need_to_import_lct:
         downloader.download_only_needed(url = url_lct, droot = raster_download_rootdir, tiles=tiles_required_lct)
         downloader.purge_corrupted(ddir = ddir_lct, url=url_lct)
 
+    print('URL for VCF:', url_vcf)
+    print('Tiles required for VCF:', tiles_required_vcf)
     if need_to_import_vcf: 
         downloader.download_only_needed(url = url_vcf, droot = raster_download_rootdir, tiles=tiles_required_vcf)
         downloader.purge_corrupted(ddir_vcf, url=url_vcf)
@@ -159,7 +161,6 @@ def main(year_rst, tag_af=None, af_fnames=None):
         download_global_raster = True
     else:
         download_global_raster = False
-    print( af_fnames, download_global_raster)
 
     raster_tasks = sec4_download_raster(year_rst, download_global_raster=download_global_raster, af_fnames=af_fnames)
     sec5_import_raster(year_rst, raster_tasks)
