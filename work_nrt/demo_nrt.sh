@@ -33,11 +33,11 @@ fi
 ### # grab annual global raster (can be commented out if you know that it's already imported into the database)
 ### python3 ./work_raster.py -y 2019
 ### 
-
-if [ $? -ne 0 ]; then
-	echo problem in work_raster.py
-	exit 1
-fi
+### 
+### if [ $? -ne 0 ]; then
+### 	echo problem in work_raster.py
+### 	exit 1
+### fi
 
 
 # process af
