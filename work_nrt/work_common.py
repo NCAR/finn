@@ -68,7 +68,7 @@ elif my_env == 'from_inside_docker':
     raster_download_rootdir = '../downloads'  # this is relative to `work_nrt` dir
 
 else:
-    raise RuntimeError(f'Unknwon FINN_DEIVER: {FINN_DRIVER}')
+    raise RuntimeError(f'Unknwon FINN_DRIVER: {FINN_DRIVER}')
 
 
 # user should put thse into .bashrc, i'd think.  for example

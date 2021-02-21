@@ -3,10 +3,11 @@
 # specify if docker will be used to run model
 #  'use_native' = no docker, everything installed on the host system
 #  'use_docker' = use postgis in docker.  some aux tool (gdal, psql, python etc) need to be installed to the system
-#  'use_from_inside_docker' = use docker for everything.  to use this option, invoke this scrpt with
+#  'from_inside_docker' = use docker for everything.  to use this option, invoke this scrpt with
 #    docker exec finn /home/finn/work_nrt/demo_nrt_from_inside_docker.sh
 #
-export FINN_DRIVER=use_native
+#export FINN_DRIVER=use_native
+export FINN_DRIVER=from_inside_docker
 
 # use UTC to decide date, or approximate local solar time (LST)
 export FINN_DATE_DEFINITION=UTC
