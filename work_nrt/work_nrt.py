@@ -133,7 +133,8 @@ def sec6_process_activefire(first_day=None, last_day=None):
         if last_day is not None:
             dates = [_ for _ in dates if _ <= last_day]
         if not dates:
-            raise RuntimeError(f'No first/last_day are not included in AF files, fst/lstday=[{first_day},{last_day}],af[{min(dates0)},{max(dates0)}]')
+            #raise RuntimeError(f'No first/last_day are not included in AF files, fst/lstday=[{first_day},{last_day}],af[{min(dates0)},{max(dates0)}]')
+            pass
 
     run_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
             first_day=first_day, last_day=last_day,

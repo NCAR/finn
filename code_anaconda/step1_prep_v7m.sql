@@ -1031,6 +1031,8 @@ DO LANGUAGE plpgsql $$
     rng := (select opt_value::daterange FROM tbl_options WHERE opt_name = 'date_range');
     if rng <> '[,]'::daterange  then
       raise notice 'tool: rng, %', rng;
+      -- need to keep the day before
+      rng := daterange(lower(rng)-1, upper(rng));
 
       i := log_checkin('drop detes of no interest', 'work_pnt', (select count(*) from work_pnt)); 
       delete from work_pnt
