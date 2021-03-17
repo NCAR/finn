@@ -1094,7 +1094,7 @@ DO LANGUAGE plpgsql $$
   BEGIN 
     i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
     insert into work_pnt (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, instrument, confident, anomtype, frp)
-    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', instrument, confident, anomtype, frp from work_pnt
+    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, date(acq_datetime_lst + interval '1 day'), instrument, confident, anomtype, frp from work_pnt
     where abs(lat) <= 23.5 and instrument = 'MODIS';
     i := log_checkout(i, (select count(*) from work_pnt) );
   END;
