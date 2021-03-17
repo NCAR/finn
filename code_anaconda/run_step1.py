@@ -6,6 +6,7 @@ import datetime
 import os
 import shlex
 import psycopg2
+import time
 
 # somehow, Mac version of docker appeared to be confuesed in encoding
 # i tell explicitly here that it is utf-8
@@ -126,11 +127,19 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
                 '-v', ('date_definition=%s' %  date_definition), 
                 ]
         print(cmd)
-        try:
-            subprocess.run(cmd, check=True, stderr=PIPE)
-        except subprocess.CalledProcessError as err: 
-            print(f"\nERROR from 'step1_prep': \n\n", err.stderr.decode(),)
-            raise
+        maxtry = 3
+        for itry in range(maxtry):
+            try:
+                subprocess.run(cmd, check=True, stderr=PIPE)
+            except subprocess.CalledProcessError as err: 
+                if itry +1 >= maxtry:
+                    raise
+                print(f"\ngot this ERROR from 'step1_prep': \n\n", err.stderr.decode(),)
+                print(f"retry in {30*itry} sec")
+                time.sleep(30*itry)
+                continue
+            break
+
     else:
         pass
 
