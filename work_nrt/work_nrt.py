@@ -129,7 +129,9 @@ def sec6_process_activefire(first_day=None, last_day=None):
         dates0 = af_import.get_dates('af_' + tag_af, combined=True)
         dates = dates0[:]
         if first_day is not None:
-            dates = [_ for _ in dates if _ >= first_day]
+            # grab one more day for carry over
+            oneday = datetime.timedelta(days=1)
+            dates = [_ for _ in dates if _ >= first_day - oneday]
         if last_day is not None:
             dates = [_ for _ in dates if _ <= last_day]
         if not dates:

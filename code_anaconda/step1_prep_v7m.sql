@@ -1023,6 +1023,23 @@ do language plpgsql $$ begin
 raise notice 'tool: import done, %', clock_timestamp();
 end $$;
 
+-- dup tropics
+DO LANGUAGE plpgsql $$ 
+  DECLARE
+    i bigint;
+  BEGIN 
+    i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
+    insert into work_pnt (
+	   rawid, geom_pnt, lon, lat, scan, track, acq_date_utc,     acq_time_utc, acq_date_lst,     acq_datetime_lst,                    acq_date_use,     instrument, confident, anomtype, frp)
+    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', acq_date_use + 1, instrument, confident, anomtype, frp from work_pnt
+    where abs(lat) <= 23.5 and instrument = 'MODIS';
+    i := log_checkout(i, (select count(*) from work_pnt) );
+  END;
+$$;
+do language plpgsql $$ begin
+raise notice 'tool: duplicating tropics done, %', clock_timestamp();
+end $$;
+
 -- drop by date
 DO LANGUAGE plpgsql $$
   declare
@@ -1033,7 +1050,7 @@ DO LANGUAGE plpgsql $$
     if rng <> '[,]'::daterange  then
       raise notice 'tool: rng, %', rng;
 
-      i := log_checkin('drop detes of no interest', 'work_pnt', (select count(*) from work_pnt)); 
+      i := log_checkin('drop dates of no interest', 'work_pnt', (select count(*) from work_pnt)); 
       delete from work_pnt
       where not (acq_date_use <@ rng);
       i := log_checkout(i, (select count(*) from work_pnt)); 
@@ -1087,23 +1104,6 @@ DO LANGUAGE plpgsql $$
   END 
 $$;
 
-
--- dup tropics
-DO LANGUAGE plpgsql $$ 
-  DECLARE
-    i bigint;
-  BEGIN 
-    i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
-    insert into work_pnt (
-	   rawid, geom_pnt, lon, lat, scan, track, acq_date_utc,     acq_time_utc, acq_date_lst,     acq_datetime_lst,                    acq_date_use,     instrument, confident, anomtype, frp)
-    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', acq_date_use + 1, instrument, confident, anomtype, frp from work_pnt
-    where abs(lat) <= 23.5 and instrument = 'MODIS';
-    i := log_checkout(i, (select count(*) from work_pnt) );
-  END;
-$$;
-do language plpgsql $$ begin
-raise notice 'tool: duplicating tropics done, %', clock_timestamp();
-end $$;
 
 -- pk
 alter table work_pnt add column cleanid serial;
