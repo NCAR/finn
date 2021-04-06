@@ -11,7 +11,4 @@ Process AF into burened area and land characterized text file, to be processed f
 * work_common.py<br />
 Above two code shares some common metadata/functinalities, and they are put into here
 
-
 work_nrt/ directory has sample bash script to use these files
-
-
