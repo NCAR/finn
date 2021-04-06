@@ -6,7 +6,7 @@
 #
 export FINN_DRIVER=from_inside_docker
 
-# using LST to compare against deault run
+# use UTC to decide date, or approximate local solar time (LST)
 export FINN_DATE_DEFINITION=LST
 
 # identifier of the af dataset
@@ -18,6 +18,7 @@ data_dir=/home/finn/input_data/fire/${tag}
 # processed burned area information
 out_dir=/home/finn/output_data/fire/${tag}
 
+exc_dir=../code_bashinterface
 
 # optionally processing summary and disk use info can be saved in a file
 # remove "-s $summary_file" altogether, if you want this info to dumped to screen
@@ -30,7 +31,7 @@ if [ x$FINN_DRIVER == xfrom_inside_docker ]; then
 fi
 
 # grab  relevant raster (it doensn't download/import if necessary raster data already imported into the database)
-python3 ./work_raster.py -t $tag -y 2017 \
+python3 $exc_dir/work_raster.py -t $tag -y 2016 \
 	$data_dir/fire_archive_M6_23960.shp \
 	$data_dir/fire_archive_V1_23961.shp
 
@@ -41,7 +42,7 @@ fi
 
 
 # process af
-python3 ./work_nrt.py -t $tag -y 2017 \
+python3 $exc_dir/work_nrt.py -t $tag -y 2016 \
 	-o $out_dir \
         -s $summary_file \
 	$data_dir/fire_archive_M6_23960.shp \
@@ -53,7 +54,7 @@ if [ $? -ne 0 ]; then
 fi
 
 ### # Purge the intermediate results in the database
-### python3 work_clean.py -t $tag \
+### python3 $exc_dir/work_clean.py -t $tag \
 ### 	-s $summary_file
 ### 
 ### 
