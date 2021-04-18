@@ -194,9 +194,9 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 
-    required_named = parser.add_argument_group('required arguments')
+    required_names = parser.add_argument_group('required arguments')
 
-    required_named.add_argument('-t', '--tag_af', 
+    required_names.add_argument('-t', '--tag_af', 
             default=None, required=True, help='tag for AF processing', type=str)
 
     parser.add_argument('-fd', '--first_day', 
@@ -206,9 +206,9 @@ if __name__ == '__main__':
             default=None, required=False, 
             help='last date (YYYYJJJ, local time) to output', type=int)
 
-    required_named.add_argument('-y', '--year_rst', 
+    required_names.add_argument('-y', '--year_rst', 
             default=None, required=True, help='dataset year for raster', type=int)
-    required_named.add_argument('-o', '--out_dir', 
+    required_names.add_argument('-o', '--out_dir', 
             default=None, required=True, help='output directory', type=str)
 
     parser.add_argument('-s', '--summary_file', 
