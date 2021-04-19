@@ -115,7 +115,8 @@ CREATE table tbl_log(
   log_nrec_after bigint,
   log_time_start timestamp,
   log_time_finish timestamp,
-  log_time_elapsed interval
+  log_time_elapsed interval,
+  log_message varchar
 );
 
 
@@ -128,6 +129,15 @@ RETURNS bigint AS
 $$
   INSERT INTO tbl_log (log_event, log_table, log_nrec_before, log_time_start)
   VALUES (log_event, log_table, nrec, clock_timestamp())
+  RETURNING log_id;
+$$
+LANGUAGE sql;
+
+CREATE OR REPLACE FUNCTION log_checkin(log_event varchar, log_table varchar, nrec bigint, log_message varchar)
+RETURNS bigint AS
+$$
+  INSERT INTO tbl_log (log_event, log_table, log_nrec_before, log_time_start, log_message)
+  VALUES (log_event, log_table, nrec, clock_timestamp(), log_message)
   RETURNING log_id;
 $$
 LANGUAGE sql;

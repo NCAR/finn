@@ -228,6 +228,11 @@ def mkcmd_create_table_oned():
             raise notice 'tool: start, %', clock_timestamp();
     end $$;
 
+    -- hold onto date being processed
+    drop table if exists tmp_oned;
+    create temporary table tmp_oned ( oned text );
+    insert into tmp_oned (oned) values(:oned);
+
 
     -- pick only one day data
     drop table if exists work_div_oned;
@@ -267,7 +272,7 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
       DECLARE
         i bigint;
       BEGIN 
-        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl}), (select oned from tmp_oned)); 
 
     with
     piece as (
@@ -350,7 +355,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_vars, schema):
       DECLARE
         i bigint;
       BEGIN 
-        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl}), (select oned from tmp_oned)); 
 
     with
     piece as (
@@ -416,7 +421,7 @@ def mkcmd_insert_table_input(tag_tbl, tag_var, variable_in, schema):
       DECLARE
         i bigint;
       BEGIN 
-        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl}), (select oned from tmp_oned)); 
 
         WITH crs AS (
         SELECT d.polyid, avg(r.{variable_in}) {variable_in} FROM work_pnt r
@@ -451,7 +456,7 @@ def mkcmd_insert_table_polygons(tag_tbl, tag_var, variable_in, schema):
       DECLARE
         i bigint;
       BEGIN 
-        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl})); 
+        i := log_checkin('join {tag_tbl}', 'tbl_{tag_tbl}', (select count(*) from tbl_{tag_tbl}), (select oned from tmp_oned)); 
     
         with crs as (
         select d.polyid, r.{variable_in} from rst_{tag_tbl} r 
@@ -493,7 +498,7 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
       DECLARE
         i bigint;
       BEGIN 
-        i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname})); 
+        i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname}),(select oned from tmp_oned) ); 
 
     insert into {tblname} (polyid, fireid, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
     select d.polyid, d.fireid, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 

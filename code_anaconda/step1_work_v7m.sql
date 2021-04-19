@@ -680,15 +680,25 @@ do language plpgsql $$ begin
 raise notice 'tool: step3 done, %', clock_timestamp();
 end $$;
 
+--select :oned;
+-- remember which date being processed for log purpose
+drop table if exists tmp_oned;
+create temporary table tmp_oned (
+	oned text
+);
+insert into tmp_oned
+(oned) values (:oned);
+
+
 -- just put changes posteriori to the log
 -- time duration becoms meaningless...
 DO LANGUAGE plpgsql $$
   DECLARE
     i bigint;
   BEGIN
-    i := log_checkin('agg to large', 'work_lrg_oned', (select count(*) from work_pnt_oned)); 
+    i := log_checkin('agg to large', 'work_lrg_oned', (select count(*) from work_pnt_oned), (select oned from tmp_oned));
     i := log_checkout(i, (select count(*) from work_lrg_oned) );
-    i := log_checkin('subdiv', 'work_div_oned', (select count(*) from work_lrg_oned)); 
+    i := log_checkin('subdiv', 'work_div_oned', (select count(*) from work_lrg_oned), (select  oned from tmp_oned));
     i := log_checkout(i, (select count(*) from work_div_oned) );
   END
 $$;
