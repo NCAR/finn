@@ -667,8 +667,25 @@ do language plpgsql $$ begin
 raise notice 'tool: step3.9 (points in polygon) done, %', clock_timestamp();
 end $$;
 
+--------------------------------------------------------------
+--- STEP 3.10 (experimental) update work_pnt here for polyid --
+--------------------------------------------------------------
+-- TODO this could be costly too..
+WITH foo AS (
+	SELECT polyid, unnest(cleanids) cleanid
+	FROM work_div_oned
+)
+UPDATE work_pnt p SET
+polyid = foo.polyid
+FROM foo
+WHERE p.cleanid = foo.cleanid;
+do language plpgsql $$ begin
+raise notice 'tool: step3.10 (points in polygon work_pnt) done, %', clock_timestamp();
+end $$;
+
+
 ---------------------
--- STEP 3.10: push --
+-- STEP 3.11: push --
 ---------------------
 
 -- push

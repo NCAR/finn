@@ -37,7 +37,7 @@ def get_first_last_day(tag):
     print(dt01)
 
     # see if dup. toropics was done for modis
-    cur.execute('select count(*) from "%s".work_pnt where instrument = \'MOSIS\' and abs(lat) <= 30' % (schema))
+    cur.execute('select count(*) from "%s".work_pnt where instrument = \'MODIS\' and abs(lat) <= 30' % (schema))
     cnt_tropdup = cur.fetchall()[0][0]
     print(cnt_tropdup)
     if cnt_tropdup > 0:
@@ -166,12 +166,12 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
             except subprocess.CalledProcessError as err: 
                 print(f"\nERROR from 'step1_work': \n\n", err.stderr.decode(),)
                 raise
-        print("starting post %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-        cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_post.sql' )))]
-        cmd += ['-v', ("tag=%s" % tag)] 
-        print(cmd)
-        try:
-            subprocess.run(cmd, check=True, stderr=PIPE)
-        except subprocess.CalledProcessError as err: 
-            print(f"\nERROR from 'step1_post': \n\n", err.stderr.decode(),)
-            raise
+#        print("starting post %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
+#        cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_post.sql' )))]
+#        cmd += ['-v', ("tag=%s" % tag)] 
+#        print(cmd)
+#        try:
+#            subprocess.run(cmd, check=True, stderr=PIPE)
+#        except subprocess.CalledProcessError as err: 
+#            print(f"\nERROR from 'step1_post': \n\n", err.stderr.decode(),)
+#            raise
