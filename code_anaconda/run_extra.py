@@ -2,6 +2,7 @@
 import os
 import subprocess
 import sys
+import psycopg2
 
 def summarize_log(tag, out_file = None):
 
@@ -44,6 +45,50 @@ def db_use_af(tag_af, outfile = None):
     outfile.write('Total\n\n')
     p = subprocess.run(['psql', '-d', 'finn', '-c', qry_af_tot], stdout=subprocess.PIPE, check=True)
     outfile.write(p.stdout.decode() + '\n')
+
+def clean_db_af(tag_af, rasters):
+    # cleans intermediate vectors, but be a bit more selective, going after big ones only
+
+    schema = f"af_{tag_af}"
+    conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
+    cur = conn.cursor()
+            
+
+    # go over af_in_X (assuming that shape file is there and canbe restored if it's needed)
+    cur.execute(f'''select table_name from "{schema}".af_ins;''')
+    cur2 = conn.cursor()
+    for rec in cur:
+        tblname = rec[0]
+        cmd = f'''drop table "{schema}".{tblname};'''
+        print(cmd)
+        cur2.execute(cmd)
+        conn.commit()
+
+    # go out_XXX, drop them except the final one (definitely dont need the intermeds)
+    tblname = f"out"
+    for rstinfo in rasters[:-1]:
+        rstname = rstinfo['tag']
+        tblname += ('_' + rstname)
+        cmd = f'''drop table "{schema}".{tblname};'''
+        print(cmd)
+        cur2.execute(cmd)
+        conn.commit()
+
+    for rstinfo in rasters:
+        rstname = rstinfo['tag']
+        tblname = 'tbl_' + rstname
+        cmd = f'''drop table if exists "{schema}".{tblname};'''
+        print(cmd)
+        cur2.execute(cmd)
+        conn.commit()
+
+    # drop work_div and work_lrg as well?  work_div has equivalent output as out_XXX with extra columns.  work_lrg should be reproduced by aggregating divided polyton if needed
+    for tblname in ('work_lrg', 'work_div'):
+        cmd = f'''drop table "{schema}".{tblname};'''
+        print(cmd)
+        cur2.execute(cmd)
+        conn.commit()
+
 
 def purge_db_af(tag_af, outfile=None):
     if outfile is None: outfile = sys.stdout
