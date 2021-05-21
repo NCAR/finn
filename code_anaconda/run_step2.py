@@ -208,6 +208,7 @@ drop table if exists "{schema}"."{tblname}";
 create table "{schema}"."{tblname}" (
     polyid integer, 
     fireid integer,
+    cleanids integer[],
     geom geometry,
     cen_lon double precision,
     cen_lat double precision,
@@ -239,13 +240,14 @@ def mkcmd_create_table_oned():
     create temporary table work_div_oned (
             polyid integer,
             fireid integer,
+            cleanids integer[],
             geom geometry,
             acq_date_use date,
             area_sqkm double precision
             );
 
-    insert into work_div_oned (polyid, fireid, geom, acq_date_use, area_sqkm)
-    select polyid, fireid, geom, acq_date_use, area_sqkm
+    insert into work_div_oned (polyid, fireid, cleanids, geom, acq_date_use, area_sqkm)
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm
     from work_div where acq_date_use = :oned::date;
     do language plpgsql $$
             declare
@@ -500,11 +502,11 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
       BEGIN 
         i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname}),(select oned from tmp_oned) ); 
 
-    insert into {tblname} (polyid, fireid, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
-    select d.polyid, d.fireid, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
+    insert into {tblname} (polyid, fireid, cleanids, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
+    select d.polyid, d.fireid, d.cleanids, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
     {fldsrcs}
     from (
-    select polyid, fireid, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
     {joins}
     ;
         i := log_checkout(i, (select count(*) from {tblname}) );
