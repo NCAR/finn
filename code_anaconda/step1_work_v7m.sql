@@ -112,8 +112,13 @@ do language plpgsql $$ begin
 raise notice 'tool: step1 add fld done, %', clock_timestamp();
 end $$;
 
--- generate spatial index on pixels
-create index work_pix_gix on work_pnt_oned using gist( geom_pix );
+-- -- generate spatial index on pixels
+-- create index work_pix_gix on work_pnt_oned using gist( geom_pix );
+-- do language plpgsql $$ begin
+-- raise notice 'tool: step1 gist done, %', clock_timestamp();
+-- end $$;
+-- generate spatial index on smalls
+create index work_sml_gix on work_pnt_oned using gist( geom_sml );
 do language plpgsql $$ begin
 raise notice 'tool: step1 gist done, %', clock_timestamp();
 end $$;
@@ -144,20 +149,26 @@ from (
 	a.acq_date_use acq_date_use,
 	a.lon as alon,
 	a.lat as alat,
-	a.pix_dx as adx, 
-	a.pix_dy as ady,
+	-- a.pix_dx as adx, 
+	-- a.pix_dy as ady,
+	a.fire_dx as adx, 
+	a.fire_dy as ady,
 	a.geom_sml as ageom, 
 	b.cleanid as bid, 
 	b.lon as blon,
 	b.lat as blat,
-	b.pix_dx as bdx, 
-	b.pix_dy as bdy,
+	-- b.pix_dx as bdx, 
+	-- b.pix_dy as bdy,
+	b.fire_dx as bdx, 
+	b.fire_dy as bdy,
 	b.geom_sml as bgeom
 from work_pnt_oned as a 
 inner join work_pnt_oned as b
 on a.acq_date_use = b.acq_date_use
-and a.geom_pix && b.geom_pix   -- THIS IS IMPORTANT, uses GIST!!!
-and st_dwithin(a.geom_pnt, b.geom_pnt, a.pix_dx + a.pix_dy + b.pix_dx + b.pix_dy)
+-- and a.geom_pix && b.geom_pix   -- THIS IS IMPORTANT, uses GIST!!!
+and a.geom_sml && b.geom_sml   -- THIS IS IMPORTANT, uses GIST!!!
+-- and st_dwithin(a.geom_pnt, b.geom_pnt, a.pix_dx + a.pix_dy + b.pix_dx + b.pix_dy)
+and st_dwithin(a.geom_pnt, b.geom_pnt, a.fire_dx + a.fire_dy + b.fire_dx + b.fire_dy)
 and a.cleanid < b.cleanid
 ) as foo
 where (abs(alon-blon)<(adx+bdx)) and (abs(alat-blat)<(ady+bdy))
