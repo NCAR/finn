@@ -2,9 +2,11 @@ import os, re
 import subprocess
 from subprocess import Popen
 
-def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definition='LST'):
+def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definition='LST', gpkg=None):
     if shpname is None:
         shpname = tblnam + '.shp'
+    if gpkg is None:
+        gpkg = False
 
     csvname = os.path.join(odir, re.sub('.shp$' , '.csv', shpname))
 
@@ -29,6 +31,11 @@ def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definiti
     #subprocess
 
     if not csvonly:
+        if gpkg:
+            fmt = 'GPKG'
+            shpname = shpname[:-4] + '.gpkg'
+        else:
+            fmt = 'ESRI Shapefile'
         ## # also get as shape file, for QA
         ## ogr2ogr -f "ESRI Shapefile" global_${yr}_div.shp PG:"host=localhost dbname=finn" -sql "select * from global_${yr}.out_div;"
         #pgsql2shp -f tes -h localhost finn global_${yr}.out_div
