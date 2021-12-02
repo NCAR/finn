@@ -16,7 +16,7 @@ def work(schema0, schema, tblname):
         days = sorted(_[0] for _ in cur.fetchall())
 
         sql = f''' 
-        ALTER TABLE {schema}.{tblname} 
+        ALTER TABLE "{schema}"."{tblname}"
         ADD COLUMN IF NOT EXISTS fireid0 integer
         '''
         cur.execute(sql)
