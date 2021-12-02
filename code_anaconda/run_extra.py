@@ -59,7 +59,7 @@ def clean_db_af(tag_af, rasters):
     cur2 = conn.cursor()
     for rec in cur:
         tblname = rec[0]
-        cmd = f'''drop table "{schema}".{tblname};'''
+        cmd = f'''drop table if exists "{schema}".{tblname};'''
         print(cmd)
         cur2.execute(cmd)
         conn.commit()
@@ -69,7 +69,7 @@ def clean_db_af(tag_af, rasters):
     for rstinfo in rasters[:-1]:
         rstname = rstinfo['tag']
         tblname += ('_' + rstname)
-        cmd = f'''drop table "{schema}".{tblname};'''
+        cmd = f'''drop table if exists "{schema}".{tblname};'''
         print(cmd)
         cur2.execute(cmd)
         conn.commit()
@@ -84,7 +84,7 @@ def clean_db_af(tag_af, rasters):
 
     # drop work_div and work_lrg as well?  work_div has equivalent output as out_XXX with extra columns.  work_lrg should be reproduced by aggregating divided polyton if needed
     for tblname in ('work_lrg', 'work_div'):
-        cmd = f'''drop table "{schema}".{tblname};'''
+        cmd = f'''drop table if exists "{schema}".{tblname};'''
         print(cmd)
         cur2.execute(cmd)
         conn.commit()
