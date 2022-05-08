@@ -51,6 +51,16 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
+        cmd_work += '''
+-- copy over attributes to work_pnt
+UPDATE work_pnt p SET
+alg_agg = CASE WHEN t.v_tree >= 50 THEN 0
+          ELSE 1
+          END
+from work_tree t
+where p.fireid = t.fireid;
+'''
+
     #print(cmd_prep)
     with open(scrname_prep, 'w') as f:
         f.write(cmd_prep)
@@ -237,7 +247,7 @@ def mkcmd_insert_table_continuous(tag_tbl, tag_rst, tag_vars, schema):
     return cmd
 
 def mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema):
-    tblname = 'out_' + '_'.join(tag_tbls)
+    tblname = 'work_tree'
     valdefs = ['{0} {1}'.format(n, t)
             for (n, t) in zip(fldnames, fldtypes)]
 
@@ -259,7 +269,7 @@ create table "{schema}"."{tblname}" (
 
 
 def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
-    tblname = 'out_' + '_'.join(tag_tbls)
+    tblname = 'work_tree'
 
     flddsts = ', '.join(fldnames)
 

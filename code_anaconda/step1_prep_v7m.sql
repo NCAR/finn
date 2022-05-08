@@ -1028,7 +1028,7 @@ do language plpgsql $$
       get_instrument(satellite),
       case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
-      ', frp, 0  from ' || myrow.table_name || ';'; 
+      ', frp, -99  from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
       i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));

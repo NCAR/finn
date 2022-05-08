@@ -50,38 +50,38 @@ end $$;
 
 
 
--- -- calculate dx, dy (half of the sides of rectangles)_
--- alter table work_pnt_oned
--- add column fire_size double precision, 
--- add column fire_dx double precision, 
--- add column fire_dy double precision,
--- add column pix_dx double precision, 
--- add column pix_dy double precision,
--- add column geom_pix geometry
--- ;
--- 
--- 
--- -- TODO make fire_size to be 1 for MODIS, .35 for VIIRS
--- -- !!! hard wired pixfac!!!
--- -- !!! hard fire_size !!!
--- update work_pnt_oned
--- set fire_size = case when (instrument = 'MODIS') then 1.0 when (instrument = 'VIIRS') then .375 else null::double precision end;
--- do language plpgsql $$ begin
--- assert (select count(*) from work_pnt_oned where fire_size is null) = 0, 'instrument?? fire_size??';
--- end $$;
--- 
--- with consts as ( select 
--- 	2. * pi() * 6370.997 as great_circle,
--- 	1.1 as pixfac
--- 	 ) 
--- update work_pnt_oned
--- set 
--- fire_dx = .5 * fire_size  * 360. / consts.great_circle / cos( lat / 180. * pi()),
--- fire_dy = .5 * fire_size * 360. / consts.great_circle ,
--- pix_dx = pixfac * .5 * work_pnt_oned.scan * 360. / consts.great_circle / cos( lat / 180. * pi()),
--- pix_dy = pixfac * .5 * work_pnt_oned.track * 360. / consts.great_circle 
--- from consts;
--- 
+-- calculate dx, dy (half of the sides of rectangles)_
+alter table work_pnt_oned
+add column fire_size double precision, 
+add column fire_dx double precision, 
+add column fire_dy double precision,
+add column pix_dx double precision, 
+add column pix_dy double precision,
+add column geom_pix geometry
+;
+
+
+-- TODO make fire_size to be 1 for MODIS, .35 for VIIRS
+-- !!! hard wired pixfac!!!
+-- !!! hard fire_size !!!
+update work_pnt_oned
+set fire_size = case when (instrument = 'MODIS') then 1.0 when (instrument = 'VIIRS') then .375 else null::double precision end;
+do language plpgsql $$ begin
+assert (select count(*) from work_pnt_oned where fire_size is null) = 0, 'instrument?? fire_size??';
+end $$;
+
+with consts as ( select 
+	2. * pi() * 6370.997 as great_circle,
+	1.1 as pixfac
+	 ) 
+update work_pnt_oned
+set 
+fire_dx = .5 * fire_size  * 360. / consts.great_circle / cos( lat / 180. * pi()),
+fire_dy = .5 * fire_size * 360. / consts.great_circle ,
+pix_dx = pixfac * .5 * work_pnt_oned.scan * 360. / consts.great_circle / cos( lat / 180. * pi()),
+pix_dy = pixfac * .5 * work_pnt_oned.track * 360. / consts.great_circle 
+from consts;
+
 -- -- generate fire polygons (small and pixel)
 -- update work_pnt_oned
 -- set geom_sml = st_setsrid(
