@@ -73,7 +73,7 @@ create table work_lrg (
 
 -- similar to above but definition of nearby detection is conservative
 drop table if exists work_lrg2;
-create table work_lrg (
+create table work_lrg2 (
 	fireid2 integer primary key not null,
 	geom_lrg geometry,
 	acq_date_use date,

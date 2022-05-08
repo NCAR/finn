@@ -1,7 +1,7 @@
 import datetime
 from subprocess import Popen
 
-from run_step1 import get_first_last_day
+from run_step1a import get_first_last_day
 
 ver = 'dev1'
 

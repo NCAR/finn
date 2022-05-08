@@ -110,36 +110,37 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
 
     # run the prep script
     if run_prep:
-        print("starting prep: %s" % datetime.datetime.now())
+#        print("starting prep: %s" % datetime.datetime.now())
+#
+#        def to_date(x):
+#            if x is None:
+#                o = ''
+#            else:
+#                # datetime
+#                o = x.strftime('%Y-%m-%d')
+#            return o
+#            
+#        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
+#                '-v', ('tag=%s' % tag), 
+#                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
+#                '-v', ('date_range=%s' %  f"[{to_date(first_day)},{to_date(last_day)}]"),
+#                '-v', ('date_definition=%s' %  date_definition), 
+#                ]
+#        print(cmd)
+#        maxtry = 3
+#        for itry in range(maxtry):
+#            try:
+#                subprocess.run(cmd, check=True, stderr=PIPE)
+#            except subprocess.CalledProcessError as err: 
+#                if itry +1 >= maxtry:
+#                    raise
+#                print(f"\ngot this ERROR from 'step1_prep': \n\n", err.stderr.decode(),)
+#                print(f"retry in {30*itry} sec")
+#                time.sleep(30*itry)
+#                continue
+#            break
 
-        def to_date(x):
-            if x is None:
-                o = ''
-            else:
-                # datetime
-                o = x.strftime('%Y-%m-%d')
-            return o
-            
-        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
-                '-v', ('tag=%s' % tag), 
-                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
-                '-v', ('date_range=%s' %  f"[{to_date(first_day)},{to_date(last_day)}]"),
-                '-v', ('date_definition=%s' %  date_definition), 
-                ]
-        print(cmd)
-        maxtry = 3
-        for itry in range(maxtry):
-            try:
-                subprocess.run(cmd, check=True, stderr=PIPE)
-            except subprocess.CalledProcessError as err: 
-                if itry +1 >= maxtry:
-                    raise
-                print(f"\ngot this ERROR from 'step1_prep': \n\n", err.stderr.decode(),)
-                print(f"retry in {30*itry} sec")
-                time.sleep(30*itry)
-                continue
-            break
-
+        pass
     else:
         pass
 
@@ -157,14 +158,14 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
         procs = set()
         for dt in dates:
             print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_work_%s.sql' % ver)))]
+            cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1b_work_%s.sql' % ver)))]
             cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
             #print(cmd)
             #subprocess.run(shlex.split(cmd), check=True)
             try:
                 subprocess.run(cmd, check=True, stderr=PIPE)
             except subprocess.CalledProcessError as err: 
-                print(f"\nERROR from 'step1_work': \n\n", err.stderr.decode(),)
+                print(f"\nERROR from 'step1b_work': \n\n", err.stderr.decode(),)
                 raise
 #        print("starting post %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
 #        cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_post.sql' )))]
