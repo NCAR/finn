@@ -52,6 +52,7 @@ CREATE TABLE work_pnt (
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
 	frp double precision,
+	alg_agg integer, -- algorithm to be used for aggregation, 0 for aggressive, 1 for conservative
 	geom_sml geometry
 	);
 
@@ -70,6 +71,15 @@ create table work_lrg (
 	);
 
 
+-- similar to above but definition of nearby detection is conservative
+drop table if exists work_lrg2;
+create table work_lrg (
+	fireid2 integer primary key not null,
+	geom_lrg geometry,
+	acq_date_use date,
+	ndetect integer,
+	area_sqkm double precision
+	);
 
 drop table if exists work_div;
 create table work_div (
@@ -1002,7 +1012,7 @@ do language plpgsql $$
     for myrow in select table_name,has_type from af_ins order by table_name loop 
       raise notice 'tool: myrow , %', myrow; 
 
-      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, acq_date_use, instrument, confident, anomtype, frp) select 
+      s := 'insert into work_pnt  (rawid, geom_pnt, lon, lat, scan, track, acq_date_utc, acq_time_utc, acq_date_lst, acq_datetime_lst, acq_date_use, instrument, confident, anomtype, frp, alg_agg) select 
       '  || cumnrow || ' + (row_number()  over (order by gid)), 
       geom, 
       longitude, 
@@ -1018,7 +1028,7 @@ do language plpgsql $$
       get_instrument(satellite),
       case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
-      ', frp  from ' || myrow.table_name || ';'; 
+      ', frp, 0  from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
       i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));
@@ -1040,8 +1050,8 @@ DO LANGUAGE plpgsql $$
   BEGIN 
     i := log_checkin('dup tropics', 'work_pnt', (select count(*) from work_pnt)); 
     insert into work_pnt (
-	   rawid, geom_pnt, lon, lat, scan, track, acq_date_utc,     acq_time_utc, acq_date_lst,     acq_datetime_lst,                    acq_date_use,     instrument, confident, anomtype, frp)
-    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', acq_date_use + 1, instrument, confident, anomtype, frp from work_pnt
+	   rawid, geom_pnt, lon, lat, scan, track, acq_date_utc,     acq_time_utc, acq_date_lst,     acq_datetime_lst,                    acq_date_use,     instrument, confident, anomtype, frp, alg_agg)
+    select rawid, geom_pnt, lon, lat, scan, track, acq_date_utc + 1, acq_time_utc, acq_date_lst + 1, acq_datetime_lst + interval '1 day', acq_date_use + 1, instrument, confident, anomtype, frp, alg_agg from work_pnt
     where abs(lat) <= 23.5 and instrument = 'MODIS';
     i := log_checkout(i, (select count(*) from work_pnt) );
   END;
