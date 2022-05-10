@@ -110,35 +110,35 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
 
     # run the prep script
     if run_prep:
-#        print("starting prep: %s" % datetime.datetime.now())
-#
-#        def to_date(x):
-#            if x is None:
-#                o = ''
-#            else:
-#                # datetime
-#                o = x.strftime('%Y-%m-%d')
-#            return o
-#            
-#        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
-#                '-v', ('tag=%s' % tag), 
-#                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
-#                '-v', ('date_range=%s' %  f"[{to_date(first_day)},{to_date(last_day)}]"),
-#                '-v', ('date_definition=%s' %  date_definition), 
-#                ]
-#        print(cmd)
-#        maxtry = 3
-#        for itry in range(maxtry):
-#            try:
-#                subprocess.run(cmd, check=True, stderr=PIPE)
-#            except subprocess.CalledProcessError as err: 
-#                if itry +1 >= maxtry:
-#                    raise
-#                print(f"\ngot this ERROR from 'step1_prep': \n\n", err.stderr.decode(),)
-#                print(f"retry in {30*itry} sec")
-#                time.sleep(30*itry)
-#                continue
-#            break
+        print("starting prep: %s" % datetime.datetime.now())
+
+        def to_date(x):
+            if x is None:
+                o = ''
+            else:
+                # datetime
+                o = x.strftime('%Y-%m-%d')
+            return o
+            
+        cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1b_prep_%s.sql' % ver)), 
+                '-v', ('tag=%s' % tag), 
+                '-v', ('filter_persistent_sources=%s' %  filter_persistent_sources),
+                '-v', ('date_range=%s' %  f"[{to_date(first_day)},{to_date(last_day)}]"),
+                '-v', ('date_definition=%s' %  date_definition), 
+                ]
+        print(cmd)
+        maxtry = 3
+        for itry in range(maxtry):
+            try:
+                subprocess.run(cmd, check=True, stderr=PIPE)
+            except subprocess.CalledProcessError as err: 
+                if itry +1 >= maxtry:
+                    raise
+                print(f"\ngot this ERROR from 'step1_prep': \n\n", err.stderr.decode(),)
+                print(f"retry in {30*itry} sec")
+                time.sleep(30*itry)
+                continue
+            break
 
         pass
     else:

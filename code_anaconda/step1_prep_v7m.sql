@@ -52,7 +52,11 @@ CREATE TABLE work_pnt (
 	confident boolean,
 	anomtype integer, -- "Type" field of AF product, 0-3
 	frp double precision,
-	alg_agg integer, -- algorithm to be used for aggregation, 0 for aggressive, 1 for conservative
+	alg_agg integer, -- algorithm to be used for aggregation, 1 for aggressive, 2 for conservative
+	fireid1 integer, -- fireid based on aggressive algorithm
+	fireid2 integer, -- fireid based on conservative algorithm
+	ndetect1 integer,
+	ndetect2 integer,
 	geom_sml geometry
 	);
 
@@ -61,35 +65,48 @@ DO language plpgsql $$ begin
 END $$;
 
 -- group pixels, and lone detections in one table of fire polygons
-drop table if exists work_lrg;
-create table work_lrg (
+drop table if exists work_lrg1;
+create table work_lrg1 (
 	fireid integer primary key not null,
 	geom_lrg geometry,
 	acq_date_use date,
 	ndetect integer,
-	area_sqkm double precision
+	area_sqkm double precision,
+	alg_agg integer
 	);
 
 
--- similar to above but definition of nearby detection is conservative
-drop table if exists work_lrg2;
-create table work_lrg2 (
-	fireid2 integer primary key not null,
-	geom_lrg geometry,
-	acq_date_use date,
-	ndetect integer,
-	area_sqkm double precision
-	);
-
-drop table if exists work_div;
-create table work_div (
-	polyid serial primary key ,
-	fireid integer,
-	cleanids integer[],
-	geom geometry,
-	acq_date_use date,
-	area_sqkm double precision
-	);
+-- -- similar to above but definition of nearby detection is conservative
+-- drop table if exists work_lrg2;
+-- create table work_lrg2 (
+-- 	fireid integer primary key not null,
+-- 	geom_lrg geometry,
+-- 	acq_date_use date,
+-- 	ndetect integer,
+-- 	area_sqkm double precision,
+-- 	alg_agg integer
+-- 	);
+-- 
+-- -- combined
+-- drop table if exists work_lrg;
+-- create table work_lrg (
+-- 	fireid integer primary key not null,
+-- 	geom_lrg geometry,
+-- 	acq_date_use date,
+-- 	ndetect integer,
+-- 	area_sqkm double precision,
+-- 	alg_agg integer
+-- 	);
+-- 
+-- drop table if exists work_div;
+-- create table work_div (
+-- 	polyid serial primary key ,
+-- 	fireid integer,
+-- 	cleanids integer[],
+-- 	geom geometry,
+-- 	acq_date_use date,
+-- 	area_sqkm double precision
+-- 	);
 
 drop table if exists tbl_flddefs;
 create table tbl_flddefs (
@@ -1028,7 +1045,7 @@ do language plpgsql $$
       get_instrument(satellite),
       case get_instrument(satellite) when ''MODIS'' then confidence::integer >= 20 when ''VIIRS'' then confidence::character(1) != ''l'' end , ' ||
       case myrow.has_type WHEN TRUE THEN ' type ' ELSE ' 0 ' END ||
-      ', frp, -99  from ' || myrow.table_name || ';'; 
+      ', frp, null::integer  from ' || myrow.table_name || ';'; 
 
       raise notice 's: %', s; 
       i := log_checkin('import ' || myrow.table_name, 'work_pnt', (select count(*) from work_pnt));

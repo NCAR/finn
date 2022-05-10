@@ -22,7 +22,7 @@ drop table if exists work_pnt_oned;
 drop table if exists work_lrg_oned;
 -- drop table if exists work_div_oned;
 create temporary table work_pnt_oned (like work_pnt excluding constraints);
-create temporary table work_lrg_oned (like work_lrg excluding constraints);
+create temporary table work_lrg_oned (like work_lrg1 excluding constraints);
 -- create temporary table work_div_oned (like work_div excluding constraints);
 --alter table work_div_oned drop column polyid;
 -- convenient to have a temporaly serial id for work_div
@@ -205,8 +205,8 @@ end $$;
 
 -- copy the group id to work_pnt
 update work_pnt_oned p set
-fireid = g.fireid,
-ndetect = g.ndetect
+fireid1 = g.fireid,
+ndetect1 = g.ndetect
 from tbl_togrp g
 where p.cleanid = g.lhs;
 
@@ -216,10 +216,10 @@ raise notice 'tool: step2.2c (upd tbl_pnt lhs) done, %', clock_timestamp();
 end $$;
 
 update work_pnt_oned p set
-fireid = g.fireid,
-ndetect = g.ndetect
+fireid1 = g.fireid,
+ndetect1 = g.ndetect
 from tbl_togrp g
-where p.fireid is null and
+where p.fireid1 is null and
 p.cleanid = g.rhs;
 
 
@@ -232,10 +232,10 @@ end $$;
 -- records which are not inluded in tbl_adj_det are lone detection
 -- cleanid becomes fireid in such case, and ndetect is 1
 update work_pnt_oned set
-fireid = cleanid,
-ndetect = 1
+fireid1 = cleanid,
+ndetect1 = 1
 where acq_date_use = :oned::date 
-and fireid is null;
+and fireid1 is null;
 
 
 do language plpgsql $$ begin
@@ -244,8 +244,8 @@ end $$;
 
 -- copy over attributes to work_pnt
 update work_pnt t set
-fireid = p.fireid,
-ndetect = p.ndetect,
+fireid1 = p.fireid1,
+ndetect1 = p.ndetect1,
 geom_sml = p.geom_sml
 from work_pnt_oned p
 where t.cleanid = p.cleanid;
@@ -272,8 +272,8 @@ end $$;
 
 -- insert lone detections
 insert into work_lrg_oned(fireid, geom_lrg)
-select fireid, geom_sml from work_pnt_oned
-where ndetect = 1;
+select fireid1, geom_sml from work_pnt_oned
+where ndetect1 = 1;
 
 do language plpgsql $$ begin
 raise notice 'tool: step2.3c (insert solo) done, %', clock_timestamp();
@@ -335,16 +335,16 @@ end $$;
 -- get necessary attributes for fire polygons
 update work_lrg_oned set
 acq_date_use = p.acq_date_use,
-ndetect = p.ndetect
+ndetect = p.ndetect1
 from work_pnt_oned as p
-where work_lrg_oned.fireid = p.fireid;
+where work_lrg_oned.fireid = p.fireid1;
 
 update work_lrg_oned set
 area_sqkm = st_area(geom_lrg, true) / 1000000.;
 
 -- export
-insert into work_lrg
-select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm
+insert into work_lrg1
+select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, null::integer
 from work_lrg_oned;
 
 do language plpgsql $$ begin

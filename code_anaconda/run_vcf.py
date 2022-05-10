@@ -54,11 +54,18 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_work += '''
 -- copy over attributes to work_pnt
 UPDATE work_pnt p SET
-alg_agg = CASE WHEN t.v_tree >= 50 THEN 0
-          ELSE 1
+alg_agg = CASE WHEN t.v_tree >= 50 THEN 1
+          ELSE 2
           END
 from work_tree t
-where p.fireid = t.fireid;
+where p.fireid1 = t.fireid;
+
+UPDATE work_lrg1 l SET
+alg_agg = CASE WHEN t.v_tree >= 50 THEN 1
+          ELSE 2
+          END
+from work_tree t
+where l.fireid = t.fireid;
 '''
 
     #print(cmd_prep)
@@ -136,7 +143,7 @@ def mkcmd_create_table_oned():
 
     insert into work_lrg_oned (fireid, geom_lrg, acq_date_use, ndetect, area_sqkm)
     select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm
-    from work_lrg where acq_date_use = :oned::date;
+    from work_lrg1 where acq_date_use = :oned::date;
     do language plpgsql $$
             declare
             cur cursor for select acq_date_use from work_lrg_oned limit 1;
