@@ -57,7 +57,8 @@ CREATE TABLE work_pnt (
 	fireid2 integer, -- fireid based on conservative algorithm
 	ndetect1 integer,
 	ndetect2 integer,
-	geom_sml geometry
+	geom_sml geometry,
+	geom_pix geometry
 	);
 
 DO language plpgsql $$ begin

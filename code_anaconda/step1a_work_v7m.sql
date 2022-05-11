@@ -56,8 +56,8 @@ add column fire_size double precision,
 add column fire_dx double precision, 
 add column fire_dy double precision,
 add column pix_dx double precision, 
-add column pix_dy double precision,
-add column geom_pix geometry
+add column pix_dy double precision --,
+-- add column geom_pix geometry
 ;
 
 
@@ -246,7 +246,8 @@ end $$;
 update work_pnt t set
 fireid1 = p.fireid1,
 ndetect1 = p.ndetect1,
-geom_sml = p.geom_sml
+geom_sml = p.geom_sml,
+geom_pix = p.geom_pix
 from work_pnt_oned p
 where t.cleanid = p.cleanid;
 

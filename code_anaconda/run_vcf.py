@@ -5,7 +5,7 @@ from run_step1a import get_first_last_day
 
 ver = 'dev1'
 
-def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work=True):
+def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work=True, algorithm_merge_aggressive_threshold_tree_cover=50):
 
     schema = 'af_{0}'.format( tag_af )
 
@@ -51,21 +51,24 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-        cmd_work += '''
+        cmd_work += f'''
 -- copy over attributes to work_pnt
 UPDATE work_pnt p SET
-alg_agg = CASE WHEN t.v_tree >= 50 THEN 1
+alg_agg = CASE WHEN t.v_tree >= {algorithm_merge_aggressive_threshold_tree_cover} THEN 1
           ELSE 2
           END
 from work_tree t
-where p.fireid1 = t.fireid;
+p.fireid1 = t.fireid;
+where acq_date_use = :oned::date and
+p.fireid1 = t.fireid;
 
 UPDATE work_lrg1 l SET
-alg_agg = CASE WHEN t.v_tree >= 50 THEN 1
+alg_agg = CASE WHEN t.v_tree >= {algorithm_merge_aggressive_threshold_tree_cover} THEN 1
           ELSE 2
           END
 from work_tree t
-where l.fireid = t.fireid;
+where acq_date_use = :oned::date and
+l.fireid = t.fireid;
 '''
 
     #print(cmd_prep)

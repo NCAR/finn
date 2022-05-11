@@ -96,43 +96,43 @@ create table work_lrg (
 	area_sqkm double precision,
 	alg_agg integer
 	);
-	-- debugging
-drop table if exists dbg_lrg_oned;
-create table dbg_lrg_oned (
-	fireid integer primary key not null,
-	geom_lrg geometry,
-	acq_date_use date,
-	ndetect integer,
-	area_sqkm double precision,
-	alg_agg integer
-	);
-drop table if exists dbg_pnt_oned;
-CREATE TABLE dbg_pnt_oned (
-	rawid integer,
-	fireid integer,
-	ndetect integer,
-	polyid integer,
-	geom_pnt geometry,
-	lon double precision,
-	lat double precision,
-	scan double precision,
-	track double precision,
-	acq_date_utc date,
-	acq_time_utc character(4),
-	acq_date_lst date,
-	acq_datetime_lst timestamp without time zone,
-	acq_date_use date,
-	instrument character(5),
-	confident boolean,
-	anomtype integer, -- "Type" field of AF product, 0-3
-	frp double precision,
-	alg_agg integer, -- algorithm to be used for aggregation, 1 for aggressive, 2 for conservative
-	fireid1 integer, -- fireid based on aggressive algorithm
-	fireid2 integer, -- fireid based on conservative algorithm
-	ndetect1 integer,
-	ndetect2 integer,
-	geom_sml geometry
-	);
+-- 	-- debugging
+-- drop table if exists dbg_lrg_oned;
+-- create table dbg_lrg_oned (
+-- 	fireid integer primary key not null,
+-- 	geom_lrg geometry,
+-- 	acq_date_use date,
+-- 	ndetect integer,
+-- 	area_sqkm double precision,
+-- 	alg_agg integer
+-- 	);
+-- drop table if exists dbg_pnt_oned;
+-- CREATE TABLE dbg_pnt_oned (
+-- 	rawid integer,
+-- 	fireid integer,
+-- 	ndetect integer,
+-- 	polyid integer,
+-- 	geom_pnt geometry,
+-- 	lon double precision,
+-- 	lat double precision,
+-- 	scan double precision,
+-- 	track double precision,
+-- 	acq_date_utc date,
+-- 	acq_time_utc character(4),
+-- 	acq_date_lst date,
+-- 	acq_datetime_lst timestamp without time zone,
+-- 	acq_date_use date,
+-- 	instrument character(5),
+-- 	confident boolean,
+-- 	anomtype integer, -- "Type" field of AF product, 0-3
+-- 	frp double precision,
+-- 	alg_agg integer, -- algorithm to be used for aggregation, 1 for aggressive, 2 for conservative
+-- 	fireid1 integer, -- fireid based on aggressive algorithm
+-- 	fireid2 integer, -- fireid based on conservative algorithm
+-- 	ndetect1 integer,
+-- 	ndetect2 integer,
+-- 	geom_sml geometry
+-- 	);
 
 drop table if exists work_div;
 create table work_div (

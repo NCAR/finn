@@ -56,8 +56,8 @@ add column fire_size double precision,
 add column fire_dx double precision, 
 add column fire_dy double precision,
 add column pix_dx double precision, 
-add column pix_dy double precision,
-add column geom_pix geometry
+add column pix_dy double precision --,
+-- add column geom_pix geometry
 ;
 
 
@@ -384,35 +384,37 @@ where alg_agg = 2;
 update work_pnt set
 fireid = fireid1, 
 ndetect = ndetect1
-where alg_agg = 1;
+where alg_agg = 1
+and acq_date_use = :oned::text::date;
 
 update work_pnt set
 fireid = fireid2, 
 ndetect = ndetect2
-where alg_agg = 2;
+where alg_agg = 2
+and acq_date_use = :oned::text::date;
 
--- debugging
-insert into dbg_pnt_oned
-select rawid, fireid, ndetect, polyid, geom_pnt, lon, lat, scan, track, acq_date_utc, 
-	acq_time_utc,
-	acq_date_lst,
-	acq_datetime_lst,
-	acq_date_use,
-	instrument,
-	confident,
-	anomtype,
-	frp,
-	alg_agg,
-	fireid1,
-	fireid2,
-	ndetect1,
-	ndetect2,
-	geom_sml
-from work_pnt_oned;
-
-insert into dbg_lrg_oned
-select * 
-from work_lrg_oned;
+-- -- debugging
+-- insert into dbg_pnt_oned
+-- select rawid, fireid, ndetect, polyid, geom_pnt, lon, lat, scan, track, acq_date_utc, 
+-- 	acq_time_utc,
+-- 	acq_date_lst,
+-- 	acq_datetime_lst,
+-- 	acq_date_use,
+-- 	instrument,
+-- 	confident,
+-- 	anomtype,
+-- 	frp,
+-- 	alg_agg,
+-- 	fireid1,
+-- 	fireid2,
+-- 	ndetect1,
+-- 	ndetect2,
+-- 	geom_sml
+-- from work_pnt_oned;
+-- 
+-- insert into dbg_lrg_oned
+-- select * 
+-- from work_lrg_oned;
 
 
 --------------------------------------------------------

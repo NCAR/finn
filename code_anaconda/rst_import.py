@@ -211,6 +211,7 @@ def get_skelton(tifname, dso=None, name_use=None, fn_censor=None):
     # get corners and points along sides
 
 
+
     # points on one side 
     num = 50
     xp = np.rint(np.linspace(0, nc, num+1))
