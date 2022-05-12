@@ -21,10 +21,12 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
 
     scrname_prep = 'stepvcf_prep_{0}_{1}.sql'.format('_'.join(tag_rsts), ver)
     scrname_work = 'stepvcf_work_{0}_{1}.sql'.format('_'.join(tag_rsts), ver)
+    scrname_post = 'stepvcf_post_{0}_{1}.sql'.format('_'.join(tag_rsts), ver)
 
     #for tag_rst in tag_rsts:
     cmd_prep = 'set search_path to "{0}",public;\n'.format( schema )
     cmd_work = 'set search_path to "{0}",raster,public;\n'.format( schema )
+    cmd_post = 'set search_path to "{0}",public;\n'.format( schema )
 
     cmd_work += mkcmd_create_table_oned()
 
@@ -51,15 +53,18 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-        cmd_work += f'''
+    cmd_post += f'''
 -- copy over attributes to work_pnt
+with t as (
+    select fireid,v_tree
+    from 
+)
 UPDATE work_pnt p SET
 alg_agg = CASE WHEN t.v_tree >= {algorithm_merge_aggressive_threshold_tree_cover} THEN 1
           ELSE 2
           END
 from work_tree t
-p.fireid1 = t.fireid;
-where acq_date_use = :oned::date and
+where 
 p.fireid1 = t.fireid;
 
 UPDATE work_lrg1 l SET
@@ -67,7 +72,7 @@ alg_agg = CASE WHEN t.v_tree >= {algorithm_merge_aggressive_threshold_tree_cover
           ELSE 2
           END
 from work_tree t
-where acq_date_use = :oned::date and
+where 
 l.fireid = t.fireid;
 '''
 
@@ -77,6 +82,8 @@ l.fireid = t.fireid;
     #print(cmd_work)
     with open(scrname_work, 'w') as f:
         f.write(cmd_work)
+    with open(scrname_post, 'w') as f:
+        f.write(cmd_post)
 
     # run the prep script
     if run_prep:
@@ -113,6 +120,12 @@ l.fireid = t.fireid;
             if p.returncode >0:
                 raise RuntimeError()
 
+        print("starting post: {0}".format( datetime.datetime.now()))
+        p = Popen(
+                ['psql']
+                + ['-f', scrname_post]
+                )
+        p.communicate()
 
 
     if True:
