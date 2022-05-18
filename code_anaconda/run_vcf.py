@@ -53,12 +53,12 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
         cmd_prep += mkcmd_create_table_output(tag_tbls, fldnames, fldtypes, schema)
         cmd_work += mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema)
 
-    cmd_post += f'''
+        # i thought about doing this as post process, but somehow it doesnt work
+        # this is slow but i just go with this for now (2022-05-11)
+        cmd_post += f'''
 -- copy over attributes to work_pnt
-with t as (
-    select fireid,v_tree
-    from 
-)
+
+
 UPDATE work_pnt p SET
 alg_agg = CASE WHEN t.v_tree >= {algorithm_merge_aggressive_threshold_tree_cover} THEN 1
           ELSE 2

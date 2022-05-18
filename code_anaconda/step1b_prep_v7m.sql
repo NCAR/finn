@@ -80,7 +80,7 @@ END $$;
 drop table if exists work_lrg2;
 create table work_lrg2 (
 	fireid integer primary key not null,
-	geom_lrg geometry,
+	geom_lrg geometry(polygon, 4326),
 	acq_date_use date,
 	ndetect integer,
 	area_sqkm double precision,
@@ -90,7 +90,7 @@ create table work_lrg2 (
 drop table if exists work_lrg;
 create table work_lrg (
 	fireid integer primary key not null,
-	geom_lrg geometry,
+	geom_lrg geometry(polygon, 4326),
 	acq_date_use date,
 	ndetect integer,
 	area_sqkm double precision,
