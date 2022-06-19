@@ -46,9 +46,9 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
             cmd_prep += mkcmd_create_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
             cmd_work += mkcmd_insert_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
             tag_tbls += [rstinfo['tag']]
-            fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable']]
-            fldtypes += ['integer', 'double precision']
-            dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_')])
+            fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable'], 'r_'+rstinfo['variable']]
+            fldtypes += ['integer', 'double precision', 'integer']
+            dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_','r_')])
         elif rstinfo['kind'] == 'continuous':
             cmd_prep += mkcmd_create_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
             cmd_work += mkcmd_insert_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
@@ -162,6 +162,7 @@ def mkcmd_create_table_thematic(tag_tbl, tag_var, schema):
     frcname = 'f_{0}'.format( tag_var )
     cntname = 'cv_{0}'.format( tag_var )
     tctname = 'ct_{0}'.format( tag_var )
+    rnkname = 'r_{0}'.format( tag_var )
     cmd = """
 drop table if exists "{schema}"."{tblname}";
 create table "{schema}"."{tblname}" (
@@ -170,10 +171,11 @@ create table "{schema}"."{tblname}" (
     {frcname} double precision,
     {cntname} integer,
     {tctname} integer,
+    {rnkname} integer,
     acq_date_use date
     );
 -- clean the left over log if any
-select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, cntname=cntname, tctname=tctname, tag_tbl=tag_tbl)
+select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, cntname=cntname, tctname=tctname, rnkname=rnkname, tag_tbl=tag_tbl)
     return cmd
 
 def mkcmd_create_table_continuous(tag_tbl, tag_vars, schema):
@@ -294,13 +296,14 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             work_div_oned as d
             on st_intersects(r.rast, d.geom)
     )
-    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, cv_{tag_var}, ct_{tag_var}, acq_date_use)
+    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, cv_{tag_var}, ct_{tag_var}, r_{tag_var}, acq_date_use)
     select 
     polyid, 
     val, 
     (cnt::float)/(tcnt::float) as afrac, 
     cnt,
     tcnt,
+    rnk,
     acq_date_use 
     from (
             -- record majority class
