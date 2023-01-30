@@ -15,7 +15,9 @@ import datetime
 ## finn preproc codes
 sys.path = sys.path + ['../code_anaconda']
 import af_import
-import run_step1 as runner_step1
+import run_step1a as runner_step1a
+import run_step1b as runner_step1b
+import run_vcf as runner_vcf
 import run_step2 as runner_step2
 import export_shp
 import run_extra
@@ -141,8 +143,17 @@ def sec6_process_activefire(first_day=None, last_day=None, run_step1=True, run_s
             raise RuntimeError(f'No first/last_day are not included in AF files, fst/lstday=[{first_day},{last_day}],af[{min(dates0)},{max(dates0)}]')
 
     if run_step1:
-        print(f'\n{this_script_name}: Starting step1 ...\n')
-        runner_step1.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
+        print(f'\n{this_script_name}: Starting step1a ...\n')
+        runner_step1a.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
+                first_day=first_day, last_day=last_day,
+                date_definition=date_definition)
+        print(f'\n{this_script_name}: Starting step1vcf ...\n')
+        runner_vcf.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
+                first_day=first_day, last_day=last_day,
+                )
+
+        print(f'\n{this_script_name}: Starting step1b ...\n')
+        runner_step1b.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
                 first_day=first_day, last_day=last_day,
                 date_definition=date_definition)
     else:
