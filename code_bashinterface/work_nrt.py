@@ -148,8 +148,7 @@ def sec6_process_activefire(first_day=None, last_day=None, run_step1=True, run_s
                 first_day=first_day, last_day=last_day,
                 date_definition=date_definition)
         print(f'\n{this_script_name}: Starting step1vcf ...\n')
-        runner_vcf.main(tag_af, filter_persistent_sources = filter_persistent_sources, 
-                first_day=first_day, last_day=last_day,
+        runner_vcf.main(tag_af, rasters,
                 )
 
         print(f'\n{this_script_name}: Starting step1b ...\n')
