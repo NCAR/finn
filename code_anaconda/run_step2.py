@@ -216,6 +216,7 @@ create table "{schema}"."{tblname}" (
     cen_lat double precision,
     acq_date_use date,
     area_sqkm double precision,
+    alg_agg integer, 
     {valdef}
     );""".format(
             schema=schema,
@@ -245,11 +246,12 @@ def mkcmd_create_table_oned():
             cleanids integer[],
             geom geometry,
             acq_date_use date,
-            area_sqkm double precision
+            area_sqkm double precision,
+            alg_agg integer
             );
 
-    insert into work_div_oned (polyid, fireid, cleanids, geom, acq_date_use, area_sqkm)
-    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm
+    insert into work_div_oned (polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg)
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg
     from work_div where acq_date_use = :oned::date;
     do language plpgsql $$
             declare
@@ -505,11 +507,11 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
       BEGIN 
         i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname}),(select oned from tmp_oned) ); 
 
-    insert into {tblname} (polyid, fireid, cleanids, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
-    select d.polyid, d.fireid, d.cleanids, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
+    insert into {tblname} (polyid, fireid, cleanids, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, alg_agg, {flddsts})
+    select d.polyid, d.fireid, d.cleanids, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, d.alg_agg, 
     {fldsrcs}
     from (
-    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg, st_centroid(geom) centroid from work_div_oned) d
     {joins}
     ;
         i := log_checkout(i, (select count(*) from {tblname}) );

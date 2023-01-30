@@ -624,10 +624,10 @@ end $$;
 -- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
 
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use, l.alg_agg
 	from tmp_vorpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid) --; -- and st_intersects(v.geom, l.geom_lrg);
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 
 do language plpgsql $$ begin
@@ -663,10 +663,10 @@ end $$;
 -- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
 -- from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid;
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use, l.alg_agg
 	from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid)
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom,  acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom,  acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 do language plpgsql $$ begin
 raise notice 'tool: step3.6b (split with cutter) done, %', clock_timestamp();
@@ -692,13 +692,13 @@ end $$;
 -- where v.npnts = 1;
 -- --where v.npnts <= 3;
 with foo as ( 
-	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use 
+	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use, l.alg_agg 
 	from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid 
 	where v.npnts = 1 
 	--where v.npnts <= 3
 )
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 
 
@@ -753,8 +753,8 @@ end $$;
 ---------------------
 
 -- push
-insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm)
-select fireid, cleanids, geom, acq_date_use, area_sqkm from work_div_oned;
+insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg from work_div_oned;
 
 
 do language plpgsql $$ begin

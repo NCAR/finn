@@ -13,7 +13,7 @@ def main(odir, schema, tblname, flds, shpname=None, csvonly=False, date_definiti
     
     # get the attribute table
     cmd = ['psql', '-c'] + [
-            "\COPY (SELECT polyid,fireid,cen_lon,cen_lat,acq_date_use as {acq_date_used},area_sqkm,{flds} FROM \"{schema}\".\"{tblname}\") TO '{csvname}' DELIMITER ',' CSV HEADER".format(
+            "\COPY (SELECT polyid,fireid,cen_lon,cen_lat,acq_date_use as {acq_date_used},area_sqkm,alg_agg,{flds} FROM \"{schema}\".\"{tblname}\") TO '{csvname}' DELIMITER ',' CSV HEADER".format(
                 flds=','.join(flds),
                 schema=schema,
                 tblname=tblname,

@@ -141,7 +141,8 @@ create table work_div (
 	cleanids integer[],
 	geom geometry,
 	acq_date_use date,
-	area_sqkm double precision
+	area_sqkm double precision,
+	alg_agg integer
 	);
 
 -- drop table if exists tbl_flddefs;
