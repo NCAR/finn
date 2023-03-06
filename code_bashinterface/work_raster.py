@@ -68,8 +68,9 @@ def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None
 
     # earthdata's URL for landcover and VCF
     is_leap = (year_rst % 4 == 0)
-    url_lct = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/%d.01.01/' % year_rst
-    url_vcf = 'https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/%d.03.%02d/' % (year_rst, 5 if is_leap else 6)
+    #url_lct = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/%d.01.01/' % year_rst
+    url_lct = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.061/%d.01.01/' % year_rst
+    url_vcf = 'https://e4ftl01.cr.usgs.gov/MOLT/MOD44B.061/%d.03.%02d/' % (year_rst, 5 if is_leap else 6)
 
     ddir_lct = raster_download_rootdir +'/'+ ''.join(urlparse(url_lct)[1:3])
     ddir_vcf = raster_download_rootdir +'/'+ ''.join(urlparse(url_vcf)[1:3])
@@ -118,7 +119,7 @@ def sec5_import_raster(year_rst, raster_tasks):
         print('RegNum preprocessing occurs in %s' % workdir_regnum)
 
     if need_to_import_lct: 
-        search_string = "%(ddir_lct)s/MCD12Q1.A%(year_rst)s001.h??v??.006.*.hdf" % dict(
+        search_string = "%(ddir_lct)s/MCD12Q1.A%(year_rst)s001.h??v??.061.*.hdf" % dict(
                 ddir_lct = ddir_lct, year_rst=year_rst) 
         fnames_lct = sorted(glob.glob(search_string)) 
         print('found %d hdf files' % len(fnames_lct) ) 
@@ -129,7 +130,7 @@ def sec5_import_raster(year_rst, raster_tasks):
 
     if need_to_import_vcf: 
         # grab hdf file names 
-        search_string = "%(ddir_vcf)s/MOD44B.A%(year)s065.h??v??.006.*.hdf" % dict( 
+        search_string = "%(ddir_vcf)s/MOD44B.A%(year)s065.h??v??.061.*.hdf" % dict( 
                 ddir_vcf = ddir_vcf, year=year_rst) 
         fnames_vcf = sorted(glob.glob(search_string)) 
         print('found %d hdf files' % len(fnames_vcf) ) 
