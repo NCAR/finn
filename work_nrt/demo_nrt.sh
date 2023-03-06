@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# date to process
+date=2023-03-01
+
+# date to prcess in julian format
+yj=$(date -d $date +'%Y%j')
+
+# year, and a year ago
+yr=$( date -d $date +'%Y')
+#yrm1=$(( $yr - 1 ))
+yrm2=$(( $yr - 2 ))
+
+yjm1=$(date -d "$date -1 day" +'%Y%j')
+
+
 # specify if docker will be used to run model
 #  'use_native' = no docker, everything installed on the host system
 #  'use_docker' = use postgis in docker.  some aux tool (gdal, psql, python etc) need to be installed to the system
@@ -12,7 +26,7 @@ export FINN_DRIVER=use_native
 export FINN_DATE_DEFINITION=UTC
 
 # identifier of the af dataset
-tag=modvrs_nrt_2020299
+tag=modvrs_nrt_${yj}
 
 # downloaded FIRMS AF data
 data_dir=/home/finn/input_data/fire
@@ -32,25 +46,35 @@ if [ x$FINN_DRIVER == xfrom_inside_docker ]; then
   cd $here
 fi
 
-### # grab annual global raster (can be commented out if you know that it's already imported into the database)
-### python3 $exc_dir/work_raster.py -y 2019
-### 
-### 
-### if [ $? -ne 0 ]; then
-### 	echo problem in work_raster.py
-### 	exit 1
-### fi
+
+# grab daily fire (two days)
+token=INSERT_YOUR_TOKEN_HERE_FOR_FIRMS_NRT_DATA
+# grab AF data
+wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yjm1}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
+wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yj}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
+wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yjm1}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
+wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yj}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
+
+# grab annual global raster (can be commented out if you know that it's already imported into the database)
+python3 $exc_dir/work_raster.py -y ${yrm2}
+
+
+if [ $? -ne 0 ]; then
+	echo problem in work_raster.py
+	exit 1
+fi
+
 
 
 # process af
-python3 $exc_dir/work_nrt.py -t $tag -y 2019 \
+python3 $exc_dir/work_nrt.py -t $tag -y $yrm2 \
 	-o $out_dir \
-       	-fd 2020299 -ld 2020299 \
+       	-fd $yj -ld $yj \
         -s $summary_file \
-	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020298.txt \
-	$data_dir/MODIS_C6_Global_MCD14DL_NRT_2020299.txt \
-	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020298.txt \
-	$data_dir/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_2020299.txt
+	$data_dir/FIRMS/modis-c6.1/MODIS_C6_Global_MCD14DL_NRT_${yjm1}.txt \
+	$data_dir/FIRMS/modis-c6.1/MODIS_C6_Global_MCD14DL_NRT_${yj}.txt \
+	$data_dir/FIRMS/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yjm1}.txt \
+	$data_dir/FIRMS/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yj}.txt
 
 if [ $? -ne 0 ]; then
 	echo problem in work_nrt.py
