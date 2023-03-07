@@ -1,7 +1,7 @@
 import datetime
 from subprocess import Popen
 
-from run_step1 import get_first_last_day
+from run_step1a import get_first_last_day
 
 ver = 'v8b'
 
@@ -46,9 +46,9 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
             cmd_prep += mkcmd_create_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
             cmd_work += mkcmd_insert_table_thematic(rstinfo['tag'], rstinfo['variable'], schema)
             tag_tbls += [rstinfo['tag']]
-            fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable']]
-            fldtypes += ['integer', 'double precision']
-            dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_')])
+            fldnames += ['v_'+rstinfo['variable'], 'f_'+rstinfo['variable'], 'r_'+rstinfo['variable']]
+            fldtypes += ['integer', 'double precision', 'integer']
+            dctfldtbl.update([(_ + rstinfo['variable'] , tag_tbls[-1]) for _ in ('v_','f_','r_')])
         elif rstinfo['kind'] == 'continuous':
             cmd_prep += mkcmd_create_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
             cmd_work += mkcmd_insert_table_continuous(rstinfo['tag'], rstinfo['variables'], schema)
@@ -162,6 +162,7 @@ def mkcmd_create_table_thematic(tag_tbl, tag_var, schema):
     frcname = 'f_{0}'.format( tag_var )
     cntname = 'cv_{0}'.format( tag_var )
     tctname = 'ct_{0}'.format( tag_var )
+    rnkname = 'r_{0}'.format( tag_var )
     cmd = """
 drop table if exists "{schema}"."{tblname}";
 create table "{schema}"."{tblname}" (
@@ -170,10 +171,11 @@ create table "{schema}"."{tblname}" (
     {frcname} double precision,
     {cntname} integer,
     {tctname} integer,
+    {rnkname} integer,
     acq_date_use date
     );
 -- clean the left over log if any
-select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, cntname=cntname, tctname=tctname, tag_tbl=tag_tbl)
+select log_purge('join {tag_tbl}');""".format(schema=schema, tblname=tblname, varname=varname, frcname=frcname, cntname=cntname, tctname=tctname, rnkname=rnkname, tag_tbl=tag_tbl)
     return cmd
 
 def mkcmd_create_table_continuous(tag_tbl, tag_vars, schema):
@@ -214,6 +216,7 @@ create table "{schema}"."{tblname}" (
     cen_lat double precision,
     acq_date_use date,
     area_sqkm double precision,
+    alg_agg integer, 
     {valdef}
     );""".format(
             schema=schema,
@@ -243,11 +246,12 @@ def mkcmd_create_table_oned():
             cleanids integer[],
             geom geometry,
             acq_date_use date,
-            area_sqkm double precision
+            area_sqkm double precision,
+            alg_agg integer
             );
 
-    insert into work_div_oned (polyid, fireid, cleanids, geom, acq_date_use, area_sqkm)
-    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm
+    insert into work_div_oned (polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg)
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg
     from work_div where acq_date_use = :oned::date;
     do language plpgsql $$
             declare
@@ -294,13 +298,14 @@ def mkcmd_insert_table_thematic(tag_tbl, tag_var, schema):
             work_div_oned as d
             on st_intersects(r.rast, d.geom)
     )
-    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, cv_{tag_var}, ct_{tag_var}, acq_date_use)
+    insert into tbl_{tag_tbl} (polyid, v_{tag_var}, f_{tag_var}, cv_{tag_var}, ct_{tag_var}, r_{tag_var}, acq_date_use)
     select 
     polyid, 
     val, 
     (cnt::float)/(tcnt::float) as afrac, 
     cnt,
     tcnt,
+    rnk,
     acq_date_use 
     from (
             -- record majority class
@@ -502,11 +507,11 @@ def mkcmd_insert_table_output(tag_tbls, fldnames, dctfldtbl, schema):
       BEGIN 
         i := log_checkin('merge all', '{tblname}', (select count(*) from {tblname}),(select oned from tmp_oned) ); 
 
-    insert into {tblname} (polyid, fireid, cleanids, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, {flddsts})
-    select d.polyid, d.fireid, d.cleanids, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, 
+    insert into {tblname} (polyid, fireid, cleanids, geom, cen_lon, cen_lat, acq_date_use, area_sqkm, alg_agg, {flddsts})
+    select d.polyid, d.fireid, d.cleanids, d.geom, st_x(d.centroid) cen_lon, st_y(d.centroid) cen_lat, d.acq_date_use, d.area_sqkm, d.alg_agg, 
     {fldsrcs}
     from (
-    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, st_centroid(geom) centroid from work_div_oned) d
+    select polyid, fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg, st_centroid(geom) centroid from work_div_oned) d
     {joins}
     ;
         i := log_checkout(i, (select count(*) from {tblname}) );

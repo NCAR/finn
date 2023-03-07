@@ -22,7 +22,7 @@ drop table if exists work_pnt_oned;
 drop table if exists work_lrg_oned;
 drop table if exists work_div_oned;
 create temporary table work_pnt_oned (like work_pnt excluding constraints);
-create temporary table work_lrg_oned (like work_lrg excluding constraints);
+create temporary table work_lrg_oned (like work_lrg2 excluding constraints);
 create temporary table work_div_oned (like work_div excluding constraints);
 --alter table work_div_oned drop column polyid;
 -- convenient to have a temporaly serial id for work_div
@@ -33,8 +33,8 @@ ALTER TABLE work_div_oned ALTER COLUMN polyid SET NOT NULL;
 -- select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confidence, cleanid work_pnt from work_pnt   where acq_date_use = :oned::date limit 1;
 
 insert into work_pnt_oned 
-(rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid)
-select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid 
+(rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid, alg_agg, fireid1, ndetect1)
+select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid , alg_agg, fireid1, ndetect1
 from work_pnt where acq_date_use = :oned::text::date;
 
 do language plpgsql $$
@@ -56,8 +56,8 @@ add column fire_size double precision,
 add column fire_dx double precision, 
 add column fire_dy double precision,
 add column pix_dx double precision, 
-add column pix_dy double precision,
-add column geom_pix geometry
+add column pix_dy double precision --,
+-- add column geom_pix geometry
 ;
 
 
@@ -78,8 +78,8 @@ update work_pnt_oned
 set 
 fire_dx = .5 * fire_size  * 360. / consts.great_circle / cos( lat / 180. * pi()),
 fire_dy = .5 * fire_size * 360. / consts.great_circle ,
-pix_dx = pixfac * .5 * work_pnt_oned.scan * 360. / consts.great_circle / cos( lat / 180. * pi()),
-pix_dy = pixfac * .5 * work_pnt_oned.track * 360. / consts.great_circle 
+pix_dx = .5 * fire_size  * 360. / consts.great_circle / cos( lat / 180. * pi()),
+pix_dy = .5 * fire_size * 360. / consts.great_circle 
 from consts;
 
 -- generate fire polygons (small and pixel)
@@ -205,8 +205,8 @@ end $$;
 
 -- copy the group id to work_pnt
 update work_pnt_oned p set
-fireid = g.fireid,
-ndetect = g.ndetect
+fireid2 = g.fireid,
+ndetect2 = g.ndetect
 from tbl_togrp g
 where p.cleanid = g.lhs;
 
@@ -216,10 +216,10 @@ raise notice 'tool: step2.2c (upd tbl_pnt lhs) done, %', clock_timestamp();
 end $$;
 
 update work_pnt_oned p set
-fireid = g.fireid,
-ndetect = g.ndetect
+fireid2 = g.fireid,
+ndetect2 = g.ndetect
 from tbl_togrp g
-where p.fireid is null and
+where p.fireid2 is null and
 p.cleanid = g.rhs;
 
 
@@ -232,10 +232,10 @@ end $$;
 -- records which are not inluded in tbl_adj_det are lone detection
 -- cleanid becomes fireid in such case, and ndetect is 1
 update work_pnt_oned set
-fireid = cleanid,
-ndetect = 1
+fireid2 = cleanid,
+ndetect2 = 1
 where acq_date_use = :oned::date 
-and fireid is null;
+and fireid2 is null;
 
 
 do language plpgsql $$ begin
@@ -244,8 +244,8 @@ end $$;
 
 -- copy over attributes to work_pnt
 update work_pnt t set
-fireid = p.fireid,
-ndetect = p.ndetect,
+fireid2 = p.fireid2,
+ndetect2 = p.ndetect2,
 geom_sml = p.geom_sml
 from work_pnt_oned p
 where t.cleanid = p.cleanid;
@@ -272,8 +272,8 @@ end $$;
 
 -- insert lone detections
 insert into work_lrg_oned(fireid, geom_lrg)
-select fireid, geom_sml from work_pnt_oned
-where ndetect = 1;
+select fireid2, geom_sml from work_pnt_oned
+where ndetect2 = 1;
 
 do language plpgsql $$ begin
 raise notice 'tool: step2.3c (insert solo) done, %', clock_timestamp();
@@ -335,22 +335,86 @@ end $$;
 -- get necessary attributes for fire polygons
 update work_lrg_oned set
 acq_date_use = p.acq_date_use,
-ndetect = p.ndetect
+ndetect = p.ndetect2
 from work_pnt_oned as p
-where work_lrg_oned.fireid = p.fireid;
+where work_lrg_oned.fireid = p.fireid2;
 
 update work_lrg_oned set
 area_sqkm = st_area(geom_lrg, true) / 1000000.;
 
 -- export
-insert into work_lrg
-select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm
+insert into work_lrg2
+select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, null::integer
 from work_lrg_oned;
 
 do language plpgsql $$ begin
 raise notice 'tool: step2 done, %', clock_timestamp();
 end $$;
 
+-- combine
+delete from work_lrg_oned l
+using work_pnt_oned p
+where l.fireid = p.fireid2 and p.alg_agg = 1;
+
+update work_lrg_oned l set
+alg_agg = p.alg_agg
+from work_pnt_oned p
+where l.fireid = p.fireid2 and p.alg_agg = 2;
+;
+
+
+insert into work_lrg_oned
+select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, alg_agg
+from work_lrg1 where acq_date_use = :oned::text::date and alg_agg = 1;
+
+insert into work_lrg
+select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, alg_agg
+from work_lrg_oned;
+
+update work_pnt_oned set
+fireid = fireid1, 
+ndetect = ndetect1
+where alg_agg = 1;
+
+update work_pnt_oned set
+fireid = fireid2, 
+ndetect = ndetect2
+where alg_agg = 2;
+
+update work_pnt set
+fireid = fireid1, 
+ndetect = ndetect1
+where alg_agg = 1
+and acq_date_use = :oned::text::date;
+
+update work_pnt set
+fireid = fireid2, 
+ndetect = ndetect2
+where alg_agg = 2
+and acq_date_use = :oned::text::date;
+
+-- -- debugging
+-- insert into dbg_pnt_oned
+-- select rawid, fireid, ndetect, polyid, geom_pnt, lon, lat, scan, track, acq_date_utc, 
+-- 	acq_time_utc,
+-- 	acq_date_lst,
+-- 	acq_datetime_lst,
+-- 	acq_date_use,
+-- 	instrument,
+-- 	confident,
+-- 	anomtype,
+-- 	frp,
+-- 	alg_agg,
+-- 	fireid1,
+-- 	fireid2,
+-- 	ndetect1,
+-- 	ndetect2,
+-- 	geom_sml
+-- from work_pnt_oned;
+-- 
+-- insert into dbg_lrg_oned
+-- select * 
+-- from work_lrg_oned;
 
 
 --------------------------------------------------------
@@ -560,10 +624,10 @@ end $$;
 -- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
 
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use, l.alg_agg
 	from tmp_vorpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid) --; -- and st_intersects(v.geom, l.geom_lrg);
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 
 do language plpgsql $$ begin
@@ -599,10 +663,10 @@ end $$;
 -- select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
 -- from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid;
 with foo as ( 
-	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use
+	select l.fireid, st_intersection(l.geom_lrg, v.geom) as geom,  l.acq_date_use, l.alg_agg
 	from tmp_cutpoly as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid)
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom,  acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom,  acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 do language plpgsql $$ begin
 raise notice 'tool: step3.6b (split with cutter) done, %', clock_timestamp();
@@ -628,13 +692,13 @@ end $$;
 -- where v.npnts = 1;
 -- --where v.npnts <= 3;
 with foo as ( 
-	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use 
+	select l.fireid, st_setsrid(l.geom_lrg, 4326) as geom, l.acq_date_use, l.alg_agg 
 	from tmp_vorpnts as v inner join work_lrg_oned as l on l.acq_date_use = v.acq_date_use and l.fireid = v.fireid 
 	where v.npnts = 1 
 	--where v.npnts <= 3
 )
-insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm)
-select fireid, geom, acq_date_use, st_area(geom, true) / 1000000. from foo;
+insert into work_div_oned (fireid, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, geom, acq_date_use, st_area(geom, true) / 1000000., alg_agg from foo;
 
 
 
@@ -689,8 +753,8 @@ end $$;
 ---------------------
 
 -- push
-insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm)
-select fireid, cleanids, geom, acq_date_use, area_sqkm from work_div_oned;
+insert into work_div(fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg)
+select fireid, cleanids, geom, acq_date_use, area_sqkm, alg_agg from work_div_oned;
 
 
 do language plpgsql $$ begin
