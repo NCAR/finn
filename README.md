@@ -2,7 +2,7 @@
 
 As of 2023-03-07, master branch is reorganizing for v2.5 release.
 
-Latest stable version is v2.4
+Latest stable version is [v2.4](https://github.com/NCAR/finn-preprocessor/releases/tag/finn2.4-preproc1.3)
 
 FINN Preprocessor and Emission Estimator
 
