@@ -49,6 +49,7 @@ fi
 
 # grab daily fire (two days)
 token=INSERT_YOUR_TOKEN_HERE_FOR_FIRMS_NRT_DATA
+token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJBUFMgT0F1dGgyIEF1dGhlbnRpY2F0b3IiLCJpYXQiOjE2NzgwNzIyMDAsIm5iZiI6MTY3ODA3MjIwMCwiZXhwIjoxNjkzNjI0MjAwLCJ1aWQiOiJ5b3N1a2UiLCJlbWFpbF9hZGRyZXNzIjoieW9zdWtlQGF1c3Rpbi51dGV4YXMuZWR1IiwidG9rZW5DcmVhdG9yIjoieW9zdWtlIn0.IeZbGJvPP8BZlAcC-sMABWyDoX6WufJYS1_k3QT0J_Q
 # grab AF data
 wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yjm1}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
 wget -e robots=off -m -np -R .html,.tmp -nH --cut-dirs=4 "https://nrt3.modaps.eosdis.nasa.gov/api/v2/content/archives/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yj}.txt" --header "Authorization: Bearer ${token}" -P $data_dir
@@ -71,8 +72,8 @@ python3 $exc_dir/work_nrt.py -t $tag -y $yrm2 \
 	-o $out_dir \
        	-fd $yj -ld $yj \
         -s $summary_file \
-	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_Global_MCD14DL_NRT_${yjm1}.txt \
-	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_Global_MCD14DL_NRT_${yj}.txt \
+	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yjm1}.txt \
+	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yj}.txt \
 	$data_dir/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yjm1}.txt \
 	$data_dir/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yj}.txt
 
