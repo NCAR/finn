@@ -14276,6 +14276,7 @@ a.anchor-link {
 <li><code>af_fnames</code>: a list of file paths to active fire shape files (e.g., downloaded from <a href="https://firms.modaps.eosdis.nasa.gov/">FIRMS</a>) </li>
 <li><code>year_rst</code>: MODIS raster data year to be used for the analysis.  It is recommended to use the data from a year prior to the Active Fire data, as the impact of large fire may affects the VCF product of the year, resulting in smaller estimate of fuel loadings.</li>
 <li><code>filter_persistent_source</code>: ActiveFire product has inferred hot spot "type" field (0 = presumed vegetation fire, 1 = active volcano, 2 = other static land source, 3 = offshore) ref: Table 9 of <a href="https://cdn.earthdata.nasa.gov/conduit/upload/10575/MODIS_C6_Fire_User_Guide_B.pdf">Giglio et al. "MODIS Collection 6 Active Fire Product User’s Guide Revision B" 2018</a>.  By making this option True, "1 active volcano" and "2 other static land source" are dropped.  Recommended to keep this True</li>
+<li><code>export_frp</code>: experimental implementation to export arithtmetic average frp value of all accepted observations within each divided polygon.  Default is False, not to calculate this.</li>
 <li><code>download_global_raster</code>:  By making this option to True, code downloads all HDF raster LCT/VCF file for specified year.  By making this false, it identify necessary HDF files enough to cover the extent of AF input.  For regional/continental application with fixed area of interest, this would make sense.  For global application, or multiple continent application, or your area of interest changes a lot across runs, it may make sense to make this True to grab everything, because finding which HDF file is needed does take some time.  Default value is False.</li>
 </ol>
 <p>It is recommended to use descriptive name which identified data source (modis vs viirs), spatial extent and time period.  e.g. <code>modvrs_global_2018</code> for Modis/VIIRS combined detection for global scale modeling for year 2018, or <code>mod_tx_2012sum</code> for modis detection for Texas for Summer 2012 (definition of "summer" is implicit here).</p>
@@ -14344,6 +14345,8 @@ a.anchor-link {
 
 <span class="n">filter_persistent_sources</span> <span class="o">=</span> <span class="kc">True</span>
 
+<span class="n">export_frp</span> <span class="o">=</span> <span class="kc">False</span>
+
 <span class="n">download_global_raster</span> <span class="o">=</span> <span class="kc">False</span>
 </pre></div>
 
@@ -14390,6 +14393,17 @@ a.anchor-link {
             <span class="s1">&#39;variable&#39;</span><span class="p">:</span> <span class="s1">&#39;regnum&#39;</span><span class="p">,</span>
         <span class="p">},</span>
 <span class="p">]</span>
+
+<span class="k">if</span> <span class="n">export_frp</span><span class="p">:</span>
+    <span class="n">tag_frp</span> <span class="o">=</span> <span class="s1">&#39;frp&#39;</span>
+    <span class="n">rasters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;tag&#39;</span><span class="p">:</span> <span class="n">tag_frp</span><span class="p">,</span>
+            <span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;input&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;variable_in&#39;</span><span class="p">:</span> <span class="s1">&#39;frp&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;variable&#39;</span><span class="p">:</span> <span class="s1">&#39;frp&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14410,7 +14424,7 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># save *.shp of the output, so that you can hold onto polygons</span>
-<span class="n">save_shp_of_output</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">save_shp_of_output</span> <span class="o">=</span> <span class="kc">False</span>
 
 <span class="c1"># save *.html version of this notebook upon exit, so that you can keep records</span>
 <span class="n">save_html_of_notebook</span> <span class="o">=</span> <span class="kc">True</span>
@@ -14436,11 +14450,16 @@ a.anchor-link {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># deletes entire schema in the database for the AF data processed in this notebook</span>
 <span class="n">wipe_intermediate_vector_in_db</span> <span class="o">=</span> <span class="kc">False</span>
 
+<span class="c1"># like above, but not deleting entire schema, but delete only giant intermediate table in schema, </span>
+<span class="c1"># so that you can still QA the data in db,if needed </span>
+<span class="c1"># (make wipe_intermediate_vector_in_db to be False to use this feature)</span>
+<span class="n">clean_intermediate_vector_in_db</span> <span class="o">=</span> <span class="kc">True</span>
+
 <span class="c1"># deletes hdf files downloaded from EARTHDATA for particular year used in this notebook</span>
-<span class="n">wipe_downloaded_hdf</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">wipe_downloaded_hdf</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># deletes intermediate geotiff files (found in proc_rst_XXX directory) for particular year used in this notebook</span>
-<span class="n">wipe_intermediate_geotiff</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="n">wipe_intermediate_geotiff</span> <span class="o">=</span> <span class="kc">True</span>
 
 <span class="c1"># deletes table of raster data imported into database (praticular year used in this notebook)</span>
 <span class="n">wipe_intermediate_rst_in_db</span> <span class="o">=</span> <span class="kc">False</span>
@@ -14499,8 +14518,8 @@ EARTHDATAPW=J0N0Puedo
 EARTHDATAUSER=yosuke
 GIT_PAGER=cat
 HOME=/root
-HOSTNAME=21c7ba0a482e
-JPY_PARENT_PID=265
+HOSTNAME=ca5bc1698005
+JPY_PARENT_PID=267
 LANG=en_US.UTF-8
 LANGUAGE=en_US:en
 LC_ALL=en_US.UTF-8
@@ -14675,7 +14694,9 @@ CREATE FUNCTION
 <span class="kn">import</span> <span class="nn">af_import</span>
 <span class="kn">import</span> <span class="nn">rst_import</span>
 <span class="kn">import</span> <span class="nn">polygon_import</span>
-<span class="kn">import</span> <span class="nn">run_step1</span>
+<span class="kn">import</span> <span class="nn">run_step1a</span>
+<span class="kn">import</span> <span class="nn">run_step1b</span>
+<span class="kn">import</span> <span class="nn">run_vcf</span>
 <span class="kn">import</span> <span class="nn">run_step2</span>
 <span class="kn">import</span> <span class="nn">export_shp</span>
 <span class="kn">import</span> <span class="nn">plotter</span>
@@ -14796,25 +14817,28 @@ CREATE FUNCTION
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">af_fname</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;exists.&quot;</span><span class="p">)</span>
         <span class="c1"># if .zip file, need to expand.</span>
-        <span class="k">if</span> <span class="n">af_fname</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;.shp&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">af_fname</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;.shp&#39;</span><span class="p">,</span> <span class="s1">&#39;.csv&#39;</span><span class="p">):</span>
             <span class="c1"># you are good</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;OK&#39;</span><span class="p">)</span>
         
         <span class="k">elif</span> <span class="n">af_fname</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s1">&#39;.zip&#39;</span><span class="p">:</span>
             <span class="c1"># still need to unzip</span>
             <span class="n">zname</span> <span class="o">=</span> <span class="n">af_fname</span>
-            <span class="n">m</span> <span class="o">=</span> <span class="n">re_zip</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">af_fname</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
-                <span class="n">arcname</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">sname</span> <span class="o">=</span> <span class="s1">&#39;fire_archive_</span><span class="si">%s</span><span class="s1">.shp&#39;</span> <span class="o">%</span> <span class="n">arcname</span>
+            <span class="c1"># asssume that this ls DL_FIRE*.zip file from FIRMS</span>
+            <span class="c1"># look for shape file name</span>
+            <span class="kn">import</span> <span class="nn">zipfile</span>
+            <span class="n">myshp</span> <span class="o">=</span> <span class="p">[</span><span class="n">_</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">zname</span><span class="p">)</span><span class="o">.</span><span class="n">namelist</span><span class="p">()</span> <span class="k">if</span> <span class="n">_</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.shp&#39;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">myshp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">sname</span> <span class="o">=</span> <span class="n">myshp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="n">re_shp</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">sname</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">m</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># i cannot predict name of shp file...</span>
-                <span class="kn">import</span> <span class="nn">zipfile</span>
-                <span class="c1"># find what shp file included...?</span>
                 <span class="k">raise</span> <span class="n">RuntileError</span><span class="p">(</span><span class="s1">&#39;specify .shp file in af_names list!&#39;</span><span class="p">)</span>
                 <span class="n">arcname</span><span class="p">,</span><span class="n">sname</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+                    
+            
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;specify .shp file in af_names list!&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;specify .shp or .csv file in af_names list!&#39;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;doesn&#39;t exist.&quot;</span><span class="p">)</span>
         
@@ -15172,7 +15196,12 @@ Region definiton shapefile will be imported
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>first day in AF file: 2017-07-14
+<pre>SELECT &#39;&#34;af_testOTS_092018&#34;.af_in_1&#39;::regclass;
+select distinct acq_date from &#34;af_testOTS_092018&#34;.af_in_1;
+SELECT &#39;&#34;af_testOTS_092018&#34;.af_in_2&#39;::regclass;
+select distinct acq_date from &#34;af_testOTS_092018&#34;.af_in_2;
+SELECT &#39;&#34;af_testOTS_092018&#34;.af_in_3&#39;::regclass;
+first day in AF file: 2017-07-14
 last day in AF file: 2017-07-21
 </pre>
 </div>
@@ -15586,10 +15615,10 @@ RegNum preprocessing occurs in ../proc_rst_regnum
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>bname: MCD12Q1.A2017001
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v04.006.2019196133656.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v05.006.2019196133708.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v04.006.2019196133753.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf&#34;:MCD12 ...
-cmd: gdal_merge.py  -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v05.006.2019196133757.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf&#34;:MCD12 ...
+cmd: gdal_merge.py -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v04.006.2019196133656.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v04.006.2019196133656.hdf&#34;:MCD12Q ...
+cmd: gdal_merge.py -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h08v05.006.2019196133708.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h08v05.006.2019196133708.hdf&#34;:MCD12Q ...
+cmd: gdal_merge.py -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v04.006.2019196133753.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v04.006.2019196133753.hdf&#34;:MCD12Q ...
+cmd: gdal_merge.py -o ../proc_rst_modlct_2017/mrg/MCD12Q1.A2017001.h09v05.006.2019196133757.tif -co COMPRESS=LZW -co TILED=YES HDF4_EOS:EOS_GRID:&#34;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/MCD12Q1.A2017001.h09v05.006.2019196133757.hdf&#34;:MCD12Q ...
 fc: 4
 cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -160 40 -150 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
 cmd: gdalwarp -t_srs &#34;+proj=longlat +datum=WGS84 +no_defs&#34; -tr 0.00166666666666666666666666666667 0.00166666666666666666666666666667 -te -150 40 -140 50 -overwrite -r mode -dstnodata 255 -wo INIT_DEST=NO_DATA -wo NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co TILED ...
@@ -15979,14 +16008,20 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h3 id="Running-&quot;step-1&quot;-grouping-points">Running "step 1" grouping points<a class="anchor-link" href="#Running-&quot;step-1&quot;-grouping-points">&#182;</a></h3>
 </div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Create "extended polygons" by joining when scan/pixel extent touches</p>
+
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[31]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step1</span><span class="p">)</span>
-<span class="n">run_step1</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">filter_persistent_sources</span> <span class="o">=</span> <span class="n">filter_persistent_sources</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step1a</span><span class="p">)</span>
+<span class="n">run_step1a</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">filter_persistent_sources</span> <span class="o">=</span> <span class="n">filter_persistent_sources</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -16006,19 +16041,131 @@ OrderedDict([(&#39;No Data Value&#39;, 255.0), (&#39;Min&#39;, None), (&#39;Max&
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>starting prep: 2020-11-07 04:17:33.349758
-[&#39;psql&#39;, &#39;-f&#39;, &#39;../code_anaconda/step1_prep_v7m.sql&#39;, &#39;-v&#39;, &#39;tag=testOTS_092018&#39;, &#39;-v&#39;, &#39;filter_persistent_sources=True&#39;]
+<pre>starting prep: 2023-03-08 01:13:23.491868
+[&#39;psql&#39;, &#39;-f&#39;, &#39;../code_anaconda/step1_prep_v7m.sql&#39;, &#39;-v&#39;, &#39;tag=testOTS_092018&#39;, &#39;-v&#39;, &#39;filter_persistent_sources=True&#39;, &#39;-v&#39;, &#39;date_range=[,]&#39;, &#39;-v&#39;, &#39;date_definition=LST&#39;]
 (datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
 0
-starting work 2017-07-13: 2020-11-07 04:17:35.012719
-starting work 2017-07-14: 2020-11-07 04:17:35.986232
-starting work 2017-07-15: 2020-11-07 04:17:37.649634
-starting work 2017-07-16: 2020-11-07 04:17:39.992901
-starting work 2017-07-17: 2020-11-07 04:17:41.770966
-starting work 2017-07-18: 2020-11-07 04:17:43.017240
-starting work 2017-07-19: 2020-11-07 04:17:44.076065
-starting work 2017-07-20: 2020-11-07 04:17:45.062784
-starting work 2017-07-21: 2020-11-07 04:17:46.241897
+starting work 2017-07-13: 2023-03-08 01:13:24.913434
+starting work 2017-07-14: 2023-03-08 01:13:25.475529
+starting work 2017-07-15: 2023-03-08 01:13:26.427925
+starting work 2017-07-16: 2023-03-08 01:13:27.499639
+starting work 2017-07-17: 2023-03-08 01:13:28.388641
+starting work 2017-07-18: 2023-03-08 01:13:29.065843
+starting work 2017-07-19: 2023-03-08 01:13:29.650411
+starting work 2017-07-20: 2023-03-08 01:13:30.276350
+starting work 2017-07-21: 2023-03-08 01:13:30.920980
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Determine tree fraction in the polygons deterimined by step1a</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[32]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_vcf</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">rasters</span><span class="p">)</span>
+<span class="n">run_vcf</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">rasters</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>[{&#39;tag&#39;: &#39;modlct_2017&#39;, &#39;kind&#39;: &#39;thematic&#39;, &#39;variable&#39;: &#39;lct&#39;}, {&#39;tag&#39;: &#39;modvcf_2017&#39;, &#39;kind&#39;: &#39;continuous&#39;, &#39;variables&#39;: [&#39;tree&#39;, &#39;herb&#39;, &#39;bare&#39;]}, {&#39;tag&#39;: &#39;regnum&#39;, &#39;kind&#39;: &#39;polygons&#39;, &#39;variable_in&#39;: &#39;region_num&#39;, &#39;variable&#39;: &#39;regnum&#39;}]
+calling modtree_2017 modvcf_2017 [&#39;tree&#39;] af_testOTS_092018 {&#39;tag&#39;: &#39;modvcf_2017&#39;, &#39;kind&#39;: &#39;continuous&#39;, &#39;variables&#39;: [&#39;tree&#39;, &#39;herb&#39;, &#39;bare&#39;]}
+starting prep: 2023-03-08 01:13:31.596837
+(datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
+0
+starting work 2017-07-13: 2023-03-08 01:13:31.878347
+starting work 2017-07-14: 2023-03-08 01:13:32.063387
+starting work 2017-07-15: 2023-03-08 01:13:32.305686
+starting work 2017-07-16: 2023-03-08 01:13:32.724403
+starting work 2017-07-17: 2023-03-08 01:13:33.474147
+starting work 2017-07-18: 2023-03-08 01:13:34.016481
+starting work 2017-07-19: 2023-03-08 01:13:34.432977
+starting work 2017-07-20: 2023-03-08 01:13:34.813873
+starting work 2017-07-21: 2023-03-08 01:13:35.325744
+starting post: 2023-03-08 01:13:35.715277
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Create "conservative polygons" for detection with smaller tree covers</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[33]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step1b</span><span class="p">)</span>
+<span class="n">run_step1b</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">filter_persistent_sources</span> <span class="o">=</span> <span class="n">filter_persistent_sources</span><span class="p">)</span><span class="c1">#, </span>
+<span class="c1">#                first_day=datetime.date(2018,8,10), last_day=datetime.date(2018,8,10))</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>starting prep: 2023-03-08 01:13:35.987186
+[&#39;psql&#39;, &#39;-f&#39;, &#39;../code_anaconda/step1b_prep_v7m.sql&#39;, &#39;-v&#39;, &#39;tag=testOTS_092018&#39;, &#39;-v&#39;, &#39;filter_persistent_sources=True&#39;, &#39;-v&#39;, &#39;date_range=[,]&#39;, &#39;-v&#39;, &#39;date_definition=LST&#39;]
+(datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
+0
+starting work 2017-07-13: 2023-03-08 01:13:36.782631
+starting work 2017-07-14: 2023-03-08 01:13:38.744554
+starting work 2017-07-15: 2023-03-08 01:13:40.914050
+starting work 2017-07-16: 2023-03-08 01:13:43.306966
+starting work 2017-07-17: 2023-03-08 01:13:44.797855
+starting work 2017-07-18: 2023-03-08 01:13:45.813946
+starting work 2017-07-19: 2023-03-08 01:13:46.625967
+starting work 2017-07-20: 2023-03-08 01:13:47.411729
+starting work 2017-07-21: 2023-03-08 01:13:48.258184
 </pre>
 </div>
 </div>
@@ -16035,7 +16182,7 @@ starting work 2017-07-21: 2020-11-07 04:17:46.241897
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[32]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[34]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_step2</span><span class="p">)</span>
@@ -16059,18 +16206,18 @@ starting work 2017-07-21: 2020-11-07 04:17:46.241897
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>starting prep: 2020-11-07 04:17:47.649403
+<pre>starting prep: 2023-03-08 01:13:49.160426
 (datetime.date(2017, 7, 13), datetime.date(2017, 7, 21))
 0
-starting work 2017-07-13: 2020-11-07 04:17:47.753932
-starting work 2017-07-14: 2020-11-07 04:17:48.124082
-starting work 2017-07-15: 2020-11-07 04:17:48.931429
-starting work 2017-07-16: 2020-11-07 04:17:50.375710
-starting work 2017-07-17: 2020-11-07 04:17:51.702022
-starting work 2017-07-18: 2020-11-07 04:17:52.474445
-starting work 2017-07-19: 2020-11-07 04:17:52.942204
-starting work 2017-07-20: 2020-11-07 04:17:53.278370
-starting work 2017-07-21: 2020-11-07 04:17:53.759953
+starting work 2017-07-13: 2023-03-08 01:13:49.538707
+starting work 2017-07-14: 2023-03-08 01:13:49.823256
+starting work 2017-07-15: 2023-03-08 01:13:50.434314
+starting work 2017-07-16: 2023-03-08 01:13:51.487201
+starting work 2017-07-17: 2023-03-08 01:13:52.724153
+starting work 2017-07-18: 2023-03-08 01:13:53.318824
+starting work 2017-07-19: 2023-03-08 01:13:53.719426
+starting work 2017-07-20: 2023-03-08 01:13:54.028370
+starting work 2017-07-21: 2023-03-08 01:13:54.420780
 </pre>
 </div>
 </div>
@@ -16093,42 +16240,66 @@ starting work 2017-07-21: 2020-11-07 04:17:53.759953
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[33]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">outdir</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
-<span class="n">shpname</span> <span class="o">=</span> <span class="s1">&#39;out_</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1}</span><span class="s1">_</span><span class="si">{2}</span><span class="s1">_</span><span class="si">{3}</span><span class="s1">.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">tag_lct</span><span class="p">,</span> <span class="n">tag_vcf</span><span class="p">,</span> <span class="n">tag_regnum</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[34]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">schema</span> <span class="o">=</span> <span class="s1">&#39;af_&#39;</span> <span class="o">+</span> <span class="n">tag_af</span>
-<span class="n">tblname</span> <span class="o">=</span> <span class="s1">&#39;out_</span><span class="si">{0}</span><span class="s1">_</span><span class="si">{1}</span><span class="s1">_</span><span class="si">{2}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_lct</span><span class="p">,</span> <span class="n">tag_vcf</span><span class="p">,</span> <span class="n">tag_regnum</span><span class="p">)</span>
-<span class="n">flds</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;v_lct&#39;</span><span class="p">,</span> <span class="s1">&#39;f_lct&#39;</span><span class="p">,</span> <span class="s1">&#39;v_tree&#39;</span><span class="p">,</span> <span class="s1">&#39;v_herb&#39;</span><span class="p">,</span> <span class="s1">&#39;v_bare&#39;</span><span class="p">,</span> <span class="s1">&#39;v_regnum&#39;</span><span class="p">)</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[35]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">tag_rasters</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">rst</span><span class="p">[</span><span class="s1">&#39;tag&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">rst</span> <span class="ow">in</span> <span class="n">rasters</span><span class="p">])</span>
+
+<span class="n">outdir</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span>
+<span class="n">shpname</span> <span class="o">=</span> <span class="s1">&#39;out_</span><span class="si">{tag_af}</span><span class="s1">_</span><span class="si">{tag_rasters}</span><span class="s1">.shp&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_af</span><span class="o">=</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">tag_rasters</span><span class="o">=</span><span class="n">tag_rasters</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Name of schema/table/fields in the database, all defined in <code>rasters</code> variables near the top of this notebook</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[36]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">schema</span> <span class="o">=</span> <span class="s1">&#39;af_&#39;</span> <span class="o">+</span> <span class="n">tag_af</span>
+<span class="n">tblname</span> <span class="o">=</span> <span class="s1">&#39;out_</span><span class="si">{tag_rasters}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tag_rasters</span><span class="o">=</span><span class="n">tag_rasters</span><span class="p">)</span>
+
+<span class="n">fields_to_export</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">rst</span> <span class="ow">in</span> <span class="n">rasters</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">rst</span><span class="p">[</span><span class="s1">&#39;kind&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;thematic&#39;</span><span class="p">:</span>
+        <span class="n">fields_to_export</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">prefix</span><span class="o">+</span><span class="s1">&#39;_&#39;</span><span class="o">+</span><span class="n">rst</span><span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">prefix</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;v&#39;</span><span class="p">,</span> <span class="s1">&#39;f&#39;</span><span class="p">)])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;variables&#39;</span> <span class="ow">in</span> <span class="n">rst</span><span class="p">:</span>
+            <span class="n">fields_to_export</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s1">&#39;v_&#39;</span><span class="o">+</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rst</span><span class="p">[</span><span class="s1">&#39;variables&#39;</span><span class="p">]])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fields_to_export</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;v_&#39;</span><span class="o">+</span><span class="n">rst</span><span class="p">[</span><span class="s1">&#39;variable&#39;</span><span class="p">])</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Export</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[37]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">export_shp</span><span class="p">)</span>
-<span class="n">export_shp</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">tblname</span><span class="p">,</span> <span class="n">flds</span><span class="p">,</span> <span class="n">shpname</span><span class="p">)</span>
+<span class="n">export_shp</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">tblname</span><span class="p">,</span> <span class="n">fields_to_export</span><span class="p">,</span> <span class="n">shpname</span><span class="p">,</span> 
+                <span class="n">csvonly</span><span class="o">=</span><span class="p">(</span><span class="ow">not</span> <span class="n">save_shp_of_output</span><span class="p">))</span>
 </pre></div>
 
      </div>
@@ -16149,7 +16320,6 @@ starting work 2017-07-21: 2020-11-07 04:17:53.759953
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>exporting: ./out_testOTS_092018_modlct_2017_modvcf_2017_regnum.csv ... Done
-exporting: ./out_testOTS_092018_modlct_2017_modvcf_2017_regnum.shp ... Done
 </pre>
 </div>
 </div>
@@ -16167,7 +16337,7 @@ exporting: ./out_testOTS_092018_modlct_2017_modvcf_2017_regnum.shp ... Done
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[36]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[38]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">reload</span><span class="p">(</span><span class="n">run_extra</span><span class="p">)</span>
@@ -16198,19 +16368,20 @@ SET
  &#34;af_testOTS_092018&#34;, public
 (1 row)
 
- log_id |     log_event      | log_nrec_change | log_nrec_before | log_nrec_after |      log_time_finish       
---------+--------------------+-----------------+-----------------+----------------+----------------------------
-      1 | import af_in_1     |             498 |               0 |            498 | 2020-11-07 04:17:34.896958
-      2 | import af_in_2     |            2037 |             498 |           2535 | 2020-11-07 04:17:34.932745
-      3 | drop low confience |            -159 |            2535 |           2376 | 2020-11-07 04:17:34.939385
-      4 | dup tropics        |               0 |            2376 |           2376 | 2020-11-07 04:17:34.946161
-     21 | agg to large       |           -2141 |            2376 |            235 | 2020-11-07 04:17:47.581489
-     22 | subdiv             |             581 |             235 |            816 | 2020-11-07 04:17:47.581997
-     47 | join modlct_2017   |             942 |               0 |            942 | 2020-11-07 04:17:54.038525
-     48 | join modvcf_2017   |             816 |               0 |            816 | 2020-11-07 04:17:54.230442
-     49 | join regnum        |             816 |               0 |            816 | 2020-11-07 04:17:54.473808
-(9 rows)
-
+ log_id |     log_event      | nrec_change | nrec_before | nrec_after |        time_finish         |  time_elapsed   
+--------+--------------------+-------------+-------------+------------+----------------------------+-----------------
+      1 | import af_in_1     |         498 |           0 |        498 | 2023-03-08 01:13:24.622657 | 00:00:00.033008
+      2 | import af_in_2     |        2037 |         498 |       2535 | 2023-03-08 01:13:24.732835 | 00:00:00.109934
+      3 | dup tropics        |           0 |        2535 |       2535 | 2023-03-08 01:13:24.746373 | 00:00:00.00294
+      4 | drop low confience |        -159 |        2535 |       2376 | 2023-03-08 01:13:24.754877 | 00:00:00.002103
+     39 | agg to large       |       -1631 |        2376 |        745 | 2023-03-08 01:13:49.138726 | 00:00:00.010171
+     40 | subdiv             |         310 |         745 |       1055 | 2023-03-08 01:13:49.139621 | 00:00:00.004414
+     21 | join modtree_2017  |        -820 |        1055 |        235 | 2023-03-08 01:13:35.63912  | 00:00:01.388966
+     89 | join modlct_2017   |         128 |        1055 |       1183 | 2023-03-08 01:13:54.593806 | 00:00:01.306873
+     91 | join modvcf_2017   |           0 |        1055 |       1055 | 2023-03-08 01:13:54.802442 | 00:00:02.078344
+     93 | join regnum        |           0 |        1055 |       1055 | 2023-03-08 01:13:55.00842  | 00:00:00.975946
+     94 | merge all          |         128 |        1055 |       1183 | 2023-03-08 01:13:55.014342 | 00:00:00.119102
+(11 rows)
 
 </pre>
 </div>
@@ -16245,7 +16416,7 @@ SET
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[37]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[39]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">qry_af</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT table_schema || &#39;.&#39; || table_name AS table_full_name,</span>
@@ -16295,29 +16466,33 @@ SET
 
                    table_full_name                    |    size    
 ------------------------------------------------------+------------
- af_testOTS_092018.work_pnt                           | 1136 kB
+ af_testOTS_092018.work_pnt                           | 4888 kB
  af_testOTS_092018.af_in_2                            | 440 kB
- af_testOTS_092018.out_modlct_2017_modvcf_2017_regnum | 296 kB
- af_testOTS_092018.out_modlct_2017_modvcf_2017        | 288 kB
- af_testOTS_092018.out_modlct_2017                    | 264 kB
- af_testOTS_092018.work_div                           | 248 kB
+ af_testOTS_092018.out_modlct_2017_modvcf_2017_regnum | 400 kB
+ af_testOTS_092018.out_modlct_2017_modvcf_2017        | 392 kB
+ af_testOTS_092018.out_modlct_2017                    | 360 kB
+ af_testOTS_092018.work_div                           | 336 kB
+ af_testOTS_092018.work_lrg                           | 240 kB
+ af_testOTS_092018.work_lrg2                          | 232 kB
+ af_testOTS_092018.work_lrg1                          | 200 kB
  af_testOTS_092018.af_in_1                            | 144 kB
- af_testOTS_092018.work_lrg                           | 120 kB
- af_testOTS_092018.tbl_modvcf_2017                    | 80 kB
- af_testOTS_092018.tbl_modlct_2017                    | 72 kB
- af_testOTS_092018.tbl_regnum                         | 56 kB
+ af_testOTS_092018.work_tree                          | 104 kB
+ af_testOTS_092018.tbl_modvcf_2017                    | 96 kB
+ af_testOTS_092018.tbl_modlct_2017                    | 96 kB
+ af_testOTS_092018.tbl_regnum                         | 64 kB
+ af_testOTS_092018.tbl_log                            | 48 kB
+ af_testOTS_092018.tbl_modtree_2017                   | 40 kB
  af_testOTS_092018.tbl_options                        | 16 kB
  af_testOTS_092018.af_ins                             | 16 kB
- af_testOTS_092018.tbl_log                            | 16 kB
  af_testOTS_092018.tbl_flddefs                        | 8192 bytes
-(15 rows)
+(19 rows)
 
 
 Total
 
    table_schema    |  size   
 -------------------+---------
- af_testOTS_092018 | 3200 kB
+ af_testOTS_092018 | 8120 kB
 (1 row)
 
 
@@ -16335,25 +16510,59 @@ Total
 <p>If all processing above is successful and you would like to reclaim the diskspace, you can change value of <code>wipe_intermediate_vector_in_db</code> defined in the first section of this noetbook to <code>True</code>.</p>
 
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[38]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[40]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># cleans intermediate vector</span>
 <span class="k">if</span> <span class="n">wipe_intermediate_vector_in_db</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># wipe out completely</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">tag_af</span><span class="p">)</span>
     <span class="n">sch_af</span> <span class="o">=</span> <span class="s1">&#39;af_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">tag_af</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">sch_af</span><span class="p">)</span>
     <span class="n">qry</span> <span class="o">=</span> <span class="s1">&#39;DROP SCHEMA &quot;</span><span class="si">%s</span><span class="s1">&quot; CASCADE;&#39;</span> <span class="o">%</span> <span class="n">sch_af</span>
     <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;psql&#39;</span><span class="p">,</span>  <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PGDATABASE&quot;</span><span class="p">],</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="n">qry</span><span class="p">]</span>
     <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">elif</span> <span class="n">clean_intermediate_vector_in_db</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># be slective and leave work_pnt (imported/cleaned points) and out_* (results being exported)</span>
+    <span class="n">reload</span><span class="p">(</span><span class="n">run_extra</span><span class="p">)</span>
+    <span class="n">run_extra</span><span class="o">.</span><span class="n">clean_db_af</span><span class="p">(</span><span class="n">tag_af</span><span class="p">,</span> <span class="n">rasters</span><span class="p">)</span>
 </pre></div>
 
      </div>
 </div>
 </div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>drop table &#34;af_testOTS_092018&#34;.af_in_2;
+drop table &#34;af_testOTS_092018&#34;.af_in_1;
+drop table &#34;af_testOTS_092018&#34;.out_modlct_2017;
+drop table &#34;af_testOTS_092018&#34;.out_modlct_2017_modvcf_2017;
+drop table if exists &#34;af_testOTS_092018&#34;.tbl_modlct_2017;
+drop table if exists &#34;af_testOTS_092018&#34;.tbl_modvcf_2017;
+drop table if exists &#34;af_testOTS_092018&#34;.tbl_regnum;
+drop table &#34;af_testOTS_092018&#34;.work_lrg;
+drop table &#34;af_testOTS_092018&#34;.work_div;
+</pre>
+</div>
+</div>
+
+</div>
+
 </div>
 
 </div>
@@ -16370,7 +16579,7 @@ Total
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[39]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[41]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;du&#39;</span><span class="p">,</span> <span class="s1">&#39;-csh&#39;</span><span class="p">,</span> <span class="n">ddir_lct</span><span class="p">,</span> <span class="n">ddir_vcf</span><span class="p">]</span>
@@ -16413,7 +16622,7 @@ Total
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[40]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[42]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;du&#39;</span><span class="p">,</span> <span class="s1">&#39;-csh&#39;</span><span class="p">,</span> <span class="n">workdir_lct</span><span class="p">,</span> <span class="n">workdir_vcf</span><span class="p">]</span>
@@ -16441,8 +16650,8 @@ Total
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>Disk use by intermediate raster processing files
 11M	../proc_rst_modlct_2017
-318M	../proc_rst_modvcf_2017
-328M	total
+315M	../proc_rst_modvcf_2017
+325M	total
 
 </pre>
 </div>
@@ -16455,7 +16664,7 @@ Total
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[41]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[43]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">qry_rst</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT table_schema || &#39;.&#39; || table_name AS table_full_name,</span>
@@ -16531,10 +16740,10 @@ Total for modlct_2017 and modvcf_2017
 
 </div>
 
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[42]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[44]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># cleans intermediate raster</span>
@@ -16565,6 +16774,28 @@ Total for modlct_2017 and modvcf_2017
      </div>
 </div>
 </div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>[&#39;rm&#39;, &#39;-fr&#39;, &#39;../downloads/e4ftl01.cr.usgs.gov/MOTA/MCD12Q1.006/2017.01.01/&#39;, &#39;../downloads/e4ftl01.cr.usgs.gov/MOLT/MOD44B.006/2017.03.06/&#39;]
+[&#39;rm&#39;, &#39;-fr&#39;, &#39;../proc_rst_modlct_2017&#39;, &#39;../proc_rst_modvcf_2017&#39;]
+</pre>
+</div>
+</div>
+
+</div>
+
 </div>
 
 </div>
