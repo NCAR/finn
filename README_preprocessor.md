@@ -34,7 +34,7 @@ The user must have an EarthData login (this is necessary for downloading the req
 https://urs.earthdata.nasa.gov/  
 The account is used in order to download land cover raster dataset from EarthData.
 
-#### 1.2 Download this software to your computer
+#### 1.2 Download required software to your computer
 
 The following software must be downloaded and installed on your computer:  
 
@@ -78,11 +78,11 @@ Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Co
 To get this repository locally, use `git clone`:
 
 ```bash
-git clone https://github.com/NCAR/finn-preprocessor.git
-cd finn-preprocessor
+git clone https://github.com/NCAR/finn.git
+cd finn/preprocessor
 ```
 
-Alternatively `Download ZIP` button is available at https://github.com/NCAR/finn-preprocessor (or direct link https://github.com/NCAR/finn-preprocessor/archive/master.zip )
+Alternatively `Download ZIP` button is available at https://github.com/NCAR/finn (or direct link https://github.com/NCAR/finn/archive/master.zip )
 
 Next, copy your fire detection shapefile(s) into the directory ../finn-preprocessor/data/.
 These files need to be UNZIPPED. 
