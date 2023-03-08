@@ -84,7 +84,7 @@ cd finn/preprocessor
 
 Alternatively `Download ZIP` button is available at https://github.com/NCAR/finn (or direct link https://github.com/NCAR/finn/archive/master.zip )
 
-Next, copy your fire detection shapefile(s) into the directory ../finn-preprocessor/data/.
+Next, copy your fire detection shapefile(s) into the directory ../finn/preprocessor/data/.
 These files need to be UNZIPPED. 
 
 ### 4. Building the Docker image
@@ -321,7 +321,7 @@ Otherwise, there will be information below these headers about the container(s) 
 
 ### 8 Database Backup/Restore
 
-If for some reason you want to create a backoup copy of PostGIS database (the data used in finn-processors), here is how.  Keep in mind that final output are exported as CSV and SHP files.  Also, the content of database persists until you deliberately delete them (or unseeable system failure).  These are only needed for the capability of review work after the finn-preprocessor is removed, or you need to move the database as is from one machine to another.
+If for some reason you want to create a backoup copy of PostGIS database (the data used in finn-processors), here is how.  Keep in mind that final output are exported as CSV and SHP files.  Also, the content of database persists until you deliberately delete them (or unseeable system failure).  These are only needed for the capability of review work after the FINN and/or FINN preprocessor is removed, or you need to move the database as is from one machine to another.
 
 Databese backup can be done with `pg_dump` command.
 
@@ -349,7 +349,7 @@ Now new container `finn_testrestore` has it's own PostGIS database (stored in `p
 
 ### 9. Tidy up by removing intermediate or unneeded data
 
-The preprocessor accumurates intermediate data as files and also data in database.  This section describes how to reclaim diskspace used by finn-preprocessor.
+The preprocessor accumurates intermediate data as files and also data in database.  This section describes how to reclaim diskspace used by finn preprocessor.
 
 #### 9.1 Removing intermediates as soon as code runs
 
@@ -376,7 +376,7 @@ Or directly from your computer by one of following ways, depending on your OS.
 
 If you use linux, `du -sh $HOME/pg_data` .  This is where we decided to store database when you created container (`docker run`).  
 
-If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and finn preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
+If you use Windows and using `Docker Destkop for Windows`, easiest way to check diskuse from Windows is to find the size of `C:\Users\Public\Documents\Hyper-V\Virtual hard disks\MobyLinuxVM.vhdx`.  This is the virtual disk image (disk space) for Linux virtual machine.  Docker is started from this Linux virtual machine, and FINN preprocessor is running on top of docker.  When finn prorpocessor is set up but starting any analysis, the size of this file was about 10GB.  After running global, annual, MODIS/VIIRS combined case, the size grew to 76GB.   
 
 In order to wipe intermediate data in the database, you'd have to delete each schema in the database.  At this point, suggested approach for manually deleting those intermediate would be to use QGIS to access the postgis database (hostname = localhost, port = 5432, databse = finn, user = finn, password = finn), use DB manager (from manu, Databae => DB Manager...), connect to database (PostGIS, new connection, and specify access information), and identify af_XXX schema where you dont need to keep, and also tables in raster schema for imported raster you dont need.  Please refer to the [mini-QGIS guide](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor), although it does not cover the part removing data.  It should help how to access the tables in the database.
 
@@ -395,9 +395,9 @@ I try to write a notebook which allows this management/cleanup at some point, if
 
 The day-to-day task covered in this subsection 7 deals with docker container, represented by boxes starting with "Run" and ending with "Conteiner Rm".  Blue arrows indicates that container is running, and `docker exec` can be issued on the container.  "Stop"/"Start" cycle can be repeated as many times.  You will also note that `docker build` and `docker volume create` commands creates "image" and "volume" respectively.  These exists independently until you explicitly delete them.
 
-FINN preprocessor is designed to save data that you download/generate to be saved outside of Docker system for better persistence of data.  First, all of your downloaded files and intermediate data are stored in finn-preprocessor directory which you created near begining.  We are using docker's "bind-mount" method to access the directory both from inside and outside of docker.  
+FINN preprocessor is designed to save data that you download/generate to be saved outside of Docker system for better persistence of data.  First, all of your downloaded files and intermediate data are stored in finn/preprocessor directory which you created near begining.  We are using docker's "bind-mount" method to access the directory both from inside and outside of docker.  
 
-Another location where FINN store data is PostgreSQL (PostGIS) database.  For Linux/Mac users, this is $HOME/pg_data directory, and is "bind-mount"ed similarly to finn-preprocessor.  The data there can be reused (more later).  For Windows users, we created "named volume" pg_data by command `docker volume create pg_data`.  This will set a directory inside Linux virtual machine (Hyper-V), and docker container is going to access the space to store the database.  Life of docker named volume is independent of docker images and containers, and it persist unless you explicitly delete the volume.
+Another location where FINN store data is PostgreSQL (PostGIS) database.  For Linux/Mac users, this is $HOME/pg_data directory, and is "bind-mount"ed similarly to finn/preprocessor.  The data there can be reused (more later).  For Windows users, we created "named volume" pg_data by command `docker volume create pg_data`.  This will set a directory inside Linux virtual machine (Hyper-V), and docker container is going to access the space to store the database.  Life of docker named volume is independent of docker images and containers, and it persist unless you explicitly delete the volume.
 
 Following section has commands for deleting cocker components used in FINN.  With the exception of removing docker volumes, these have little effects on disk use, as FINN preprocer does not store data in containers/images.  
 
@@ -431,7 +431,7 @@ or
 docker image rm finn
 ```
 
-Again, this does not remove any files in finn-preprocessor directory, or the PostgreSQL database.  Image can be recreated with `docker build` command described in Section 4.
+Again, this does not remove any files in finn/preprocessor directory, or the PostgreSQL database.  Image can be recreated with `docker build` command described in Section 4.
 
 
 ##### Removing the volume 
@@ -458,7 +458,7 @@ docker container rm finn
 docker image rm finn
 ```
 
-In the Terminal, navigate to main directory `../finn-preprocessor`  
+In the Terminal, navigate to main directory `../finn/preprocessor`  
 Then type:
 
 ```
@@ -485,7 +485,7 @@ For docker desktop for Windows, System taks tray have the whale icon for Docker 
 
 From our experiences, docker may appear to stop functioning because changes in your system.  We observed that
 
-- If you started VPN, docker may lose access to local storage. As a result you cannot see the conent of finn-preprocessor directory from docker (e.g. Jupyter Notebook).  Stop the VPN and restart the container (`docker stop finn` and then `docker start finn`)
+- If you started VPN, docker may lose access to local storage. As a result you cannot see the conent of FINN preprocessor directory from docker (e.g. Jupyter Notebook).  Stop the VPN and restart the container (`docker stop finn` and then `docker start finn`)
 - If you changed password for your machine or domain, it may affects docker.  On `Docker Desktop for Windows`, you can go to the setting (right click the system tray icon for docker), go to  `Shared Drive` tab, and `Reset credentials`.  Then enable the shared drive again.
 - You have to be in a user group `docker` in order to use docker.  Make sure that you are in `docker` user.  [Instruction for Docker Desktop for Windows are found here](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#2-add-yourself-to-docker-users-group).  Linux instruction is ["Manage Docker as a non-root user" section in thie page](https://docs.docker.com/install/linux/linux-postinstall/#manage-docker-as-a-non-root-user).
 
