@@ -1,6 +1,6 @@
 # FINN
 
-FINN Preprocessor and Emission Estimator
+FINN (Fire INventory from NCAR) Preprocessor and Emission Estimator
 
 As of 2023-03-07, master branch is being reorganized for v2.5 release.
 
