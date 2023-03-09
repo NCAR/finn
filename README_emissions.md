@@ -1,0 +1,4 @@
+Emissions are calculated with the IDL program finn2_calc_emissions_v25.pro using the files produced with the FINNv2 Preprocessor, which contain area and landcover type for each fire. 
+To prepare the current FINNv2.5 files, the FINN preprocessor was run in 2 different configurations, with different procedures for combining adjacent fires into larger fire regions. The merge_fire_files_mod.pro and merge_fire_files_mv.pro programs combine these 2 fire datasets, choosing the individual (not combined) fires for grass and crop fires, but the combined, larger fire regions for all other land types. The 'mod' routine is for modis only fires, and 'mv' for modis+viirs fires.
+The finn2_calc_emissions_v25.pro routine reads the other CSV files in the v2.5_emissions_code directory for estimates of fuel load, emissions factors and VOC speciation factors.
+Please see Wiedinmyer et al. (2023) for more information: https://egusphere.copernicus.org/preprints/2023/egusphere-2023-124/
