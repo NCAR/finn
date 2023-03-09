@@ -1,11 +1,14 @@
 ;**************************************************************
 ; FINNv2 Emissions Calculation - Version 2.5
 ; Calculate emissions from pre-processed fire locations
-; 1 June 2021, Louisa Emmons: rewrite of global_fire_v2.pro
-;   reads finnv2.3 processed fires, annual files
-;   corrects vegetation assignments from previous versions (2.2,2.3)
-;   writes text output files in same format as before
-; 20 Sept: testing with/without large-polygon fires
+; 1) reads fuel loads for each vegetation type for each global region
+; 2) reads emission factors file for aerosols and a few gases for each vegetation type
+; 3) reads processed fires file (from FINN preprocessor)
+; 4) for each fire read matches LCT to generic vegetation, determines biomass burned,
+;    calculates emissions
+; 5) from total NMVOC calcuated in step 4 calculates emissions for specific VOCS
+;    for MOZART, SAPRC99 and GEOS-Chem chemical mechanisms
+; 6) writes output to text files
 ;**************************************************************
 
 pro x_finn2_calc_emissions_v2_5, file_in, simid, year_emis, date_lab, todaydate, path_out
