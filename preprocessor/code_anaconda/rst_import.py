@@ -25,9 +25,14 @@ import shlex
 import itertools
 from importlib import reload
 
-import gdal
-import ogr
-import osr
+try:
+    import gdal
+    import ogr
+    import osr
+except ImportError:
+    from osgeo import gdal
+    from osgeo import ogr
+    from osgeo import osr
 from shapely.geometry import Polygon
 import shapely
 import numpy as np
