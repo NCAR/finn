@@ -320,7 +320,7 @@ class Intersecter(object):
         lyr.SetNextByIndex(0)
         for i,feat in enumerate(lyr):
             geom = feat.GetGeometryRef()
-            geom = shapely.wkb.loads(geom.ExportToWkb())
+            geom = shapely.wkb.loads(bytes(geom.ExportToWkb()))
             lst.append(geom)
         geom0 = shapely.ops.cascaded_union(lst)
         lyr = geom = None
