@@ -10,17 +10,16 @@ Note - Paragraphs starting with an icon :information_source: can be skipped. The
 
 *Note* - the instructions here are for all supperted operating systems (Windows, Mac, and Linux). However, there are specific notes throughout for Windows users (Docker Desktop for Windows).  There are extra information specific to different operations system, version of Docker product (Desktop vs. Toolbox), and please refer to them as needed.
 
-* [Docker Desktop for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows), standard docker environment for recent version of Windows
-* [Docker Toolbox for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows), legacy implementation of docker for older version of Windows10 and older
+* [Docker Desktop for Windows](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows), standard docker environment for deskop Windows
 * [Docker CE for Linux](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-CE-for-Ubuntu), use of Ubuntu Linux is assumed.
 
 The user is expected to provide the MODIS and/or VIIRS fire detection shapefile for the time and spatial extent to be processed. The user can request these files from the NASA Fire Information for Resource Management System (FIRMS). Information about the VIIRS and MODIS products are at:  
-https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms
+https://www.earthdata.nasa.gov/learn/find-data/near-real-time/firms
 
 To request archived data, the user can go to the Archive Download:   https://firms.modaps.eosdis.nasa.gov/download/
 
 Users can also request the active fire data for up to 7 days ago at:  
-https://earthdata.nasa.gov/earth-observation-data/near-real-time/firms/active-fire-data
+https://www.earthdata.nasa.gov/learn/find-data/near-real-time/firms/active-fire-data
 
 Users can chose MODIS and/or VIIRS fire detections. When requesting data, the shapefile file format should be chosen. 
 
@@ -38,14 +37,10 @@ The account is used in order to download land cover raster dataset from EarthDat
 
 The following software must be downloaded and installed on your computer:  
 
-* Docker CE
-  * (Windows) https://docs.docker.com/docker-for-windows/install/
-  * (Linux) https://docs.docker.com/install/linux/docker-ce/ubuntu/
-  * (Mac) https://docs.docker.com/docker-for-mac/install/  
-
-  (Windows/Mac) Depending on version of Windows and Mac, you use either `Docker Desktop` (newer product) or `Docker Toolbox` (legacy product).  Project wiki page for `Docker Desktop for Windows` has [screen shots of installation steps](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#1-install-docker-ce). 
+* Docker Desktop
+  https://www.docker.com/
   
-  (Windows/Mac) NOTE on Oct 2020:  Earlier in 2020, [Docker Dashboard](https://docs.docker.com/desktop/dashboard/) is included in Windows and Mac version of Docker Desktop.  It appears slick, and it may simplify parts 5 and 7 of this README.  We will update instruction when we find time to experiment with this new feature.
+  Provide environment that runs PostGIS without much disturbance to your machine
 
 * QGIS  
   https://qgis.org
@@ -65,11 +60,7 @@ Linux/Mac user can use the OS's default terminal.
 
 Windows/Mac requires customization of Docker environment.  
 
-Specific instuction for `Docker Desktop` can be found in the wiki page at [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  
-
-Specific instruction for `Docker Toolbox` can be found in the wiki page at [2 Configure Oracle VM Virtual Machine](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Toolbox-for-Windows#2-configure-oracle-vm-virtual-machine) 
-
-** For Docker Toolbox, make sure you do this before going further (after you install Docker to your computer).**  Docker Desktop's configuration can be changed later as needed.
+Specific instuction for `Docker Desktop` can be found in the wiki page at [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  Note that the version of Desktop in the example is older so exact apperance may differ from the version you are using.
 
 ### 3. Acquiring this repository
 
@@ -82,9 +73,9 @@ git clone https://github.com/NCAR/finn.git
 cd finn/preprocessor
 ```
 
-Alternatively `Download ZIP` button is available at https://github.com/NCAR/finn (or direct link https://github.com/NCAR/finn/archive/master.zip )
+Alternatively `Download` button is available at [Zenodo](https://doi.org/10.5281/zenodo.7853959) 
 
-Next, copy your fire detection shapefile(s) into the directory ../finn/preprocessor/data/.
+Next, copy your fire detection shapefile(s) into the directory `finn/preprocessor/data/`.
 These files need to be UNZIPPED. 
 
 ### 4. Building the Docker image
