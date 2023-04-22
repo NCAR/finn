@@ -83,7 +83,7 @@ def clean_db_af(tag_af, rasters):
         conn.commit()
 
     # drop work_div and work_lrg as well?  work_div has equivalent output as out_XXX with extra columns.  work_lrg should be reproduced by aggregating divided polyton if needed
-    for tblname in ('work_lrg', 'work_div'):
+    for tblname in ('work_lrg1', 'work_lrg2', 'work_lrg', 'work_div'):
         cmd = f'''drop table "{schema}".{tblname};'''
         print(cmd)
         cur2.execute(cmd)
