@@ -1,5 +1,5 @@
 import datetime
-from subprocess import Popen
+from subprocess import Popen, PIPE, STDOUT
 
 from run_step1a import get_first_last_day
 
@@ -116,18 +116,21 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
                 range((dt1-dt0).days)]
         for dt in dates:
             print("starting work {0}: {1}".format( dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            p = Popen(
-                ['psql',] +
-                ['-f', scrname_work] +
-#                ['-v', ("tag=%s" % tag)] +
-                ['-v', "oned='{0}'".format( dt.strftime('%Y-%m-%d'))],
-                    stdout = open('out.step1.o{0}'.format( dt.strftime('%Y%m%d')),
-                        'w')
-                    ) 
-            p.communicate()
-            if p.returncode >0:
-                raise RuntimeError()
-
+            with open('out.step2.o{0}'.format( dt.strftime('%Y%m%d')), 'w') as ofile:
+                p = Popen(
+                    ['psql',] +
+                    ['-f', scrname_work] +
+#                    ['-v', ("tag=%s" % tag)] +
+                    ['-v', "oned='{0}'".format( dt.strftime('%Y-%m-%d'))],
+                        stdout=ofile, 
+                        stderr=STDOUT,
+                        ) 
+#                for line in p.stderr:
+#                    ofile.write(line.decode())
+                p.communicate()
+                if p.returncode >0:
+                    raise RuntimeError()
+    
 
 
     if True:

@@ -1,5 +1,5 @@
 import datetime
-from subprocess import Popen
+from subprocess import Popen, STDOUT
 
 from run_step1a import get_first_last_day
 
@@ -108,17 +108,19 @@ l.fireid = t.fireid;
                 range((dt1-dt0).days)]
         for dt in dates:
             print("starting work {0}: {1}".format( dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            p = Popen(
-                ['psql',] +
-                ['-f', scrname_work] +
-#                ['-v', ("tag=%s" % tag)] +
-                ['-v', "oned='{0}'".format( dt.strftime('%Y-%m-%d'))],
-                    stdout = open('out.step1.o{0}'.format( dt.strftime('%Y%m%d')),
-                        'w')
-                    ) 
-            p.communicate()
-            if p.returncode >0:
-                raise RuntimeError()
+            with open('out.stepvcf.o{0}'.format( dt.strftime('%Y%m%d') ), 'w') as ofile:
+
+                p = Popen(
+                    ['psql',] +
+                    ['-f', scrname_work] +
+#                    ['-v', ("tag=%s" % tag)] +
+                    ['-v', "oned='{0}'".format( dt.strftime('%Y-%m-%d'))],
+                        stdout = ofile,
+                        stderr = STDOUT,
+                        ) 
+                p.communicate()
+                if p.returncode >0:
+                    raise RuntimeError()
 
         print("starting post: {0}".format( datetime.datetime.now()))
         p = Popen(
