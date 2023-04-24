@@ -4,7 +4,10 @@ import six
 import numpy as np
 from pyproj import Proj
 from bs4 import BeautifulSoup
-import ogr
+try:
+    import ogr
+except ImportError:
+    from osgeo import ogr
 import requests
 from urllib.parse import urlparse
 import modis_tile

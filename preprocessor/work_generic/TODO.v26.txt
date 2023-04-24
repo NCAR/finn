@@ -1,0 +1,2 @@
+migrate to postgis 3.1
+implement count of days being burned

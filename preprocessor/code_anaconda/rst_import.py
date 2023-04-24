@@ -25,9 +25,14 @@ import shlex
 import itertools
 from importlib import reload
 
-import gdal
-import ogr
-import osr
+try:
+    import gdal
+    import ogr
+    import osr
+except ImportError:
+    from osgeo import gdal
+    from osgeo import ogr
+    from osgeo import osr
 from shapely.geometry import Polygon
 import shapely
 import numpy as np
@@ -315,7 +320,7 @@ class Intersecter(object):
         lyr.SetNextByIndex(0)
         for i,feat in enumerate(lyr):
             geom = feat.GetGeometryRef()
-            geom = shapely.wkb.loads(geom.ExportToWkb())
+            geom = shapely.wkb.loads(bytes(geom.ExportToWkb()))
             lst.append(geom)
         geom0 = shapely.ops.cascaded_union(lst)
         lyr = geom = None

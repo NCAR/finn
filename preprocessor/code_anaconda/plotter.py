@@ -1,7 +1,11 @@
 from collections import OrderedDict
 import numpy as np
-import gdal
-import osr
+try:
+    import gdal
+    import osr
+except ImportError:
+    from osgeo import gdal
+    from osgeo import osr
 import psycopg2
 import psycopg2.sql as sql
 

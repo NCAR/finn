@@ -4,8 +4,12 @@ import numbers
 import re
 
 import numpy as np
-import ogr
-import osr
+try:
+    import ogr
+    import osr
+except ImportError:
+    from osgeo import ogr
+    from osgeo import osr
 from shapely.geometry import Polygon
 
 fileloc = os.path.dirname(os.path.realpath(__file__))

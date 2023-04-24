@@ -209,7 +209,7 @@ def get_tiles_needed(schema, combined=False):
         #
         #   I go with METHOD 1 for now.
         #   make sure that rst_import.prep_modis_tile() got called somewhere, to have this wireframe (defining tiles)
-        qry = """select count(*), w.tilename from %s a, raster.wireframe w where st_covers(w.wkb_geometry, a.geom) group by w.tilename;""" % st
+        qry = """select count(*), w.tilename from %s a, raster.wireframe w where st_covers(ST_Transform(w.wkb_geometry, 4326), a.geom) group by w.tilename;""" % st
         #print('gtn: ', qry)
         cur.execute(qry)
         #print('gtn: fetchall')
