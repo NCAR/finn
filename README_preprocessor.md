@@ -35,34 +35,24 @@ The account is used in order to download land cover raster dataset from EarthDat
 
 #### 1.2 Download required software to your computer
 
-The following software must be downloaded and installed on your computer:  
+The following software needs to downloaded and installed on your computer:  
 
 * Docker Desktop
   https://www.docker.com/
   
-  Provide environment that runs PostGIS without much disturbance to your machine
+  (required) Provide environment that runs PostGIS without much disturbance to your machine
 
 * QGIS  
   https://qgis.org
 
-  A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.  Instruction to use QGIS to visualize burned area and raster stored in PostGIS database is available in [this wiki page](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor).
-
-* Git
-  * (Windows) https://git-scm.com/download/win
-  * (Linux/Mac) use system's package manager
+  (optional) A GIS software analogous to ArcMap.  Recommended to install this on your machine, since it allows you to directly see the PostGIS database to QA the processing.  Instruction to use QGIS to visualize burned area and raster stored in PostGIS database is available in [this wiki page](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor).
 
 *For those using Windows:*  
 `Powershell` is recommended as your command line terminal. To open the `PowerShell`, type `PowerShell` in the Windows search bar. This program will open a terminal in which you can use command lines to run the programs (see [screeen shots in wiki page](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#4-docker-build)).  
 
 Linux/Mac user can use the OS's default terminal.
 
-### 2. (Windows/Mac) Customize virtual machine
-
-Windows/Mac requires customization of Docker environment.  
-
-Specific instuction for `Docker Desktop` can be found in the wiki page at [3 Customize Docker Setting](https://github.com/yosukefk/finn_preproc/wiki/Specific-instructions-for-Docker-Desktop-for-Windows#3-customize-docker-settings) of the Project Wiki page for Docker-Desktop.  Note that the version of Desktop in the example is older so exact apperance may differ from the version you are using.
-
-### 3. Acquiring this repository
+### 2. Acquiring this repository
 
 *Note for Windows Users: Open a `PowerShell` terminal and navigate to the directory on your computer where you want to store and run command in sections 3, 4 and 5 of this README file.*  
 
@@ -78,7 +68,7 @@ Alternatively `Download` button is available at [Zenodo](https://doi.org/10.5281
 Next, copy your fire detection shapefile(s) into the directory `finn/preprocessor/data/`.
 These files need to be UNZIPPED. 
 
-### 4. Building the Docker image
+### 3. Building the Docker image
 
 The next step is to build the Docker image. To build the Docker image, execute the following command from the terminal, in the directory where `Dockerfile` exists (this project directory):
 
@@ -91,11 +81,11 @@ Look for an output line that says "Successfully built ..." and "Successfully tag
 To verify that the image is created, type `docker image ls`.  One record should list `finn` as a `REPOSITORY` (specified by `-t finn` option).
 
 
-### 5. Manage the Docker container
+### 4. Manage the Docker container
 
 The next step is to create your Docker container and then run the code within it. This is still done within the terminal (for Windows users, continue in `PowerShell`).  
 
-#### 5.1 Create and start
+#### 4.1 Create and start
 
 Create and start the container via `docker run`, mounting the current working directory to the location `/home/finn` in the container.
 
@@ -119,6 +109,7 @@ docker run --name finn -v $(pwd):/home/finn -v pg_data:/var/lib/postgresql -p 12
 ```
 
 (Windows Powershell for Docker Desktop, the latest Docker on Windows)
+uses volume mount for stability.  defines `docker-path` filter to use docker aware pathname
 ```powershell
 # Create named volume to store the database
 docker volume create pg_data
@@ -129,19 +120,6 @@ filter docker-path {'/' + $_ -replace '\\', '/' -replace ':', ''}
 # Create docker container and start
 docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
 ```
-
-(Windows Powershell for Docker Toolbox, the legacy Docker on Windows)
-```powershell
-# Create named volume to store the database
-docker volume create pg_data
-
-# Function to convert windows path to what docker likes
-filter docker-path { '/' + $_.tostring().substring(0,1).tolower() + $_.tostring().substring(1) -replace '\\', '/' -replace ':', ''}
-
-# Create docker container and start
-docker run --name finn -v ( (pwd | docker-path) + ':/home/finn') -v pg_data:/var/lib/postgresql -p 127.0.0.1:5432:5432 -p 8888:8888 -d -e EARTHDATAUSER=yourusername -e EARTHDATAPW=yourpassword finn
-```
-
 
 To verify that the container is running, type `docker ps`.
 You should see the container listed with a unique container id, the name "finn" and some other information.
@@ -170,10 +148,10 @@ Instead of `docker run` after restarting docker, You would try `docker start fin
   This sets the name for the container.  Happened to be the same as image's name, but you may choose other names (to have multiple containers out of one image).  You cannot use same name for two different containers, though, container name must be unique.
 * `-v $(pwd):/home/finn`  
   This makes $(pwd) (current working directory, where you downloaded FINN preprocessor by Git) to be accessible as `/home/finn` from inside the container being made ( [bind mounts](https://docs.docker.com/storage/bind-mounts/) ).  Therefore the change you make in FINN directory on your machine is reflected immediately in files in /home/finn in the container and vice versa, since they are identical file on the storage.  Our code/inputs/intermediate files/outputs is stored in FINN direoctory which becomes /home/finn when you look from the container.
-* (Linux/Mac) `-v ${HOME}/pg_data:/var/lib/postgresql`  
+* (Linux) `-v ${HOME}/pg_data:/var/lib/postgresql`  
   Does bind mounting again, mounting pg_data directory you created (this can be anywhere on your machine) to the container's `/var/lib/postgresql` directory.  The directory is used by PostgreSQL/PostGIS running in container to store the database.  With this setting, database itself becomes independent of the container.  Instead of ${HOME}/pg_data you can use any directory in your system.
-* (Windows) `-v pg_data:/var/lib/posrgresql`  
-  Unfortunately this setting does not work for Windows version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
+* (Mac/Windows) `-v pg_data:/var/lib/posrgresql`  
+  Linux approach above does not work for Windows version of Docker since the host machine's files system is not compatible of PostgreSQL in the container (Linux version).  Instead we recommend to create [named volumes](https://docs.docker.com/storage/volumes/) and store database there.  See project wiki page for [volume management](https://github.com/yosukefk/finn_preproc/wiki/Docker-volume-to-store-postgreSQL-database) for more detail.
 * `-p 127.0.0.1:5432:5432` and `-p 8888:8888`
   Maps container's port for PostgreSQL and Jupyter Notebook to those on the host machine.  You can, for example, `-p 25432:5432` if your machine uses 5432 for other purpose.  `127.0.0.1` part is to let only the machine with the address, i.e., the host machine running the docker container, to access the port.
 * `-d`
@@ -183,7 +161,7 @@ Instead of `docker run` after restarting docker, You would try `docker start fin
 * `finn` at the end refers to docker image `finn` created by `docker build` command earlier.
 
 
-#### 5.2 Start Jupyter Notebook from the container
+#### 4.2 Start Jupyter Notebook from the container
 
 Once the container is running, you can launch a jupyter notebook using `docker exec`:
 
@@ -215,7 +193,7 @@ Note that your token (the part after `token=...`) will be different.
 
 If running on a remote server (e.g., an Amazon EC2 instance) replace `localhost` with the server's IP address.
 
-### 6. Running the notebook
+### 5. Running the notebook
 
 From this point forward, leave the terminal open and move to the newly opened web browser. 
 
@@ -226,7 +204,7 @@ MODIS land cover and vegetation data. The user is able to run a test case or to
 run a specific time and location for which the user has already downloaded fire
 detections.
 
-#### 6.1 Run the test case
+#### 5.1 Run the test case
 
 It is *highly recommended* at this point to run 'main_generic.ipynb' as it is, to verify that your local copy is working as expected.  If run is successful, your output should look something similar to 'main_generic.html' which is hard copy version of ipynb with results.
 
@@ -238,7 +216,7 @@ Next to each cell is `In [ ]:`. When there is a `In [*]:`, the cell is cued up t
 
 At the end of the run, your FINN input file will be in the directory of the name that you chose in the first cell. For the test case it will be `"out_testOTS_092018_modlct_2017_modvcf_2017_regnum.csv"`.  The created file will be a comma-delimited file that can be used as input to the FINN emissions code.
 
-#### 6.2 Run your case
+#### 5.2 Run your case
 
 Once you run the test case successfully you are ready to run your case.
 
@@ -255,7 +233,7 @@ NOTE: If running a recent year, the year-specific MODIS LCT and VCF files may no
 
 NOTE:  [Minimum in struction to use QGIS](https://github.com/yosukefk/finn_preproc/wiki/Minimum-Instruction-for-using-QGIS-with-FINN-preprocessor) available to visualize burned area and raster dataset stored in PostGIS.
 
-### 7 What you'd do day-to-day
+### 6 What you'd do day-to-day
 
 You may want to shut down, leave the computer, come back next day to continue you rowrk.  Use the comamnd below.
 
@@ -310,7 +288,7 @@ Otherwise, there will be information below these headers about the container(s) 
 
 ![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
-### 8 Database Backup/Restore
+### 7 Database Backup/Restore
 
 If for some reason you want to create a backoup copy of PostGIS database (the data used in finn-processors), here is how.  Keep in mind that final output are exported as CSV and SHP files.  Also, the content of database persists until you deliberately delete them (or unseeable system failure).  These are only needed for the capability of review work after the FINN and/or FINN preprocessor is removed, or you need to move the database as is from one machine to another.
 
@@ -338,15 +316,15 @@ Restore the database from backup `finn.dmp` that was created earlier.
 
 Now new container `finn_testrestore` has it's own PostGIS database (stored in `pg_data2` on docker virtual machine).  You can, for example, export the output (last part of `main_XXX.ipynb` to export output without running them.
 
-### 9. Tidy up by removing intermediate or unneeded data
+### 8. Tidy up by removing intermediate or unneeded data
 
 The preprocessor accumurates intermediate data as files and also data in database.  This section describes how to reclaim diskspace used by finn preprocessor.
 
-#### 9.1 Removing intermediates as soon as code runs
+#### 8.1 Removing intermediates as soon as code runs
 
 This is what i tried by four options near the beginging of script, Section 1., 'wipe_intermediate_vector_in_db', 'wipe_downloaded_hdf', 'wipe_intermediate_geotiff' and 'wipe_intermediate_rst_in_db'.  Problem is that it is not straight forward if user want to use this capability some later day (after the notebook shutdown, and later restarted), because variables being used are set in the code embedded in the middle of code, and restoring them is not stratighforward.  At this point, you may have to do manual delete as described in Sections 9.2 and 9.3.  
 
-#### 9.2 Removing raw MODIS imagery and intermediate raster data
+#### 8.2 Removing raw MODIS imagery and intermediate raster data
 
 If you need to remove files to free up hard disk space after running the
 FINN preprocessor, you can do so by running the following commands in a
@@ -359,7 +337,7 @@ cell at the end of a Jupyter notebook:
 
 The first command removes the `downloads` directory which has copy of raw MODIS imagery (hdf files) on EarthLab.  Second command removes all directories that starts with `proc_rst`, where intermediate raster files are created.  ALternatively you can use your system's methods (e.g. `rm` in terminal, Windows Explorer to remove files) to remove the files/directories.
 
-#### 9.3 Removing intermediate fire detection/burned area processing data
+#### 8.3 Removing intermediate fire detection/burned area processing data
 
 The active fire shape file you downloaded from FIRMS website is imported into PostGIS database, and has several intermediate format in the database.  The disk use by the database is checked from Jupyter notebook by `!du -sh /var/lib/postgresql`.  With annual, global processing using combined MODIS/VIIRS detection, disk use was 48GB.  
 
@@ -376,7 +354,7 @@ Another possibility is [pgAdmin 4](https://www.pgadmin.org/download/) which allo
 I try to write a notebook which allows this management/cleanup at some point, if i have enough time.  Let me know if you need this feature desperately, i try harder to find time.
 
 
-#### 9.4 Remove/Recreate/Update docker components
+#### 8.4 Remove/Recreate/Update docker components
 
 ##### Overview of docker components
 
@@ -437,7 +415,7 @@ This will wipe the PostgreSQL datbase (PostGIS database) stored in Linux virtual
 
 :information_source: The content of pg_data is native format for the specific versoin of PostgreSQL.  If you copy the entire directory/files to somewhere and let postgreSQL to point to the directory, the database starts with the data.  This means that that if you have copy of entier pg_data in somewhere safe, you can start the database by restoring the content.  To be specific, you first wipe the pg_data as specified here (or `rm -fr ${HOME}/pg_data` for linux), and then create new docker volume/container to have fresh databse.  You stop the container, and overwrite the content of `pg_data` with copy of older versoin.  You start the docker container, then the database is populated with the old data.  This could be an alternative way to backup/restore the database, rather than the canonical method of creating database dump as explained in Secton 8.  This is easy for Liunx, as pg_data is a directory in host machine.  A log harder to actually do this, because you have to get into Hyper-V linux virtual machine to do the same (this tool lets you do this https://github.com/justincormack/nsenter1).  Moreover, you have to make sure that file ownership is set correctly after restoring data:  PostgreSQL for Linux is pecific about file ownership, and this was the reason why we have to use named volume (diskspace inside Linux virtual machine), instead of bind-mounte volume (directly accessing host computer's diskspace) for Windows application.  
 
-### 10 Update FINN
+### 9 Update FINN
 
 Note that updating FINN code won't affect your data on the database you have worked on, or input/output you have generated.  It only updates the code to create them.   The only exception that you may loose your work in main_generic.ipynb.  Update will wipe what you have done to the file.  If have customized the file, you save the file with different name before you update FINN.  Better yet, you save in different name if you customized the file (e.g., save as `work_global_2016/main_global_2016.ipynb` for global run for year 2016).
 
@@ -460,7 +438,7 @@ git pull
 You now recreate image (`docker build` as in Section 4) and container (`docer run` as in Section 5.1).  
 
 
-### 11. Disaster recovery
+### 10. Disaster recovery
 
 ##### Try this first, restart the container
 
