@@ -1,5 +1,4 @@
 # 2023-04-08 updated from postgis 2.5
-#FROM kartoza/postgis:11.0-2.5
 FROM kartoza/postgis:14-3.1
 
 ENV PATH /opt/conda/bin:$PATH
@@ -8,8 +7,6 @@ RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
     apt-get install -y wget bzip2 ca-certificates \
     libglib2.0-0 libxext6 libsm6 libxrender1 postgis git unzip
 
-# 2020-06-27 somehow plpython3 seems to work out of box
-#RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo postgresql-plpython3-11 
 RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo
 
 # 2023-04-08 TINI version fixed
@@ -34,27 +31,12 @@ RUN conda info && \
 RUN conda update conda
 
 # 2023-04-08 version of packages that works
-# even though i specified all the versions, conda still 
-# try to resolve package depandency, which uses lots of memory
-# i needed to increas docker's memory and/or swapspace to be larger (a few GB?)
-# otherwise, build fails with 'Killed' message (memory runs out)
-#RUN conda install -c conda-forge \
-#	gdal=2.4 \
-#  "libgfortran-ng=7.2" \
-#	python=3.7 \
-#	jupyterlab=2.2.9 \
-#	ncurses=6.2 \
-#	pyproj=1.9.6 \
-#	beautifulsoup4=4.9.3 \
-#	shapely=1.6.4 \
-#	psycopg2=2.8.4 \
-#	matplotlib=2.2.5 \
-#	basemap=1.2.1
+# 2023-04-23 minor version specifications relaxed
 RUN conda install -c conda-forge -y \
-	gdal=3.6.3 \
-	python=3.11.3 \
+	gdal=3.6 \
+	python=3.11 \
 	jupyterlab=3.6.3 \
-	pyproj=3.4.1 \
+	pyproj=3.4 \
 	beautifulsoup4=4.12.2 \
 	shapely=2.0.1 \
 	psycopg2=2.9.3 \
@@ -68,9 +50,6 @@ RUN /opt/conda/bin/python -c "from osgeo import gdal"
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
 # also i SOULD specify version of library so that results are reproducible...
-#RUN /usr/bin/pip3 install numpy scipy networkx
-#RUN /usr/bin/pip3 install numpy==1.18.0 scipy networkx==2.4 # versions in finn2.2-preproc1.2a
-#RUN /usr/bin/pip3 install numpy==1.19.4 scipy==1.5.4 networkx==2.5 # versions installed as of 2020-11-07
 RUN /usr/bin/pip3 install numpy scipy networkx # no specfic version, 2023-04-08
 
 EXPOSE 8888
