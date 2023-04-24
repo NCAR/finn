@@ -322,7 +322,8 @@ class Intersecter(object):
             geom = feat.GetGeometryRef()
             geom = shapely.wkb.loads(bytes(geom.ExportToWkb()))
             lst.append(geom)
-        geom0 = shapely.ops.cascaded_union(lst)
+        #geom0 = shapely.ops.cascaded_union(lst)
+        geom0 = shapely.ops.unary_union(lst)
         lyr = geom = None
         self.geom0 = geom0
 
