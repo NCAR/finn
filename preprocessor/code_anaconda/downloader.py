@@ -14,6 +14,7 @@ import modis_tile
 import psycopg2
 from importlib import reload
 from pathlib import Path
+import warnings
 
 
 import af_import
@@ -52,6 +53,8 @@ def download_one(url, droot=None, ddir=None):
         cmd.extend(['--force-directories', '-P', droot])
     cmd.extend(['--user', os.environ['EARTHDATAUSER']])
     cmd.extend(['--password', os.environ['EARTHDATAPW']])
+    #cmd.extend(['--no-verbose'])
+    cmd.extend(['--quiet'])
     cmd.append(url)
     subprocess.run(cmd, check=True)
 
@@ -114,6 +117,8 @@ def check_downloads(fname, get_cksum=None):
         def earthdata_cksum(fname):
             # assume that the data file comes with xml file
             xname = fname + '.xml'
+            warnings.filterwarnings("ignore", category=UserWarning, module='bs4',
+                    message='.*parsing an XML document using an HTML parser.*')
             soup = BeautifulSoup(open(xname, 'r'), 'html.parser')
             cksum, filsz = [soup.findAll(_)[0].contents[0] for _ in ('checksum', 'filesize')]
             return cksum, filsz
