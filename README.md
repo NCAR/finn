@@ -2,7 +2,7 @@
 
 Fire Inventory from NCAR (FINN), a fire emissions inventory that provides publicly available emissions of trace gases and aerosols.
 
-Latest stable version is v2.5.1, available from [Zenodo](https://zenodo.org/record/7854306#.ZEP56HbMKUk) or [GitHub](https://github.com/NCAR/finn/releases/tag/finn2.5.1)
+Latest stable version is v2.5.2, available from [Zenodo](https://doi.org/10.5281/zenodo.7854306) or [GitHub](https://github.com/NCAR/finn/releases/tag/finn2.5.2)
 
 The process for calculating emissions with FINN is to first run the preprocessor, which combines nearby fire detections into fire regions from MODIS and VIIRS observations, and writes a file containing the location, area, vegetation type, etc., for each fire.  Second, the IDL emissions code is run, which estimates the biomass burned for each fire, and applies emission factors for each fire based on vegetation type to calculate the base species (BC, OC, CO, NOx, NMVOC, etc.), and then the total NMVOC is speciated into individual VOCs for MOZART, SAPRC99 and GEOS-Chem chemical mechanisms.
 
