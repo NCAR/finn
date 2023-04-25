@@ -116,7 +116,7 @@ def main(tag_af, rasters, first_day=None, last_day=None, run_prep=True, run_work
                 range((dt1-dt0).days)]
         for dt in dates:
             print("starting work {0}: {1}".format( dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            with open('out.step2.o{0}'.format( dt.strftime('%Y%m%d')), 'w') as ofile:
+            with open('log.step2.o{0}'.format( dt.strftime('%Y%m%d')), 'w') as ofile:
                 p = Popen(
                     ['psql',] +
                     ['-f', scrname_work] +

@@ -108,7 +108,7 @@ l.fireid = t.fireid;
                 range((dt1-dt0).days)]
         for dt in dates:
             print("starting work {0}: {1}".format( dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
-            with open('out.stepvcf.o{0}'.format( dt.strftime('%Y%m%d') ), 'w') as ofile:
+            with open('log.stepvcf.o{0}'.format( dt.strftime('%Y%m%d') ), 'w') as ofile:
 
                 p = Popen(
                     ['psql',] +

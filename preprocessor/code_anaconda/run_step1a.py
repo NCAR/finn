@@ -120,7 +120,7 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
                 o = x.strftime('%Y-%m-%d')
             return o
 
-        with open('out.step1a.prep', 'w') as ofile:
+        with open('log.step1a.prep', 'w') as ofile:
 
             
             cmd = ['psql','-f',  os.path.join(os.path.dirname(__file__), ('step1_prep_%s.sql' % ver)), 
@@ -164,7 +164,7 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
             cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
             #print(cmd)
             #subprocess.run(shlex.split(cmd), check=True)
-            with open('out.step1a.o{0}'.format( dt.strftime('%Y%m%d')), 'w') as ofile:
+            with open('log.step1a.o{0}'.format( dt.strftime('%Y%m%d')), 'w') as ofile:
                 try:
                     #subprocess.run(cmd, check=True, stderr=PIPE, stdout=DEVNULL)
                     subprocess.run(cmd, check=True, stderr=STDOUT, stdout=ofile)
