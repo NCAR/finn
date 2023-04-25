@@ -6,6 +6,8 @@ code_anaconda/out_modlct*
 work_*/all_countries
 work_*/step2_*.sql
 *log*.txt
+*.log
+log.*
 *proc_mod*
 *tifnames.txt
 *.tif
