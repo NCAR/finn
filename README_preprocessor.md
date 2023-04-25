@@ -284,9 +284,6 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 </pre>
 Otherwise, there will be information below these headers about the container(s) that is running.
 
-:information_source: Diagram below shows components of docker involved in FINN preprocessor.  You would notice where this docker run, exec, start and stop fits in.  Please refer to descriptoins in Section 9.4 below for more.
-
-![docker components](https://github.com/yosukefk/finn_preproc/blob/master/images/docker_components.svg)
 
 ### 7 Database Backup/Restore
 
