@@ -1,5 +1,5 @@
 # 2023-04-08 updated from postgis 2.5
-FROM kartoza/postgis:14-3.1
+FROM kartoza/postgis:14-3.3
 
 ENV PATH /opt/conda/bin:$PATH
 
@@ -32,16 +32,19 @@ RUN conda update conda
 
 # 2023-04-08 version of packages that works
 # 2023-04-23 minor version specifications relaxed
+# 2023-07-12 notebook separatedly needed for jupyterlab
+# 2023-07-12 switched from basemap to catopy
 RUN conda install -c conda-forge -y \
 	gdal=3.6 \
 	python=3.11 \
-	jupyterlab=3.6.3 \
-	pyproj=3.4 \
-	beautifulsoup4=4.12.2 \
-	shapely=2.0.1 \
-	psycopg2=2.9.3 \
-	matplotlib=3.6.3 \
-	basemap=1.3.6
+	jupyterlab=4.0 \
+	notebook=6.5 \
+	pyproj=3.6 \
+	beautifulsoup4=4.12 \
+	shapely=2.0 \
+	psycopg2=2.9 \
+	matplotlib=3.7 \
+	cartopy=0.21
 
 # verify that gdal is importable
 RUN /opt/conda/bin/python -c "from osgeo import gdal"
