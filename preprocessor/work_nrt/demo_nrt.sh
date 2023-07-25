@@ -71,19 +71,19 @@ python3 $exc_dir/work_nrt.py -t $tag -y $yrm2 \
 	-o $out_dir \
        	-fd $yj -ld $yj \
         -s $summary_file \
-	$data_dir/FIRMS/modis-c6.1/MODIS_C6_Global_MCD14DL_NRT_${yjm1}.txt \
-	$data_dir/FIRMS/modis-c6.1/MODIS_C6_Global_MCD14DL_NRT_${yj}.txt \
-	$data_dir/FIRMS/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yjm1}.txt \
-	$data_dir/FIRMS/suomi-npp-viirs-c2/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yj}.txt
+	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yjm1}.txt \
+	$data_dir/FIRMS/modis-c6.1/Global/MODIS_C6_1_Global_MCD14DL_NRT_${yj}.txt \
+	$data_dir/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yjm1}.txt \
+	$data_dir/FIRMS/suomi-npp-viirs-c2/Global/SUOMI_VIIRS_C2_Global_VNP14IMGTDL_NRT_${yj}.txt
 
 if [ $? -ne 0 ]; then
 	echo problem in work_nrt.py
 	exit 2
 fi
 
-# Purge the intermediate results in the database
-python3 $exc_dir/work_clean.py -t $tag \
-	-s $summary_file
+## Purge the intermediate results in the database
+#python3 $exc_dir/work_clean.py -t $tag \
+#	-s $summary_file
 
 
 if [ $? -ne 0 ]; then

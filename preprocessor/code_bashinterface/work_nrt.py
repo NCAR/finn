@@ -164,12 +164,17 @@ def sec6_process_activefire(first_day=None, last_day=None, run_step1=True, run_s
         print(f'\n{this_script_name}: Skipping step2\n')
 
 
-def sec7_export_output(out_dir, summary_file=None):
-    shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
+def sec7_export_output(out_dir, summary_file=None, export_frp=True):
 
     schema = 'af_' + tag_af
-    tblname = 'out_{0}_{1}_{2}'.format(tag_lct, tag_vcf, tag_regnum)
-    flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
+    if export_frp:
+        shpname = 'out_{0}_{1}_{2}_{3}_{4}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum, tag_frp)
+        tblname = 'out_{0}_{1}_{2}_{3}'.format(tag_lct, tag_vcf, tag_regnum, tag_frp)
+        flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum', 'v_frp')
+    else:
+        shpname = 'out_{0}_{1}_{2}_{3}.shp'.format(tag_af, tag_lct, tag_vcf, tag_regnum)
+        tblname = 'out_{0}_{1}_{2}'.format(tag_lct, tag_vcf, tag_regnum)
+        flds = ('v_lct', 'f_lct', 'v_tree', 'v_herb', 'v_bare', 'v_regnum')
 
     export_shp.main(out_dir, schema, tblname, flds, shpname, 
             date_definition = date_definition)
@@ -183,7 +188,7 @@ def sec7_export_output(out_dir, summary_file=None):
 
 # TODO have '-f' option to clean the schema.  otherwise it wont overwrite or do anything and die
 def main(tag_af, af_fnames, year_rst, out_dir, first_day=None, last_day=None, 
-        summary_file=None, run_import=True, run_step1=True, run_step2=True):
+        summary_file=None, run_import=True, run_step1=True, run_step2=True, export_frp=True):
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -197,7 +202,7 @@ def main(tag_af, af_fnames, year_rst, out_dir, first_day=None, last_day=None,
 
     print(f'\n{this_script_name}: Starting processing ...\n')
 
-    user_config = common.sec1_user_config(tag_af, af_fnames, year_rst)
+    user_config = common.sec1_user_config(tag_af, af_fnames, year_rst, export_frp)
     globals().update(user_config)
 
     common.sec2_check_environment(out=out)
@@ -215,7 +220,7 @@ def main(tag_af, af_fnames, year_rst, out_dir, first_day=None, last_day=None,
         summary_file = Path(summary_file).open('a')
 
     print(f'\n{this_script_name}: Starting export ...\n')
-    sec7_export_output(out_dir=out_dir, summary_file=summary_file)
+    sec7_export_output(out_dir=out_dir, summary_file=summary_file, export_frp=export_frp)
 
 
 
@@ -263,6 +268,10 @@ if __name__ == '__main__':
             type=str2bool, nargs='?', const=True)
     parser.add_argument('--run_step2', default=True, 
             help='run step2 (lct/vcf identification) [yes/no]', 
+            type=str2bool, nargs='?', const=True)
+
+    parser.add_argument('--export_frp', default=True,
+            help='export average frp at each polygon [yes/no]',
             type=str2bool, nargs='?', const=True)
 
     parser.add_argument('af_fnames', 
