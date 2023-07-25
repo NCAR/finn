@@ -12,10 +12,8 @@ import psycopg2.sql as sql
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-# somehow this is needed for conda version of proj.  get rid of this if it is offending
 import os
-os.environ['PROJ_LIB'] = os.environ.get('PROJ_LIB', '/opt/conda/share/proj')
-from mpl_toolkits.basemap import Basemap
+import cartopy.crs as ccrs
 
 
 def clr_to_cmap(clr, val=None):
@@ -54,6 +52,8 @@ class Plotter(object):
 
         self.conn = psycopg2.connect(dbname=os.environ['PGDATABASE'])
         self.cur = self.conn.cursor()
+
+        self.fig = plt.figure(figsize=(12,6))
 
 
     def mk_density(self, schema_table):
@@ -215,8 +215,6 @@ class Plotter(object):
 
         info = getinfo(ds)
 
-        plt.figure(figsize=(12,6))
-
         llcrnrlon=info['Origin'][0]
         urcrnrlat=info['Origin'][1]
         urcrnrlon=(info['Origin'][0]+info['Pixel Size'][0] * info['Size'][0])
@@ -233,16 +231,12 @@ class Plotter(object):
             else:
                 raise RuntimeError('urrcrnerlon: %s' % llcrnrlat)
         
-        m = Basemap(
-                # need to flip upside down
-                llcrnrlon=llcrnrlon,
-                urcrnrlat=urcrnrlat,
-                urcrnrlon=urcrnrlon, 
-                llcrnrlat=llcrnrlat
-                )
-        m.drawcoastlines()
+        ax = self.fig.add_subplot(projection=ccrs.PlateCarree())
+        extent = [llcrnrlon,urcrnrlon, llcrnrlat, urcrnrlat,]
+        ax.set_extent(extent)
+        ax.coastlines()
         print(arr.shape)
-        m.imshow(arr,
+        ax.imshow(arr, origin='lower', extent=extent,
                 cmap=cmap)
         plt.show()
 
