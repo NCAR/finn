@@ -86,7 +86,7 @@ sys.path = sys.path + ['../code_anaconda']
 import rst_import
 
 
-def sec1_user_config(tag_af, af_fnames, year_rst):
+def sec1_user_config(tag_af, af_fnames, year_rst, export_frp=True):
     """ hard-wired options"""
 
 
@@ -129,6 +129,17 @@ def sec1_user_config(tag_af, af_fnames, year_rst):
             'variable': 'regnum', 
             }, 
         ]
+
+    if export_frp:
+        tag_frp = 'frp'
+        rasters.append(
+                {
+                    'tag': tag_frp,
+                    'kind': 'input',
+                    'variable_in': 'frp',
+                    'variable': 'frp',
+                    })
+
 
     # save *.shp of the output, so that you can hold onto polygons
     save_shp_of_output = True
