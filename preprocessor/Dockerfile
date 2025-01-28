@@ -1,7 +1,7 @@
 # 2023-04-08 updated from postgis 2.5
 FROM kartoza/postgis:14-3.3
 
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
 
 RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
     apt-get install -y wget bzip2 ca-certificates \
@@ -10,7 +10,7 @@ RUN rm -fr /var/lib/apt/lists/* && apt-get update --fix-missing && \
 RUN apt-get install -y curl grep sed dpkg unzip python3-pip sudo
 
 # 2023-04-08 TINI version fixed
-ENV TINI_VERSION 0.19.0
+ENV TINI_VERSION=0.19.0
 RUN curl -L "https://github.com/krallin/tini/releases/download/v${TINI_VERSION}/tini_${TINI_VERSION}.deb" > tini.deb && \
     dpkg -i tini.deb && \
     rm tini.deb && \
@@ -53,7 +53,8 @@ RUN /opt/conda/bin/python -c "from osgeo import gdal"
 # apt has older version of networkx, cannot be used.
 # so i have to use pip3
 # also i SOULD specify version of library so that results are reproducible...
-RUN /usr/bin/pip3 install numpy scipy networkx # no specfic version, 2023-04-08
+#RUN /usr/bin/pip3 install numpy scipy networkx # no specfic version, 2023-04-08
+RUN /usr/bin/pip3 install numpy=1.26 scipy==1.13 networkx==3.2 # froze version 2025-01-28 (numpy 2.0 was causing trouble with NDArray.ptp() being removed
 
 EXPOSE 8888
 
