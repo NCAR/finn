@@ -113,6 +113,7 @@ def purge_corrupted(ddir, url=None):
 
 def check_downloads(fname, get_cksum=None):
     """test checksum of a file against .xml file"""
+
     if get_cksum is None:
         def earthdata_cksum(fname):
             # assume that the data file comes with xml file
@@ -123,16 +124,28 @@ def check_downloads(fname, get_cksum=None):
             cksum, filsz = [soup.findAll(_)[0].contents[0] for _ in ('checksum', 'filesize')]
             return cksum, filsz
         get_cksum = earthdata_cksum
+
+    typ = 'CRC'  # assume it is cksum
     cksum0 = ['0','0']
     try:
         cksum0 = get_cksum(fname)
+        typ = cksum0[2]
+        cksum0 = cksum0[:2]
     except:
         pass
 
-    p = subprocess.Popen(['cksum', fname], stdout=subprocess.PIPE)
-    cksum = p.stdout.read()
-    p.communicate()
-    cksum = [_.decode() for _ in cksum.split()[:2]]
+    if typ == 'MD5':
+        p = subprocess.run(['md5sum', fname], stdout=subprocess.PIPE)
+        md5 = [_.decode() for _ in p.stdout.split()]
+        p = subprocess.run(['stat','-c', '%s' , fname], stdout=subprocess.PIPE)
+        siz = p.stdout.split()[0].decode()
+        cksum = [md5[0] , siz]
+    else:
+        cmd = 'cksum'
+        p = subprocess.Popen(['cksum', fname], stdout=subprocess.PIPE)
+        cksum = p.stdout.read()
+        p.communicate()
+        cksum = [_.decode() for _ in cksum.split()[:2]]
 
     if all((p)==(q) for (p,q) in zip(cksum0, cksum)):
         return True
